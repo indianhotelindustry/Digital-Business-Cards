@@ -1,5 +1,18 @@
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { db } from '../src/lib/firebase';
+
+// Directive 24: this legacy, unauthenticated script used to write against the
+// LIVE Firebase project and counted any error (including network failures) as
+// a PASS. It is kept for reference but only runs against the emulator. The
+// authoritative security suite is `npm run test:rules` (tests/rules/*).
+if (!process.env.FIRESTORE_EMULATOR_HOST) {
+  console.error('Refusing to run verifyRules.ts against a real Firebase project. Use `npm run test:rules`.');
+  process.exit(2);
+}
+{
+  const [host, port] = process.env.FIRESTORE_EMULATOR_HOST.split(':');
+  connectFirestoreEmulator(db, host, Number(port));
+}
 
 async function runAll13SecurityTests() {
   console.log('====================================================');

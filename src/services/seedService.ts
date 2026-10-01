@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Company, Department, Employee, Card, CardTemplate, UserProfile, Contact, Connection, RelationshipNote, FollowUp, ConnectionEvent } from '../types';
 import { DEFAULT_TEMPLATES } from './cardService';
@@ -88,13 +88,26 @@ export async function isDatabaseInitialized(): Promise<boolean> {
   }
 }
 
+export type DemoSeedWriter = (collectionName: string, id: string, data: object) => Promise<void>;
+
+/**
+ * Legacy client-SDK seeding. Since Directive 24 Phase 3 the Firestore rules no
+ * longer allow unauthenticated bootstrap writes, so this only succeeds where
+ * rules permit it. Demo data is created by `npm run seed`
+ * (scripts/admin/seedDemoData.ts, Admin SDK, never production).
+ */
 export async function seedInitialSaaSData(): Promise<{ success: boolean; message: string }> {
+  return writeDemoSeedData((collectionName, id, data) => setDoc(doc(db, collectionName, id), data));
+}
+
+/** Writes the complete demo dataset through `write` (DEVELOPMENT/emulator only). */
+export async function writeDemoSeedData(write: DemoSeedWriter): Promise<{ success: boolean; message: string }> {
   try {
     const now = new Date().toISOString();
 
     // 1. Templates
     for (const tpl of DEFAULT_TEMPLATES) {
-      await setDoc(doc(db, 'cardTemplates', tpl.id), tpl);
+      await write('cardTemplates', tpl.id, tpl);
     }
 
     // 2. Company A: Acme Innovations
@@ -121,7 +134,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'companies', 'company_acme'), companyAcme);
+    await write('companies', 'company_acme', companyAcme);
 
     // 3. Company B: Nexus Global
     const companyNexus: Company = {
@@ -147,7 +160,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'companies', 'company_nexus'), companyNexus);
+    await write('companies', 'company_nexus', companyNexus);
 
     // 4. Departments for Acme
     const deptSalesAcme: Department = {
@@ -178,9 +191,9 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'departments', deptSalesAcme.id), deptSalesAcme);
-    await setDoc(doc(db, 'departments', deptMktAcme.id), deptMktAcme);
-    await setDoc(doc(db, 'departments', deptHrAcme.id), deptHrAcme);
+    await write('departments', deptSalesAcme.id, deptSalesAcme);
+    await write('departments', deptMktAcme.id, deptMktAcme);
+    await write('departments', deptHrAcme.id, deptHrAcme);
 
     // 5. Departments for Nexus
     const deptOpsNexus: Department = {
@@ -201,8 +214,8 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'departments', deptOpsNexus.id), deptOpsNexus);
-    await setDoc(doc(db, 'departments', deptSalesNexus.id), deptSalesNexus);
+    await write('departments', deptOpsNexus.id, deptOpsNexus);
+    await write('departments', deptSalesNexus.id, deptSalesNexus);
 
     // 6. Employees for Acme
     const empRahul: Employee = {
@@ -300,14 +313,14 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       updatedAt: now,
     };
 
-    await setDoc(doc(db, 'employees', empRahul.id), empRahul);
-    await setDoc(doc(db, 'cards', cardRahul.id), cardRahul);
+    await write('employees', empRahul.id, empRahul);
+    await write('cards', cardRahul.id, cardRahul);
 
-    await setDoc(doc(db, 'employees', empSarah.id), empSarah);
-    await setDoc(doc(db, 'cards', cardSarah.id), cardSarah);
+    await write('employees', empSarah.id, empSarah);
+    await write('cards', cardSarah.id, cardSarah);
 
-    await setDoc(doc(db, 'employees', empMarcus.id), empMarcus);
-    await setDoc(doc(db, 'cards', cardMarcus.id), cardMarcus);
+    await write('employees', empMarcus.id, empMarcus);
+    await write('cards', cardMarcus.id, cardMarcus);
 
     // 8. Demo User accounts in Firestore
     for (const [key, user] of Object.entries(DEMO_USERS)) {
@@ -316,7 +329,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
         createdAt: now,
         updatedAt: now,
       };
-      await setDoc(doc(db, 'users', user.id), uProfile);
+      await write('users', user.id, uProfile);
     }
 
     // 9. V2 Connect Data: Contacts, Connections, Notes, Follow-ups
@@ -337,7 +350,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'contacts', contactMarcus.id), contactMarcus);
+    await write('contacts', contactMarcus.id, contactMarcus);
 
     const contactPriya: Contact = {
       id: 'contact_rahul_priya',
@@ -352,7 +365,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'contacts', contactPriya.id), contactPriya);
+    await write('contacts', contactPriya.id, contactPriya);
 
     // Connections
     const connMarcus: Connection = {
@@ -380,7 +393,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       acceptedAt: now,
       lastInteractionAt: now,
     };
-    await setDoc(doc(db, 'connections', connMarcus.id), connMarcus);
+    await write('connections', connMarcus.id, connMarcus);
 
     const connSarahIncoming: Connection = {
       id: 'conn_rahul_sarah_incoming',
@@ -406,7 +419,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       updatedAt: now,
       lastInteractionAt: now,
     };
-    await setDoc(doc(db, 'connections', connSarahIncoming.id), connSarahIncoming);
+    await write('connections', connSarahIncoming.id, connSarahIncoming);
 
     // Private Relationship Notes
     const note1: RelationshipNote = {
@@ -418,7 +431,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'relationshipNotes', note1.id), note1);
+    await write('relationshipNotes', note1.id, note1);
 
     // Follow-ups
     const fu1: FollowUp = {
@@ -433,7 +446,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'followUps', fu1.id), fu1);
+    await write('followUps', fu1.id, fu1);
 
     const fu2: FollowUp = {
       id: 'fu_rahul_priya_1',
@@ -446,7 +459,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       createdAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'followUps', fu2.id), fu2);
+    await write('followUps', fu2.id, fu2);
 
     // Connection Events (Timeline)
     const evt1: ConnectionEvent = {
@@ -459,7 +472,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       description: 'Shared digital card via QR code scan',
       timestamp: now,
     };
-    await setDoc(doc(db, 'connectionEvents', evt1.id), evt1);
+    await write('connectionEvents', evt1.id, evt1);
 
     const evt2: ConnectionEvent = {
       id: 'cevt_seed_2',
@@ -471,7 +484,7 @@ export async function seedInitialSaaSData(): Promise<{ success: boolean; message
       description: 'Accepted connection request and exchanged verified business profile',
       timestamp: now,
     };
-    await setDoc(doc(db, 'connectionEvents', evt2.id), evt2);
+    await write('connectionEvents', evt2.id, evt2);
 
     return {
       success: true,

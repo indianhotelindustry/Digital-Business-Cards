@@ -1,6 +1,18 @@
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { db } from '../src/lib/firebase';
 import { DEFAULT_TEMPLATES } from '../src/services/cardService';
+
+// Directive 24 Phase 3: the client-SDK seeder relied on the removed
+// `!exists(company_acme)` rules backdoor and wrote to the LIVE project.
+// It now runs only against the emulator. Use `npm run seed` (Admin SDK).
+if (!process.env.FIRESTORE_EMULATOR_HOST) {
+  console.error('Refusing to run seedDatabase.ts against a real Firebase project. Use `npm run seed`.');
+  process.exit(2);
+}
+{
+  const [host, port] = process.env.FIRESTORE_EMULATOR_HOST.split(':');
+  connectFirestoreEmulator(db, host, Number(port));
+}
 
 async function seed() {
   console.log('Seeding initial SaaS data into live Firestore...');
