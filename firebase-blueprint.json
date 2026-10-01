@@ -1,0 +1,278 @@
+{
+  "entities": {
+    "users": {
+      "description": "User accounts linked to Firebase Authentication with role and tenant mapping",
+      "fields": {
+        "id": { "type": "string", "description": "Auth UID" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "Full name" },
+        "role": { "type": "string", "description": "app_owner | company_admin | employee" },
+        "companyId": { "type": "string", "description": "Assigned company ID for admins and employees" },
+        "employeeId": { "type": "string", "description": "Assigned employee ID for employee users" },
+        "status": { "type": "string", "description": "active | suspended" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "companies": {
+      "description": "Tenants representing companies subscribing to the SaaS",
+      "fields": {
+        "id": { "type": "string", "description": "Company ID" },
+        "name": { "type": "string", "description": "Trading name" },
+        "legalName": { "type": "string", "description": "Registered legal entity name" },
+        "logoUrl": { "type": "string", "description": "Company logo URL or data URL" },
+        "website": { "type": "string", "description": "Official company website" },
+        "email": { "type": "string", "description": "Company contact email" },
+        "phone": { "type": "string", "description": "Company contact phone" },
+        "address": { "type": "string", "description": "Physical address" },
+        "description": { "type": "string", "description": "About company" },
+        "branding": { "type": "map", "description": "Brand colors and styling settings" },
+        "status": { "type": "string", "description": "active | suspended" },
+        "planId": { "type": "string", "description": "SaaS plan identifier e.g. pro, enterprise" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "departments": {
+      "description": "Organizational departments scoped to a specific company",
+      "fields": {
+        "id": { "type": "string", "description": "Department ID" },
+        "companyId": { "type": "string", "description": "Owner company tenant ID" },
+        "name": { "type": "string", "description": "Department name e.g. Sales, Engineering" },
+        "description": { "type": "string", "description": "Department mandate" },
+        "departmentHeadEmployeeId": { "type": "string", "description": "Optional head employee ID" },
+        "status": { "type": "string", "description": "active | inactive" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "employees": {
+      "description": "Employees belonging to a company with professional and contact credentials",
+      "fields": {
+        "id": { "type": "string", "description": "Employee ID" },
+        "companyId": { "type": "string", "description": "Owner company tenant ID" },
+        "departmentId": { "type": "string", "description": "Department ID (nullable)" },
+        "firstName": { "type": "string", "description": "First name" },
+        "lastName": { "type": "string", "description": "Last name" },
+        "displayName": { "type": "string", "description": "Full display name" },
+        "designation": { "type": "string", "description": "Job title" },
+        "profilePhotoUrl": { "type": "string", "description": "Profile picture URL" },
+        "email": { "type": "string", "description": "Professional email" },
+        "phone": { "type": "string", "description": "Work telephone" },
+        "whatsapp": { "type": "string", "description": "WhatsApp number" },
+        "bio": { "type": "string", "description": "Short bio or statement" },
+        "linkedin": { "type": "string", "description": "LinkedIn profile link" },
+        "website": { "type": "string", "description": "Personal or portfolio website" },
+        "instagram": { "type": "string", "description": "Instagram handle or link" },
+        "otherSocialLinks": { "type": "map", "description": "Twitter, GitHub, YouTube etc." },
+        "cardId": { "type": "string", "description": "Associated business card ID" },
+        "status": { "type": "string", "description": "active | inactive" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "cards": {
+      "description": "Digital business card records with public slugs and template associations",
+      "fields": {
+        "id": { "type": "string", "description": "Card ID" },
+        "companyId": { "type": "string", "description": "Company tenant ID" },
+        "employeeId": { "type": "string", "description": "Employee ID" },
+        "templateId": { "type": "string", "description": "Card visual template e.g. classic, modern, minimal" },
+        "publicSlug": { "type": "string", "description": "Unique URL slug e.g. rahul-sharma" },
+        "status": { "type": "string", "description": "active | inactive" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "cardTemplates": {
+      "description": "Reusable card design presets configured by app owner",
+      "fields": {
+        "id": { "type": "string", "description": "Template ID" },
+        "name": { "type": "string", "description": "Template title" },
+        "description": { "type": "string", "description": "Style description" },
+        "previewImageUrl": { "type": "string", "description": "Thumbnail preview" },
+        "configuration": { "type": "map", "description": "Layout and font options" },
+        "status": { "type": "string", "description": "active | retired" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "analytics": {
+      "description": "Event telemetry for card interactions (views, contact saves, outbound clicks)",
+      "fields": {
+        "id": { "type": "string", "description": "Event ID" },
+        "companyId": { "type": "string", "description": "Company tenant ID" },
+        "employeeId": { "type": "string", "description": "Employee ID" },
+        "cardId": { "type": "string", "description": "Card ID" },
+        "eventType": { "type": "string", "description": "card_view | phone_click | whatsapp_click | email_click | linkedin_click | website_click | save_contact | share" },
+        "timestamp": { "type": "string", "description": "ISO timestamp" },
+        "metadata": { "type": "map", "description": "Contextual details like referrer or user agent" }
+      }
+    },
+    "contacts": {
+      "description": "User-scoped personal address book entries created from card interactions or manual entries",
+      "fields": {
+        "id": { "type": "string", "description": "Contact document ID" },
+        "ownerUserId": { "type": "string", "description": "Auth UID of the owner" },
+        "sourceType": { "type": "string", "description": "dsbc_card | manual | qr_scan" },
+        "linkedIdentityId": { "type": "string", "description": "Linked employee or user ID" },
+        "linkedCardId": { "type": "string", "description": "Linked card ID" },
+        "displayName": { "type": "string", "description": "Full name" },
+        "companyName": { "type": "string", "description": "Company name" },
+        "jobTitle": { "type": "string", "description": "Job title" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "email": { "type": "string", "description": "Email address" },
+        "website": { "type": "string", "description": "Website URL" },
+        "notesSummary": { "type": "string", "description": "High level summary notes" },
+        "archivedAt": { "type": "string", "description": "Nullable ISO archive timestamp" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "connections": {
+      "description": "Mutual professional connections with state transitions and granular shared info consent",
+      "fields": {
+        "id": { "type": "string", "description": "Connection document ID" },
+        "connectionVersion": { "type": "string", "description": "v2.0" },
+        "requesterUserId": { "type": "string", "description": "Requester user UID" },
+        "recipientUserId": { "type": "string", "description": "Recipient user UID (nullable if visitor)" },
+        "requesterIdentityId": { "type": "string", "description": "Requester identifier" },
+        "recipientIdentityId": { "type": "string", "description": "Recipient employeeId or userId" },
+        "requesterName": { "type": "string", "description": "Requester display name" },
+        "requesterCompany": { "type": "string", "description": "Requester company" },
+        "requesterTitle": { "type": "string", "description": "Requester job title" },
+        "requesterEmail": { "type": "string", "description": "Requester email" },
+        "requesterPhone": { "type": "string", "description": "Requester phone" },
+        "requesterCompanyId": { "type": "string", "description": "Nullable requester company tenant ID" },
+        "recipientCompanyId": { "type": "string", "description": "Recipient company tenant ID" },
+        "status": { "type": "string", "description": "none | requested | pending | accepted | declined | revoked | blocked" },
+        "initiatedBy": { "type": "string", "description": "Actor user UID" },
+        "exchangeMethod": { "type": "string", "description": "qr_scan | direct_link | card_exchange | manual" },
+        "consentState": { "type": "string", "description": "none | requested | accepted | declined | revoked | blocked" },
+        "sharedCategories": { "type": "array", "description": "List of shared categories: profile, company, job_title, phone, email, website" },
+        "relationshipStatus": { "type": "string", "description": "lead | prospect | partner | colleague | client | vendor | other" },
+        "relationshipPriority": { "type": "string", "description": "low | medium | high" },
+        "initialNote": { "type": "string", "description": "Initial introduction note" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" },
+        "acceptedAt": { "type": "string", "description": "Nullable ISO timestamp" },
+        "declinedAt": { "type": "string", "description": "Nullable ISO timestamp" },
+        "revokedAt": { "type": "string", "description": "Nullable ISO timestamp" },
+        "lastInteractionAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "relationshipNotes": {
+      "description": "User-scoped private relationship notes inaccessible to company admins or peers",
+      "fields": {
+        "id": { "type": "string", "description": "Note document ID" },
+        "ownerUserId": { "type": "string", "description": "Author UID" },
+        "connectionId": { "type": "string", "description": "Associated connection ID" },
+        "contactId": { "type": "string", "description": "Associated contact ID" },
+        "content": { "type": "string", "description": "Note content" },
+        "authorName": { "type": "string", "description": "Author name" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "followUps": {
+      "description": "User-scoped follow-up tasks and reminders",
+      "fields": {
+        "id": { "type": "string", "description": "Follow-up document ID" },
+        "ownerUserId": { "type": "string", "description": "Owner user UID" },
+        "connectionId": { "type": "string", "description": "Associated connection ID" },
+        "contactId": { "type": "string", "description": "Associated contact ID" },
+        "targetName": { "type": "string", "description": "Name of relationship target" },
+        "title": { "type": "string", "description": "Task title" },
+        "dueAt": { "type": "string", "description": "Due date" },
+        "status": { "type": "string", "description": "pending | completed | cancelled" },
+        "notes": { "type": "string", "description": "Optional notes" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" },
+        "completedAt": { "type": "string", "description": "Nullable completion timestamp" },
+        "cancelledAt": { "type": "string", "description": "Nullable cancellation timestamp" }
+      }
+    },
+    "connectionEvents": {
+      "description": "Append-only immutable relationship event timeline and audit trail",
+      "fields": {
+        "id": { "type": "string", "description": "Event document ID" },
+        "connectionId": { "type": "string", "description": "Associated connection ID" },
+        "ownerUserId": { "type": "string", "description": "Optional private owner UID" },
+        "participantUserIds": { "type": "array", "description": "Participant UIDs allowed to view event" },
+        "eventType": { "type": "string", "description": "CARD_SHARED | CONNECTION_REQUESTED | CONNECTION_ACCEPTED | CONNECTION_DECLINED | CONNECTION_REVOKED | CONTACT_CREATED | NOTE_ADDED | FOLLOW_UP_CREATED | FOLLOW_UP_COMPLETED | FOLLOW_UP_CANCELLED" },
+        "actorUserId": { "type": "string", "description": "Actor user UID" },
+        "actorName": { "type": "string", "description": "Actor display name" },
+        "description": { "type": "string", "description": "Event human readable summary" },
+        "timestamp": { "type": "string", "description": "ISO timestamp" },
+        "metadata": { "type": "map", "description": "Contextual metadata" }
+      }
+    },
+    "plans": {
+      "description": "Configurable SaaS subscription tiers and feature matrices",
+      "fields": {
+        "id": { "type": "string", "description": "Plan key e.g. individual_free, company_pro" },
+        "name": { "type": "string", "description": "Display name" },
+        "targetType": { "type": "string", "description": "individual | company" },
+        "description": { "type": "string", "description": "Value proposition" },
+        "price": { "type": "number", "description": "Subscription price" },
+        "currency": { "type": "string", "description": "INR | USD | EUR" },
+        "billingCycle": { "type": "string", "description": "monthly | yearly | lifetime | free" },
+        "isActive": { "type": "boolean", "description": "Active state" },
+        "features": { "type": "map", "description": "Feature entitlement rules mapping" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "entitlementOverrides": {
+      "description": "Tenant and individual custom feature grants, limits, and time-bounded exceptions",
+      "fields": {
+        "id": { "type": "string", "description": "Override ID" },
+        "targetType": { "type": "string", "description": "individual | company" },
+        "targetId": { "type": "string", "description": "Target user UID or company ID" },
+        "targetName": { "type": "string", "description": "Target entity display name" },
+        "featureId": { "type": "string", "description": "Stable feature ID" },
+        "rule": { "type": "map", "description": "Entitlement status and quota limits" },
+        "grantType": { "type": "string", "description": "permanent | until_date | trial | complimentary" },
+        "validFrom": { "type": "string", "description": "Start ISO timestamp" },
+        "expiresAt": { "type": "string", "description": "Expiration ISO timestamp (nullable)" },
+        "reason": { "type": "string", "description": "Audit business justification" },
+        "createdBy": { "type": "string", "description": "App Owner UID" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "globalPolicies": {
+      "description": "System-wide SaaS baseline settings and maintenance flags",
+      "fields": {
+        "id": { "type": "string", "description": "Policy document ID" },
+        "maintenanceMode": { "type": "boolean", "description": "Maintenance mode toggle" },
+        "allowSelfRegistration": { "type": "boolean", "description": "Self-service registration toggle" },
+        "defaultIndividualPlanId": { "type": "string", "description": "Default plan for individuals" },
+        "defaultCompanyPlanId": { "type": "string", "description": "Default plan for companies" },
+        "defaultTrialDays": { "type": "number", "description": "Default trial duration" },
+        "enforceLimitsStrictly": { "type": "boolean", "description": "Strict limit enforcement" },
+        "currency": { "type": "string", "description": "Platform currency code" },
+        "currencySymbol": { "type": "string", "description": "Platform currency symbol" },
+        "platformName": { "type": "string", "description": "Platform branding name" }
+      }
+    },
+    "entitlementAuditLogs": {
+      "description": "Append-only immutable audit trail of all SaaS policy and entitlement mutations",
+      "fields": {
+        "id": { "type": "string", "description": "Log ID" },
+        "actorUserId": { "type": "string", "description": "Actor user UID" },
+        "actorName": { "type": "string", "description": "Actor display name" },
+        "targetType": { "type": "string", "description": "company | individual | plan | global" },
+        "targetId": { "type": "string", "description": "Target entity ID" },
+        "targetName": { "type": "string", "description": "Target entity name" },
+        "featureId": { "type": "string", "description": "Feature ID (nullable)" },
+        "featureName": { "type": "string", "description": "Feature name (nullable)" },
+        "previousValue": { "type": "string", "description": "Previous state" },
+        "newValue": { "type": "string", "description": "New state" },
+        "reason": { "type": "string", "description": "Business justification" },
+        "timestamp": { "type": "string", "description": "ISO timestamp" },
+        "source": { "type": "string", "description": "Source UI / System" }
+      }
+    }
+  }
+}

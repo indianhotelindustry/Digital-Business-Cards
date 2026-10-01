@@ -1,0 +1,6 @@
+{
+  "name": "Digital Business Card SaaS",
+  "description": "Enterprise multi-tenant digital business card and professional relationship platform with DSBC Connect, Events, Campaigns, Lead Capture, Attribution, and strict tenant privacy isolation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
