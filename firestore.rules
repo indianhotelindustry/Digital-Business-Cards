@@ -1,563 +1,627 @@
 rules_version = '2';
+
+// ============================================================================
+// DSBC Firestore Security Rules — Directive 24 (Phases 2–4)
+// ----------------------------------------------------------------------------
+// Principles
+//   * Deny by default. Nothing is allowed because a document is ABSENT
+//     (the former `!exists(companies/company_acme)` bootstrap is gone).
+//     Bootstrap/demo data is written only by scripts/admin/* with Admin SDK.
+//   * App Owner authority = custom claim platformRole == 'app_owner', set only
+//     by scripts/admin/setAppOwner.ts, on an identity with a verified email.
+//     No email allow-list, no trust in users/{uid}.role for App Owner.
+//   * Registration establishes identity + requested account type only. Role,
+//     companyId, tenant and plan are fixed by these rules, not the client.
+//   * Tenant role and membership (users.role / companyId / employeeId /
+//     status / tenantId / accountType) are never client-writable afterwards.
+//   * Commercial authority (plans, policies, overrides, subscriptions,
+//     invoices, audit logs) is read-only for every client; only a trusted
+//     backend (Admin SDK) may write it.
+// Tests: tests/rules/*.test.ts (npm run test:rules, Firebase Emulator only).
+// ============================================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
-    function isAuthenticated() {
+    // ------------------------------------------------------------------------
+    // Identity helpers
+    // ------------------------------------------------------------------------
+    function isSignedIn() {
       return request.auth != null;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function isAppOwner() {
+      return isSignedIn()
+        && request.auth.token.get('platformRole', '') == 'app_owner'
+        && request.auth.token.get('email_verified', false) == true;
     }
 
-    function isAppOwner() {
-      return isAuthenticated() && (
-        request.auth.token.email == 'owner@saas-cards.io' ||
-        request.auth.token.email == 'theindianhotelindustry@gmail.com' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         getUserData().role == 'app_owner')
-      );
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function hasProfile() {
+      return isSignedIn() && exists(userPath(request.auth.uid));
+    }
+
+    function me() {
+      return get(userPath(request.auth.uid)).data;
+    }
+
+    function isActiveProfile() {
+      return hasProfile() && me().status == 'active';
+    }
+
+    function isNonEmptyString(v) {
+      return v is string && v.size() > 0;
+    }
+
+    // ------------------------------------------------------------------------
+    // Tenant helpers
+    // ------------------------------------------------------------------------
+    function companyPath(companyId) {
+      return /databases/$(database)/documents/companies/$(companyId);
+    }
+
+    function tenantPath(tenantId) {
+      return /databases/$(database)/documents/tenants/$(tenantId);
     }
 
     function isCompanyActive(companyId) {
-      return exists(/databases/$(database)/documents/companies/$(companyId)) && 
-        get(/databases/$(database)/documents/companies/$(companyId)).data.status == 'active';
+      return isNonEmptyString(companyId)
+        && exists(companyPath(companyId))
+        && get(companyPath(companyId)).data.status == 'active';
     }
-    
+
+    // Any active profile whose companyId is this company (any role).
+    function isMemberOf(companyId) {
+      return isNonEmptyString(companyId) && isActiveProfile() && me().companyId == companyId;
+    }
+
+    function isActiveMemberOf(companyId) {
+      return isMemberOf(companyId) && isCompanyActive(companyId);
+    }
+
     function isCompanyAdmin(companyId) {
-      return isAuthenticated() && 
-        isCompanyActive(companyId) &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().role == 'company_admin' && 
-        getUserData().companyId == companyId;
-    }
-    
-    function isEmployee(employeeId) {
-      return isAuthenticated() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().role == 'employee' && 
-        getUserData().employeeId == employeeId;
+      return isMemberOf(companyId) && me().role == 'company_admin' && isCompanyActive(companyId);
     }
 
-    // users collection - Strict Self-Isolation
+    function isSelfEmployee(employeeId) {
+      return isNonEmptyString(employeeId)
+        && isActiveProfile()
+        && me().role == 'employee'
+        && me().employeeId == employeeId;
+    }
+
+    function departmentBelongsTo(departmentId, companyId) {
+      return departmentId == null
+        || get(/databases/$(database)/documents/departments/$(departmentId)).data.companyId == companyId;
+    }
+
+    function employeeBelongsTo(employeeId, companyId) {
+      return get(/databases/$(database)/documents/employees/$(employeeId)).data.companyId == companyId;
+    }
+
+    // ------------------------------------------------------------------------
+    // Change helpers
+    // ------------------------------------------------------------------------
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function unchanged(fields) {
+      return !changedKeys().hasAny(fields);
+    }
+
+    function onlyChanges(fields) {
+      return changedKeys().hasOnly(fields);
+    }
+
+    // ------------------------------------------------------------------------
+    // Registration (Phase 2): one batch writes users/{uid} + tenants/{id}
+    // (+ companies/co_<uid> for company accounts). The caller has no profile
+    // before the batch; ids are derived from the caller's uid.
+    // ------------------------------------------------------------------------
+    function isRegistrationInProgress() {
+      return isSignedIn()
+        && !exists(userPath(request.auth.uid))
+        && existsAfter(userPath(request.auth.uid));
+    }
+
+    function isValidRegistrationProfile(uid) {
+      let d = request.resource.data;
+      let fields = ['id', 'email', 'displayName', 'role', 'companyId', 'employeeId',
+                    'status', 'accountType', 'tenantId', 'createdAt', 'updatedAt'];
+      return d.keys().hasOnly(fields)
+        && d.keys().hasAll(fields)
+        && d.id == uid
+        && isNonEmptyString(d.email)
+        && d.email == request.auth.token.get('email', '')
+        && isNonEmptyString(d.displayName) && d.displayName.size() <= 120
+        && d.status == 'active'
+        && d.employeeId == null
+        && d.createdAt is string
+        && d.updatedAt is string
+        && (
+          (
+            d.accountType == 'individual'
+            && d.role == 'employee'
+            && d.companyId == null
+            && d.tenantId == 'ind_' + uid
+            && getAfter(tenantPath('ind_' + uid)).data.ownerUid == uid
+          ) || (
+            d.accountType == 'company'
+            && d.role == 'company_admin'
+            && d.companyId == 'co_' + uid
+            && d.tenantId == 'co_' + uid
+            && getAfter(tenantPath('co_' + uid)).data.ownerUid == uid
+            && getAfter(companyPath('co_' + uid)).data.ownerUid == uid
+          )
+        );
+    }
+
+    function isValidTenantRecord(tenantId) {
+      let d = request.resource.data;
+      let uid = request.auth.uid;
+      let fields = ['id', 'kind', 'ownerUid', 'companyId', 'status', 'createdAt'];
+      return d.keys().hasOnly(fields)
+        && d.keys().hasAll(fields)
+        && d.id == tenantId
+        && d.ownerUid == uid
+        && d.status == 'active'
+        && d.createdAt is string
+        && (
+          (tenantId == 'ind_' + uid && d.kind == 'individual' && d.companyId == null)
+          || (tenantId == 'co_' + uid && d.kind == 'company' && d.companyId == tenantId)
+        );
+    }
+
+    function isValidSelfRegisteredCompany(companyId) {
+      let d = request.resource.data;
+      return companyId == 'co_' + request.auth.uid
+        && d.id == companyId
+        && d.ownerUid == request.auth.uid
+        && d.kind == 'company'
+        && d.status == 'active'
+        && d.planId == 'company_free'
+        && isNonEmptyString(d.name) && d.name.size() <= 120;
+    }
+
+    // ========================================================================
+    // users
+    // ========================================================================
     match /users/{userId} {
-      allow read: if isAuthenticated() && (
-        request.auth.uid == userId || 
-        isAppOwner()
-      );
-      allow create: if (isAuthenticated() && (
-        request.auth.uid == userId || isAppOwner()
-      ) && (
-        request.resource.data.role != 'app_owner' || 
-        request.auth.token.email == 'theindianhotelindustry@gmail.com' || 
-        isAppOwner()
-      )) || (
-        !exists(/databases/$(database)/documents/companies/company_acme) &&
-        userId in ['user_app_owner_demo', 'user_admin_acme_demo', 'user_admin_nexus_demo', 'user_emp_rahul_demo']
-      );
-      // Forbid ordinary users from altering their own role, companyId, or employeeId
+      allow read: if isAppOwner() || (isSignedIn() && request.auth.uid == userId);
+
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && isValidRegistrationProfile(userId);
+
+      // Users may only rename themselves. Role, membership, status, email,
+      // tenant and account type are authority fields.
       allow update: if isAppOwner() || (
-        isAuthenticated() && 
-        request.auth.uid == userId && 
-        request.resource.data.role == resource.data.role && 
-        request.resource.data.companyId == resource.data.companyId && 
-        request.resource.data.employeeId == resource.data.employeeId
+        isSignedIn()
+        && request.auth.uid == userId
+        && resource.data.status == 'active'
+        && onlyChanges(['displayName', 'updatedAt'])
+        && isNonEmptyString(request.resource.data.displayName)
+        && request.resource.data.displayName.size() <= 120
       );
+
       allow delete: if isAppOwner();
     }
 
-    // companies collection
+    // ========================================================================
+    // tenants (Phase 2) — tenant registry; created only during registration
+    // ========================================================================
+    match /tenants/{tenantId} {
+      allow read: if isAppOwner() || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+      allow create: if isRegistrationInProgress()
+        && getAfter(userPath(request.auth.uid)).data.tenantId == tenantId
+        && isValidTenantRecord(tenantId);
+      allow update, delete: if false;
+    }
+
+    // ========================================================================
+    // companies
+    // ========================================================================
     match /companies/{companyId} {
-      // Public card view needs active company branding (logo, name, colors)
-      allow read: if (resource != null && resource.data.status == 'active') || 
-        isAppOwner() || 
-        (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().companyId == companyId);
+      // Active companies are public (company mini-website / card branding).
+      allow read: if (resource != null && resource.data.status == 'active')
+        || isAppOwner()
+        || isMemberOf(companyId);
+
       allow create: if isAppOwner() || (
-        !exists(/databases/$(database)/documents/companies/company_acme) &&
-        companyId in ['company_acme', 'company_nexus']
+        isRegistrationInProgress()
+        && getAfter(userPath(request.auth.uid)).data.companyId == companyId
+        && isValidSelfRegisteredCompany(companyId)
       );
-      // Company Admin cannot change company id, planId, or status (cannot self-unsuspend)
+
+      // Company admins edit content only; never id, status (no self-unsuspend),
+      // plan, kind or ownership.
       allow update: if isAppOwner() || (
-        isCompanyAdmin(companyId) && 
-        request.resource.data.id == resource.data.id && 
-        request.resource.data.status == resource.data.status && 
-        request.resource.data.planId == resource.data.planId
+        isCompanyAdmin(companyId)
+        && unchanged(['id', 'status', 'planId', 'kind', 'ownerUid'])
       );
+
       allow delete: if isAppOwner();
     }
 
-    // departments collection
+    // ========================================================================
+    // departments
+    // ========================================================================
     match /departments/{departmentId} {
-      allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId)) ||
-        isAppOwner() || 
-        (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().companyId == resource.data.companyId);
-      allow create: if isAppOwner() || 
-        isCompanyAdmin(request.resource.data.companyId) || (
-          !exists(/databases/$(database)/documents/companies/company_acme) &&
-          request.resource.data.companyId in ['company_acme', 'company_nexus']
-        );
+      allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId))
+        || isAppOwner()
+        || isMemberOf(resource.data.companyId);
+      allow create: if isAppOwner() || isCompanyAdmin(request.resource.data.companyId);
       allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && 
-        request.resource.data.companyId == resource.data.companyId
-      );
-      allow delete: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId);
-    }
-
-    // employees collection
-    match /employees/{employeeId} {
-      // Public can read active employee profile for card if company is active
-      allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId)) || 
-        isAppOwner() || 
-        (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().companyId == resource.data.companyId);
-      // Admin create: cannot inject department belonging to another company
-      allow create: if isAppOwner() || (
-        isCompanyAdmin(request.resource.data.companyId) && 
-        (request.resource.data.departmentId == null || 
-         get(/databases/$(database)/documents/departments/$(request.resource.data.departmentId)).data.companyId == request.resource.data.companyId)
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme) &&
-        request.resource.data.companyId in ['company_acme', 'company_nexus']
-      );
-      // Admin update: cannot cross-assign department. Employee update: limited to self-service contact fields
-      allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && 
-        request.resource.data.companyId == resource.data.companyId && 
-        (request.resource.data.departmentId == null || 
-         get(/databases/$(database)/documents/departments/$(request.resource.data.departmentId)).data.companyId == resource.data.companyId)
-      ) || (
-        isAuthenticated() && 
-        isCompanyActive(resource.data.companyId) &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().role == 'employee' && 
-        getUserData().employeeId == employeeId && 
-        request.resource.data.companyId == resource.data.companyId &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'firstName', 'lastName', 'displayName', 'designation',
-          'phone', 'whatsapp', 'bio', 'profilePhotoUrl', 'website', 
-          'linkedin', 'instagram', 'otherSocialLinks', 'updatedAt'
-        ])
-      );
-      allow delete: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId);
-    }
-
-    // cards collection
-    match /cards/{cardId} {
-      // Public can read active cards only if associated company is active
-      allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId)) || 
-        isAppOwner() || 
-        (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().companyId == resource.data.companyId);
-      // Admin create: card employeeId must belong to the same company
-      allow create: if isAppOwner() || (
-        isCompanyAdmin(request.resource.data.companyId) && 
-        get(/databases/$(database)/documents/employees/$(request.resource.data.employeeId)).data.companyId == request.resource.data.companyId
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme) &&
-        request.resource.data.companyId in ['company_acme', 'company_nexus']
-      );
-      // Admin update: companyId immutable, employee must belong to same company
-      allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && 
-        request.resource.data.companyId == resource.data.companyId && 
-        get(/databases/$(database)/documents/employees/$(request.resource.data.employeeId)).data.companyId == resource.data.companyId
-      );
-      allow delete: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId);
-    }
-
-    // cardTemplates collection
-    match /cardTemplates/{templateId} {
-      allow read: if true;
-      allow write: if isAppOwner() || !exists(/databases/$(database)/documents/companies/company_acme);
-    }
-
-    // analytics collection - Strict Cross-Tenant Injection Guard
-    match /analytics/{eventId} {
-      allow create: if request.resource.data.eventType in [
-        'card_view', 'phone_click', 'whatsapp_click', 'email_click', 
-        'website_click', 'linkedin_click', 'save_contact', 'share'
-      ] && 
-      exists(/databases/$(database)/documents/cards/$(request.resource.data.cardId)) && 
-      get(/databases/$(database)/documents/cards/$(request.resource.data.cardId)).data.companyId == request.resource.data.companyId && 
-      get(/databases/$(database)/documents/cards/$(request.resource.data.cardId)).data.employeeId == request.resource.data.employeeId;
-      
-      allow read: if isAppOwner() || 
-        (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && isCompanyAdmin(resource.data.companyId));
-      allow update, delete: if isAppOwner();
-    }
-
-    // ====================================================
-    // DSBC V2.0 CONNECT FOUNDATION SECURITY RULES
-    // ====================================================
-
-    // contacts collection - Strictly User-Scoped Personal Address Book
-    match /contacts/{contactId} {
-      allow read: if isAuthenticated() && resource.data.ownerUserId == request.auth.uid;
-      allow create: if (
-        isAuthenticated() && request.resource.data.ownerUserId == request.auth.uid
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      allow update: if (
-        isAuthenticated() && 
-        resource.data.ownerUserId == request.auth.uid && 
-        request.resource.data.ownerUserId == resource.data.ownerUserId
-      );
-      allow delete: if (
-        isAuthenticated() && resource.data.ownerUserId == request.auth.uid
-      );
-    }
-
-    // connections collection - Mutual Connection State Machine
-    match /connections/{connectionId} {
-      // Participants or App Owner can read
-      allow read: if isAppOwner() || (
-        isAuthenticated() && (
-          resource.data.requesterUserId == request.auth.uid || 
-          resource.data.recipientUserId == request.auth.uid ||
-          (resource.data.recipientUserId == null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().employeeId == resource.data.recipientIdentityId)
-        )
-      );
-      
-      // Intentional Connection Request creation
-      allow create: if isAppOwner() || (
-        isAuthenticated() && request.resource.data.requesterUserId == request.auth.uid && 
-        request.resource.data.status in ['requested', 'pending']
-      ) || (
-        // Public intentional contact exchange request from external visitor
-        request.resource.data.status in ['requested', 'pending'] &&
-        exists(/databases/$(database)/documents/companies/$(request.resource.data.recipientCompanyId))
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-
-      // State updates: participants only, immutable identities, companies, and timestamps, cannot unblock unilaterally
-      allow update: if isAppOwner() || (
-        isAuthenticated() && (
-          resource.data.requesterUserId == request.auth.uid || 
-          resource.data.recipientUserId == request.auth.uid ||
-          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().employeeId == resource.data.recipientIdentityId)
-        ) && 
-        request.resource.data.requesterUserId == resource.data.requesterUserId &&
-        request.resource.data.recipientIdentityId == resource.data.recipientIdentityId &&
-        request.resource.data.requesterIdentityId == resource.data.requesterIdentityId &&
-        request.resource.data.recipientCompanyId == resource.data.recipientCompanyId &&
-        request.resource.data.createdAt == resource.data.createdAt &&
-        // Blocked state cannot silently revert
-        (resource.data.status != 'blocked' || request.resource.data.status == 'blocked')
-      );
-
-      allow delete: if isAppOwner() || (
-        isAuthenticated() && resource.data.requesterUserId == request.auth.uid
-      );
-    }
-
-    // relationshipNotes collection - Strictly Private to Note Author
-    match /relationshipNotes/{noteId} {
-      allow read: if (
-        isAuthenticated() && resource.data.ownerUserId == request.auth.uid
-      );
-      allow create: if (
-        isAuthenticated() && request.resource.data.ownerUserId == request.auth.uid
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      allow update: if (
-        isAuthenticated() && 
-        resource.data.ownerUserId == request.auth.uid && 
-        request.resource.data.ownerUserId == resource.data.ownerUserId
-      );
-      allow delete: if (
-        isAuthenticated() && resource.data.ownerUserId == request.auth.uid
-      );
-    }
-
-    // followUps collection - Strictly Private to User
-    match /followUps/{followUpId} {
-      allow read: if (
-        isAuthenticated() && resource.data.ownerUserId == request.auth.uid
-      );
-      allow create: if (
-        isAuthenticated() && request.resource.data.ownerUserId == request.auth.uid
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      allow update: if (
-        isAuthenticated() && 
-        resource.data.ownerUserId == request.auth.uid && 
-        request.resource.data.ownerUserId == resource.data.ownerUserId
-      );
-      allow delete: if (
-        isAuthenticated() && resource.data.ownerUserId == request.auth.uid
-      );
-    }
-
-    // connectionEvents collection - Append-only Relationship Timeline (Immutable Audit Trail)
-    match /connectionEvents/{eventId} {
-      allow read: if isAppOwner() || (
-        isAuthenticated() && (
-          resource.data.ownerUserId == request.auth.uid || 
-          request.auth.uid in resource.data.participantUserIds
-        )
-      );
-      allow create: if isAppOwner() || (
-        isAuthenticated() && (
-          request.resource.data.actorUserId == request.auth.uid || 
-          request.resource.data.ownerUserId == request.auth.uid
-        )
-      ) || (
-        // Public initial connection event
-        request.resource.data.eventType == 'CONNECTION_REQUESTED'
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      // History is immutable; direct updates and deletions are strictly forbidden
-      allow update, delete: if false;
-    }
-
-    // ====================================================
-    // DSBC V2.1 EVENTS, CAMPAIGNS & LEAD CAPTURE SECURITY RULES
-    // ====================================================
-
-    // events collection - Company-Scoped Events & Expos
-    match /events/{eventId} {
-      allow read: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == resource.data.companyId
-      );
-      allow create: if isAppOwner() || (
-        isCompanyAdmin(request.resource.data.companyId)
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && 
-        request.resource.data.companyId == resource.data.companyId
-      );
-      allow delete: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId);
-    }
-
-    // eventMembers collection - Enrolled Employees in Event
-    match /eventMembers/{memberId} {
-      allow read: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == resource.data.companyId
-      );
-      allow create: if isAppOwner() || (
-        isCompanyAdmin(request.resource.data.companyId)
-      ) || (
-        isAuthenticated() && 
-        isCompanyActive(request.resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == request.resource.data.companyId &&
-        getUserData().employeeId == request.resource.data.employeeId
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      allow update: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId);
-      allow delete: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId) || (
-          isAuthenticated() && 
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          getUserData().employeeId == resource.data.employeeId
-        );
-    }
-
-    // campaigns collection - Attribution Channels & Booth QRs
-    match /campaigns/{campaignId} {
-      // Public can read active campaigns for booth routing & tracking
-      allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId)) ||
-        isAppOwner() || (
-          isAuthenticated() && 
-          isCompanyActive(resource.data.companyId) && 
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          getUserData().companyId == resource.data.companyId
-        );
-      allow create: if isAppOwner() || 
-        isCompanyAdmin(request.resource.data.companyId) || (
-          !exists(/databases/$(database)/documents/companies/company_acme)
-        );
-      allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && 
-        request.resource.data.companyId == resource.data.companyId
-      );
-      allow delete: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId);
-    }
-
-    // leads collection - Company-Owned Business Leads (Personal Contacts NOT shared)
-    match /leads/{leadId} {
-      allow read: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == resource.data.companyId
-      );
-      allow create: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(request.resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == request.resource.data.companyId
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      allow update: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == resource.data.companyId &&
-        request.resource.data.companyId == resource.data.companyId
-      );
-      allow delete: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId);
-    }
-
-    // leadNotes collection - Company-Owned Lead Notes (Isolated from Private Notes)
-    match /leadNotes/{noteId} {
-      allow read: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == resource.data.companyId
-      );
-      allow create: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(request.resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == request.resource.data.companyId &&
-        request.resource.data.authorUserId == request.auth.uid
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      allow update: if isAppOwner() || (
-        isAuthenticated() && 
-        resource.data.authorUserId == request.auth.uid && 
-        request.resource.data.companyId == resource.data.companyId
-      );
-      allow delete: if isAppOwner() || 
-        isCompanyAdmin(resource.data.companyId) || (
-          isAuthenticated() && resource.data.authorUserId == request.auth.uid
-        );
-    }
-
-    // leadEvents collection - Append-Only Immutable Lead Audit Trail
-    match /leadEvents/{eventId} {
-      allow read: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == resource.data.companyId
-      );
-      allow create: if isAppOwner() || (
-        isAuthenticated() && 
-        isCompanyActive(request.resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().companyId == request.resource.data.companyId
-      ) || (
-        !exists(/databases/$(database)/documents/companies/company_acme)
-      );
-      // Lead audit timeline is strictly immutable
-      allow update, delete: if false;
-    }
-
-    // ====================================================
-    // DSBC V2.2 DIGITAL IDENTITY PROFILES & TEMPLATES
-    // ====================================================
-    match /digitalIdentityProfiles/{employeeId} {
-      // Public card view requires access to employee presentation profile
-      allow read: if (resource != null && isCompanyActive(resource.data.companyId)) || 
-        isAppOwner() || 
-        (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().companyId == resource.data.companyId);
-      allow create: if isAppOwner() || 
-        isCompanyAdmin(request.resource.data.companyId) || (
-          isAuthenticated() && 
-          isCompanyActive(request.resource.data.companyId) && 
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          getUserData().employeeId == employeeId && 
-          getUserData().companyId == request.resource.data.companyId
-        ) || (
-          !exists(/databases/$(database)/documents/companies/company_acme)
-        );
-      allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && 
-        request.resource.data.companyId == resource.data.companyId &&
-        request.resource.data.employeeId == resource.data.employeeId
-      ) || (
-        isAuthenticated() && 
-        isCompanyActive(resource.data.companyId) && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().employeeId == employeeId && 
-        getUserData().companyId == resource.data.companyId &&
-        request.resource.data.companyId == resource.data.companyId &&
-        request.resource.data.employeeId == resource.data.employeeId
+        isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
       );
       allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
     }
 
-    // ====================================================
-    // DSBC V2.5 SAAS ENTITLEMENT & APP OWNER CONTROL SYSTEM
-    // ====================================================
-    match /plans/{planId} {
-      allow read: if true; // Public pricing and entitlement resolution
-      allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));
+    // ========================================================================
+    // employees
+    // ========================================================================
+    match /employees/{employeeId} {
+      // Active employees of active companies are public (public card).
+      allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId))
+        || isAppOwner()
+        || isMemberOf(resource.data.companyId);
+
+      allow create: if isAppOwner() || (
+        isCompanyAdmin(request.resource.data.companyId)
+        && departmentBelongsTo(request.resource.data.get('departmentId', null), request.resource.data.companyId)
+      );
+
+      allow update: if isAppOwner() || (
+        isCompanyAdmin(resource.data.companyId)
+        && unchanged(['companyId'])
+        && departmentBelongsTo(request.resource.data.get('departmentId', null), resource.data.companyId)
+      ) || (
+        isSelfEmployee(employeeId)
+        && me().companyId == resource.data.companyId
+        && isCompanyActive(resource.data.companyId)
+        && onlyChanges([
+          'firstName', 'lastName', 'displayName', 'designation',
+          'phone', 'whatsapp', 'bio', 'profilePhotoUrl', 'website',
+          'linkedin', 'instagram', 'otherSocialLinks', 'updatedAt'
+        ])
+      );
+
+      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
     }
 
-    match /entitlementOverrides/{overrideId} {
+    // ========================================================================
+    // cards
+    // ========================================================================
+    match /cards/{cardId} {
+      allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId))
+        || isAppOwner()
+        || isMemberOf(resource.data.companyId);
+
+      allow create: if isAppOwner() || (
+        isCompanyAdmin(request.resource.data.companyId)
+        && employeeBelongsTo(request.resource.data.employeeId, request.resource.data.companyId)
+      );
+
+      allow update: if isAppOwner() || (
+        isCompanyAdmin(resource.data.companyId)
+        && unchanged(['companyId'])
+        && employeeBelongsTo(request.resource.data.employeeId, resource.data.companyId)
+      );
+
+      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+    }
+
+    // ========================================================================
+    // cardTemplates — platform catalogue
+    // ========================================================================
+    match /cardTemplates/{templateId} {
+      allow read: if true;
+      allow write: if isAppOwner();
+    }
+
+    // ========================================================================
+    // analytics — public telemetry, validated against the real card
+    // ========================================================================
+    match /analytics/{eventId} {
+      allow create: if request.resource.data.eventType in [
+          'card_view', 'phone_click', 'whatsapp_click', 'email_click',
+          'website_click', 'linkedin_click', 'save_contact', 'share'
+        ]
+        && exists(/databases/$(database)/documents/cards/$(request.resource.data.cardId))
+        && get(/databases/$(database)/documents/cards/$(request.resource.data.cardId)).data.companyId == request.resource.data.companyId
+        && get(/databases/$(database)/documents/cards/$(request.resource.data.cardId)).data.employeeId == request.resource.data.employeeId;
+      allow read: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+      allow update, delete: if isAppOwner();
+    }
+
+    // ========================================================================
+    // DSBC Connect — personal, user-scoped data
+    // ========================================================================
+    match /contacts/{contactId} {
+      allow read: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
+      allow update: if isSignedIn()
+        && resource.data.ownerUserId == request.auth.uid
+        && unchanged(['ownerUserId']);
+      allow delete: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+    }
+
+    // Public (unauthenticated) contact-exchange request from a card visitor:
+    // exactly the shape ExchangeContactModal writes, to a real active employee.
+    function isValidVisitorConnectionRequest() {
+      let d = request.resource.data;
+      return request.auth == null
+        && d.keys().hasOnly([
+          'id', 'connectionVersion', 'requesterUserId', 'recipientUserId', 'requesterIdentityId',
+          'recipientIdentityId', 'requesterName', 'requesterTitle', 'requesterCompany',
+          'requesterEmail', 'requesterPhone', 'requesterCompanyId', 'recipientCompanyId',
+          'status', 'initiatedBy', 'exchangeMethod', 'consentState', 'sharedCategories',
+          'initialNote', 'createdAt', 'updatedAt', 'lastInteractionAt'
+        ])
+        && d.requesterUserId is string
+        && d.requesterUserId.matches('^visitor_[A-Za-z0-9_]{1,64}$')
+        && d.requesterIdentityId == d.requesterUserId
+        && d.initiatedBy == d.requesterUserId
+        && d.get('recipientUserId', null) == null
+        && d.get('requesterCompanyId', null) == null
+        && d.status == 'pending'
+        && d.consentState == 'requested'
+        && isNonEmptyString(d.requesterName) && d.requesterName.size() <= 120
+        && isCompanyActive(d.recipientCompanyId)
+        && isNonEmptyString(d.recipientIdentityId)
+        && exists(/databases/$(database)/documents/employees/$(d.recipientIdentityId))
+        && employeeBelongsTo(d.recipientIdentityId, d.recipientCompanyId);
+    }
+
+    match /connections/{connectionId} {
       allow read: if isAppOwner() || (
-        isAuthenticated() && (
-          (resource.data.targetType == 'company' && getUserData().companyId == resource.data.targetId) ||
-          (resource.data.targetType == 'individual' && (getUserData().employeeId == resource.data.targetId || request.auth.uid == resource.data.targetId))
+        isSignedIn() && (
+          resource.data.requesterUserId == request.auth.uid
+          || resource.data.get('recipientUserId', null) == request.auth.uid
+          || (resource.data.get('recipientUserId', null) == null
+              && hasProfile()
+              && isNonEmptyString(me().employeeId)
+              && me().employeeId == resource.data.recipientIdentityId)
         )
       );
-      allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));
+
+      allow create: if isAppOwner() || (
+        isSignedIn()
+        && request.resource.data.requesterUserId == request.auth.uid
+        && request.resource.data.status in ['requested', 'pending']
+      ) || isValidVisitorConnectionRequest();
+
+      // Participants only; identities, companies and creation time are
+      // immutable; a blocked connection cannot be silently unblocked.
+      allow update: if isAppOwner() || (
+        isSignedIn() && (
+          resource.data.requesterUserId == request.auth.uid
+          || resource.data.get('recipientUserId', null) == request.auth.uid
+          || (hasProfile() && isNonEmptyString(me().employeeId) && me().employeeId == resource.data.recipientIdentityId)
+        )
+        && unchanged(['requesterUserId', 'recipientIdentityId', 'requesterIdentityId', 'recipientCompanyId', 'createdAt'])
+        && (resource.data.status != 'blocked' || request.resource.data.status == 'blocked')
+      );
+
+      allow delete: if isAppOwner() || (isSignedIn() && resource.data.requesterUserId == request.auth.uid);
+    }
+
+    match /relationshipNotes/{noteId} {
+      allow read: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
+      allow update: if isSignedIn()
+        && resource.data.ownerUserId == request.auth.uid
+        && unchanged(['ownerUserId']);
+      allow delete: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+    }
+
+    match /followUps/{followUpId} {
+      allow read: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
+      allow update: if isSignedIn()
+        && resource.data.ownerUserId == request.auth.uid
+        && unchanged(['ownerUserId']);
+      allow delete: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+    }
+
+    // Caller must be a party to the referenced connection.
+    function isConnectionParty(connectionId) {
+      let c = get(/databases/$(database)/documents/connections/$(connectionId)).data;
+      return c.requesterUserId == request.auth.uid
+        || c.get('recipientUserId', null) == request.auth.uid
+        || (hasProfile() && isNonEmptyString(me().employeeId) && me().employeeId == c.recipientIdentityId);
+    }
+
+    function participantsWithinConnection(connectionId) {
+      let c = get(/databases/$(database)/documents/connections/$(connectionId)).data;
+      return request.resource.data.participantUserIds is list
+        && request.resource.data.participantUserIds.hasOnly([c.requesterUserId, c.get('recipientUserId', '')]);
+    }
+
+    // Append-only relationship timeline. Only parties of an existing
+    // connection may append, as themselves; no public writes.
+    match /connectionEvents/{eventId} {
+      allow read: if isAppOwner() || (
+        isSignedIn() && (
+          resource.data.get('ownerUserId', null) == request.auth.uid
+          || request.auth.uid in resource.data.participantUserIds
+        )
+      );
+      allow create: if isAppOwner() || (
+        isSignedIn()
+        && request.resource.data.actorUserId == request.auth.uid
+        && request.resource.data.get('ownerUserId', null) in [null, request.auth.uid]
+        && isNonEmptyString(request.resource.data.connectionId)
+        && exists(/databases/$(database)/documents/connections/$(request.resource.data.connectionId))
+        && isConnectionParty(request.resource.data.connectionId)
+        && participantsWithinConnection(request.resource.data.connectionId)
+      );
+      allow update, delete: if false;
+    }
+
+    // ========================================================================
+    // Events, campaigns & lead capture — company-scoped
+    // ========================================================================
+    match /events/{eventId} {
+      allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
+      allow create: if isAppOwner() || isCompanyAdmin(request.resource.data.companyId);
+      allow update: if isAppOwner() || (
+        isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
+      );
+      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+    }
+
+    match /eventMembers/{memberId} {
+      allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
+      allow create: if isAppOwner()
+        || isCompanyAdmin(request.resource.data.companyId)
+        || (
+          isActiveMemberOf(request.resource.data.companyId)
+          && me().employeeId == request.resource.data.employeeId
+        );
+      allow update: if isAppOwner() || (
+        isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
+      );
+      allow delete: if isAppOwner()
+        || isCompanyAdmin(resource.data.companyId)
+        || (isActiveMemberOf(resource.data.companyId) && me().employeeId == resource.data.employeeId);
+    }
+
+    match /campaigns/{campaignId} {
+      // Active campaigns are public (booth QR routing & attribution).
+      allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId))
+        || isAppOwner()
+        || isActiveMemberOf(resource.data.companyId);
+      allow create: if isAppOwner() || isCompanyAdmin(request.resource.data.companyId);
+      allow update: if isAppOwner() || (
+        isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
+      );
+      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+    }
+
+    match /leads/{leadId} {
+      allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
+      allow create: if isAppOwner() || isActiveMemberOf(request.resource.data.companyId);
+      allow update: if isAppOwner() || (
+        isActiveMemberOf(resource.data.companyId) && unchanged(['companyId'])
+      );
+      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+    }
+
+    match /leadNotes/{noteId} {
+      allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
+      allow create: if isAppOwner() || (
+        isActiveMemberOf(request.resource.data.companyId)
+        && request.resource.data.authorUserId == request.auth.uid
+      );
+      allow update: if isAppOwner() || (
+        isActiveMemberOf(resource.data.companyId)
+        && resource.data.authorUserId == request.auth.uid
+        && unchanged(['companyId', 'authorUserId'])
+      );
+      allow delete: if isAppOwner()
+        || isCompanyAdmin(resource.data.companyId)
+        || (isActiveMemberOf(resource.data.companyId) && resource.data.authorUserId == request.auth.uid);
+    }
+
+    // Append-only lead audit trail.
+    match /leadEvents/{eventId} {
+      allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
+      allow create: if isAppOwner() || isActiveMemberOf(request.resource.data.companyId);
+      allow update, delete: if false;
+    }
+
+    // ========================================================================
+    // Digital identity profiles (keyed by employeeId)
+    // ========================================================================
+    match /digitalIdentityProfiles/{employeeId} {
+      allow read: if (resource != null && isCompanyActive(resource.data.companyId))
+        || isAppOwner()
+        || isMemberOf(resource.data.companyId);
+      allow create: if isAppOwner()
+        || isCompanyAdmin(request.resource.data.companyId)
+        || (
+          isSelfEmployee(employeeId)
+          && isActiveMemberOf(request.resource.data.companyId)
+        );
+      allow update: if isAppOwner() || (
+        isCompanyAdmin(resource.data.companyId)
+        && unchanged(['companyId', 'employeeId'])
+      ) || (
+        isSelfEmployee(employeeId)
+        && isActiveMemberOf(resource.data.companyId)
+        && unchanged(['companyId', 'employeeId'])
+      );
+      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+    }
+
+    // ========================================================================
+    // Commercial authority — read-only for every client (Phase 4).
+    // Written exclusively by the trusted backend (Admin SDK) in later phases.
+    // ========================================================================
+    function isSubscriptionCustomer(customerType, customerId) {
+      return hasProfile() && (
+        (customerType == 'company' && isNonEmptyString(me().companyId) && me().companyId == customerId)
+        || (customerType == 'individual' && (
+          request.auth.uid == customerId
+          || (isNonEmptyString(me().employeeId) && me().employeeId == customerId)
+        ))
+      );
+    }
+
+    function isBillingContact(customerType, customerId) {
+      return hasProfile() && (
+        (customerType == 'company' && isCompanyAdmin(customerId))
+        || (customerType == 'individual' && (
+          request.auth.uid == customerId
+          || (isNonEmptyString(me().employeeId) && me().employeeId == customerId)
+        ))
+      );
+    }
+
+    match /plans/{planId} {
+      allow read: if true; // public pricing
+      allow write: if false;
     }
 
     match /globalPolicies/{policyId} {
       allow read: if true;
-      allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));
+      allow write: if false;
+    }
+
+    match /entitlementOverrides/{overrideId} {
+      allow read: if isAppOwner() || isSubscriptionCustomer(resource.data.targetType, resource.data.targetId);
+      allow write: if false;
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAppOwner() || isSubscriptionCustomer(resource.data.customerType, resource.data.customerId);
+      allow write: if false;
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAppOwner() || isBillingContact(resource.data.customerType, resource.data.customerId);
+      allow write: if false;
     }
 
     match /entitlementAuditLogs/{auditId} {
       allow read: if isAppOwner();
-      allow create: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));
-      allow update, delete: if false; // Immutable audit log
-    }
-
-    // ====================================================
-    // DSBC V2.6 COMMERCIAL SUBSCRIPTION & BILLING SYSTEM
-    // ====================================================
-    match /subscriptions/{subscriptionId} {
-      allow read: if isAppOwner() || (
-        isAuthenticated() && (
-          (resource.data.customerType == 'company' && getUserData().companyId == resource.data.customerId) ||
-          (resource.data.customerType == 'individual' && (getUserData().employeeId == resource.data.customerId || request.auth.uid == resource.data.customerId))
-        )
-      );
-      allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));
-    }
-
-    match /invoices/{invoiceId} {
-      allow read: if isAppOwner() || (
-        isAuthenticated() && (
-          (resource.data.customerType == 'company' && getUserData().companyId == resource.data.customerId) ||
-          (resource.data.customerType == 'individual' && (getUserData().employeeId == resource.data.customerId || request.auth.uid == resource.data.customerId))
-        )
-      );
-      allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));
+      allow write: if false;
     }
 
     match /commercialAuditLogs/{auditId} {
       allow read: if isAppOwner();
-      allow create: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));
-      allow update, delete: if false; // Immutable commercial audit log
+      allow write: if false;
+    }
+
+    // Written by scripts/admin/* (App Owner grants/revocations).
+    match /securityAuditLogs/{auditId} {
+      allow read: if isAppOwner();
+      allow write: if false;
     }
   }
 }
