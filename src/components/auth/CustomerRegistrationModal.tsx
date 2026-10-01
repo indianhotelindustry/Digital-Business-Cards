@@ -15,9 +15,9 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { registerWithEmail } from '../../services/authService';
+import { registerAccount } from '../../services/authService';
 import { conversionFunnelService } from '../../services/conversionFunnelService';
-import { UserProfile, UserRole } from '../../types';
+import { UserProfile } from '../../types';
 
 interface CustomerRegistrationModalProps {
   isOpen: boolean;
@@ -38,7 +38,7 @@ export const CustomerRegistrationModal: React.FC<CustomerRegistrationModalProps>
   onRegistrationSuccess,
   onSwitchToLogin,
 }) => {
-  const { setCustomUserProfile } = useAuth();
+  const { refreshUserData } = useAuth();
   const [customerType, setCustomerType] = useState<'individual' | 'company'>(initialType);
 
   // Common inputs
@@ -77,35 +77,16 @@ export const CustomerRegistrationModal: React.FC<CustomerRegistrationModalProps>
     conversionFunnelService.trackEvent('REGISTRATION_STARTED', customerType);
 
     try {
-      const assignedRole: UserRole = customerType === 'company' ? 'company_admin' : 'employee';
-      let profile: UserProfile;
-
-      try {
-        // Attempt real Firebase Auth registration
-        profile = await registerWithEmail(
-          email.trim(),
-          password,
-          fullName.trim(),
-          assignedRole,
-          customerType === 'company' ? `company_${Date.now()}` : null
-        );
-      } catch (authErr: any) {
-        // If in preview or test env without direct user creation permissions, generate clean operational profile
-        const uid = `user_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-        profile = {
-          id: uid,
-          email: email.trim(),
-          displayName: fullName.trim(),
-          role: assignedRole,
-          companyId: customerType === 'company' ? `company_${Date.now()}` : null,
-          employeeId: customerType === 'individual' ? `emp_${Date.now()}` : null,
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      }
-
-      setCustomUserProfile(profile);
+      // Directive 24: identity + requested account type only; no client-chosen
+      // role/companyId and no fabricated fallback profile.
+      const profile: UserProfile = await registerAccount({
+        email: email.trim(),
+        password,
+        displayName: fullName.trim(),
+        accountType: customerType,
+        companyName: customerType === 'company' ? companyName.trim() : undefined,
+      });
+      await refreshUserData();
       conversionFunnelService.trackEvent('REGISTRATION_COMPLETED', customerType);
 
       onRegistrationSuccess({

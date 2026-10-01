@@ -2,13 +2,13 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User as FirebaseUser,
+  deleteUser,
   updateProfile as updateAuthProfile,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-import { UserProfile, UserRole } from '../types';
+import { AccountType, UserProfile } from '../types';
+import { buildRegistrationDocuments } from './registrationModel';
 
 const USERS_COLLECTION = 'users';
 
@@ -22,35 +22,6 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     console.error(`Error fetching user profile for ${userId}:`, err);
     return null;
   }
-}
-
-export async function createUserProfile(
-  userId: string,
-  data: {
-    email: string;
-    displayName: string;
-    role: UserRole;
-    companyId?: string | null;
-    employeeId?: string | null;
-  }
-): Promise<UserProfile> {
-  const userDocRef = doc(db, USERS_COLLECTION, userId);
-  const now = new Date().toISOString();
-
-  const profile: UserProfile = {
-    id: userId,
-    email: data.email,
-    displayName: data.displayName || 'User',
-    role: data.role,
-    companyId: data.companyId || null,
-    employeeId: data.employeeId || null,
-    status: 'active',
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  await setDoc(userDocRef, profile);
-  return profile;
 }
 
 export async function updateUserProfile(
@@ -69,26 +40,53 @@ export async function loginWithEmail(email: string, pass: string): Promise<UserP
   return getUserProfile(userCredential.user.uid);
 }
 
-export async function registerWithEmail(
-  email: string,
-  pass: string,
-  displayName: string,
-  role: UserRole = 'company_admin',
-  companyId: string | null = null,
-  employeeId: string | null = null
-): Promise<UserProfile> {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-  await updateAuthProfile(userCredential.user, { displayName });
+/**
+ * Register a new account (Directive 24 Phase 2).
+ *
+ * The caller supplies identity and the requested account type only. Role,
+ * tenant, companyId and plan are derived by registrationModel and re-checked
+ * by firestore.rules. Profile, tenant (and company) are written in one batch.
+ * If that batch is rejected the just-created Auth user is deleted so no
+ * half-registered account remains — registration fails closed.
+ */
+export async function registerAccount(params: {
+  email: string;
+  password: string;
+  displayName: string;
+  accountType: AccountType;
+  companyName?: string;
+}): Promise<UserProfile> {
+  const credential = await createUserWithEmailAndPassword(auth, params.email, params.password);
+  const user = credential.user;
 
-  const profile = await createUserProfile(userCredential.user.uid, {
-    email,
-    displayName,
-    role,
-    companyId,
-    employeeId,
-  });
+  try {
+    await updateAuthProfile(user, { displayName: params.displayName });
 
-  return profile;
+    // Use the email as normalised by Firebase Auth; the rules compare against
+    // the ID token's email claim.
+    const docs = buildRegistrationDocuments({
+      uid: user.uid,
+      email: user.email || params.email,
+      displayName: params.displayName,
+      accountType: params.accountType,
+      companyName: params.companyName,
+    });
+
+    const batch = writeBatch(db);
+    if (docs.company) batch.set(doc(db, 'companies', docs.company.id), docs.company);
+    batch.set(doc(db, 'tenants', docs.tenant.id), docs.tenant);
+    batch.set(doc(db, USERS_COLLECTION, user.uid), docs.user);
+    await batch.commit();
+
+    return docs.user;
+  } catch (err) {
+    try {
+      await deleteUser(user);
+    } catch (cleanupErr) {
+      console.error('Registration rollback failed; account has no profile:', cleanupErr);
+    }
+    throw err;
+  }
 }
 
 export async function logout(): Promise<void> {

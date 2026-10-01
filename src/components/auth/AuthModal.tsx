@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { loginWithEmail, registerWithEmail } from '../../services/authService';
+import { loginWithEmail, registerAccount } from '../../services/authService';
 import { DEMO_USERS } from '../../services/seedService';
 import { conversionFunnelService } from '../../services/conversionFunnelService';
-import { UserRole, UserProfile } from '../../types';
+import { DEMO_FEATURES_ENABLED } from '../../lib/runtimeFlags';
 import { Lock, Mail, Key, User, Building2, AlertCircle, Sparkles, X, Check, ArrowRight } from 'lucide-react';
 
 interface AuthModalProps {
@@ -21,7 +21,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialType = 'individual',
   onSuccess,
 }) => {
-  const { switchDemoPersona, isDemoMode, setCustomUserProfile } = useAuth();
+  const { switchDemoPersona, refreshUserData } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [customerType, setCustomerType] = useState<'individual' | 'company'>(initialType);
   const [email, setEmail] = useState('');
@@ -68,25 +68,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           return;
         }
 
-        const role: UserRole = customerType === 'company' ? 'company_admin' : 'employee';
-        try {
-          await registerWithEmail(email.trim(), password, displayName.trim(), role);
-        } catch (firebaseErr: any) {
-          console.warn('Firebase direct register encountered error, applying secure local session fallback:', firebaseErr);
-          // Create reliable profile session
-          const fallbackProfile: UserProfile = {
-            id: `usr_${Date.now()}`,
-            email: email.trim(),
-            displayName: displayName.trim(),
-            role,
-            companyId: customerType === 'company' ? `comp_${Date.now()}` : 'company_acme',
-            employeeId: customerType === 'individual' ? `emp_${Date.now()}` : null,
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-          setCustomUserProfile(fallbackProfile);
-        }
+        // Directive 24: identity + requested account type only. Role, tenant and
+        // plan are assigned by registrationModel and enforced by firestore.rules.
+        // No local fallback profile: if registration fails, the user is told so.
+        await registerAccount({
+          email: email.trim(),
+          password,
+          displayName: displayName.trim(),
+          accountType: customerType,
+          companyName: customerType === 'company' ? displayName.trim() : undefined,
+        });
+        await refreshUserData();
 
         conversionFunnelService.trackEvent('REGISTRATION_COMPLETED', customerType);
         onClose();
@@ -277,7 +269,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </button>
           </div>
 
-          {/* Quick Demo Switcher Divider */}
+          {/* Quick Demo Switcher Divider (DEVELOPMENT only) */}
+          {DEMO_FEATURES_ENABLED && (
           <div className="mt-5 pt-4 border-t border-slate-100">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
@@ -312,6 +305,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </button>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>

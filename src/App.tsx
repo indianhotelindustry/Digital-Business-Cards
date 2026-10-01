@@ -26,6 +26,7 @@ import { PublicMarketingPage } from './components/public/PublicMarketingPage';
 import { SecurityTestRunnerModal } from './components/security/SecurityTestRunnerModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { OnboardingWizardModal } from './components/onboarding/OnboardingWizardModal';
+import { DEMO_FEATURES_ENABLED } from './lib/runtimeFlags';
 import { Shield, Sparkles, Building2, ExternalLink, Lock } from 'lucide-react';
 
 function AppContent() {
@@ -276,11 +277,13 @@ function AppContent() {
           onSuccess={handleAuthSuccess}
         />
 
-        {/* Security Test Runner Modal */}
-        <SecurityTestRunnerModal
-          isOpen={isSecurityModalOpen}
-          onClose={() => setIsSecurityModalOpen(false)}
-        />
+        {/* Legacy Security Test Runner Modal (DEVELOPMENT only — Directive 24) */}
+        {DEMO_FEATURES_ENABLED && (
+          <SecurityTestRunnerModal
+            isOpen={isSecurityModalOpen}
+            onClose={() => setIsSecurityModalOpen(false)}
+          />
+        )}
       </div>
     );
   }
@@ -433,11 +436,13 @@ function AppContent() {
         }}
       />
 
-      {/* Security Test Runner Modal */}
-      <SecurityTestRunnerModal
-        isOpen={isSecurityModalOpen}
-        onClose={() => setIsSecurityModalOpen(false)}
-      />
+      {/* Legacy Security Test Runner Modal (DEVELOPMENT only — Directive 24) */}
+      {DEMO_FEATURES_ENABLED && (
+        <SecurityTestRunnerModal
+          isOpen={isSecurityModalOpen}
+          onClose={() => setIsSecurityModalOpen(false)}
+        />
+      )}
 
       {/* Real Firebase Authentication Modal */}
       <AuthModal

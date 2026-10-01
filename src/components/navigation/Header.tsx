@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { DEMO_USERS } from '../../services/seedService';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { DEMO_FEATURES_ENABLED } from '../../lib/runtimeFlags';
 
 interface HeaderProps {
   onOpenSecurityModal: () => void;
@@ -161,7 +162,8 @@ export const Header: React.FC<HeaderProps> = ({
           Pricing
         </button>
 
-        {/* Security Audit Button */}
+        {/* Legacy in-browser Security Audit (DEVELOPMENT only — Directive 24) */}
+        {DEMO_FEATURES_ENABLED && (
         <button
           onClick={onOpenSecurityModal}
           className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100 text-teal-800 text-xs font-semibold shadow-xs transition"
@@ -170,6 +172,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Shield className="w-3.5 h-3.5 mr-1.5 text-teal-600" />
           Security Audit (Live Tests)
         </button>
+        )}
 
         {/* Theme Mode Switcher */}
         <ThemeToggle variant="icon" />
@@ -189,7 +192,8 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         )}
 
-        {/* Persona Switcher Dropdown */}
+        {/* Persona Switcher Dropdown (DEVELOPMENT only — Directive 24) */}
+        {DEMO_FEATURES_ENABLED && (
         <div className="relative">
           <button
             onClick={() => setIsPersonaMenuOpen(!isPersonaMenuOpen)}
@@ -286,6 +290,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
+        )}
 
         {/* User Profile Pill */}
         <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
