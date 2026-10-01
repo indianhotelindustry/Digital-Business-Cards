@@ -1,0 +1,125 @@
+{
+  "schema": "dsbc.directive24.stageReport/v1",
+  "directive": "DSBC Directive 24 — Production Security & Authoritative Backend Foundation Recovery",
+  "phasesCovered": [0, 1, 2, 3, 4],
+  "status": "PHASES_0_TO_4_IMPLEMENTED_AND_TESTED_IN_EMULATOR — NOT DEPLOYED — NOT PRODUCTION READY",
+  "productionReady": false,
+  "deployed": false,
+  "repository": {
+    "branch": "security-foundation/directive-24",
+    "baselineBranch": "main",
+    "baselineCommit": "d9a95d7",
+    "commits": [
+      { "sha": "d9a95d7", "subject": "chore: baseline snapshot of DSBC before Directive 24" },
+      { "sha": "318c853", "subject": "docs(d24-phase0): machine-readable baseline report" },
+      { "sha": "c0f19a4", "subject": "test(d24): emulator security-test harness and Phase 2-4 attack suite" },
+      { "sha": "ba42254", "subject": "fix(d24-phase2-4): fail-closed, tenant-authoritative Firestore rules" },
+      { "sha": "f705c01", "subject": "feat(d24-phase2): server-authoritative registration and App Owner" },
+      { "sha": "a28cf54", "subject": "feat(d24-phase3): controlled administrative bootstrap; no client seeding" }
+    ],
+    "note": "The commit containing this report is the branch HEAD that follows a28cf54."
+  },
+  "files": {
+    "created": [
+      "docs/directive-24/phase-0-baseline.json",
+      "docs/directive-24/phase-1-client-authority-classification.json",
+      "docs/directive-24/phase-0-4-report.json",
+      "docs/directive-24/ARCHITECTURE-CHANGES.md",
+      "docs/directive-24/evidence/rules-suite-vs-baseline-rules.json",
+      "docs/directive-24/evidence/rules-suite-vs-directive24-rules.json",
+      "scripts/directive24/generateBaselineReport.mjs",
+      "scripts/admin/adminTarget.ts",
+      "scripts/admin/setAppOwner.ts",
+      "scripts/admin/seedDemoData.ts",
+      "src/lib/authority.ts",
+      "src/lib/runtimeFlags.ts",
+      "src/services/registrationModel.ts",
+      "src/vite-env.d.ts",
+      "tests/rules/support/rulesEnv.ts",
+      "tests/rules/harness.test.ts",
+      "tests/rules/phase2-identity.test.ts",
+      "tests/rules/phase3-bootstrap.test.ts",
+      "tests/rules/phase4-tenant-isolation.test.ts",
+      "tests/rules/phase4-connect.test.ts",
+      "tests/unit/authority.test.ts",
+      "tests/unit/adminTarget.test.ts",
+      "tests/unit/registrationModel.test.ts",
+      "tests/integration/adminScripts.test.ts",
+      "vitest.config.ts",
+      "vitest.rules.config.ts",
+      "vitest.integration.config.ts"
+    ],
+    "modified": [
+      "firestore.rules",
+      "firebase.json",
+      "package.json",
+      "bun.lock",
+      "src/App.tsx",
+      "src/components/auth/AuthModal.tsx",
+      "src/components/auth/CustomerRegistrationModal.tsx",
+      "src/components/navigation/Header.tsx",
+      "src/context/AuthContext.tsx",
+      "src/services/authService.ts",
+      "src/services/seedService.ts",
+      "src/types/index.ts",
+      "scripts/verifyRules.ts",
+      "scripts/seedDatabase.ts"
+    ],
+    "deleted": []
+  },
+  "vulnerabilitiesFixed": [
+    { "id": "SEC-01", "title": "Self-assignable company_admin / companyId at registration", "fix": "Rules fix role/companyId/tenant/plan at registration; client sends account type only", "evidence": "tests/rules/phase2-identity.test.ts 'Phase 2 — registration attacks'", "baselineRules": "VULNERABLE (self-assign admin of company_acme and claim of emp_a succeeded)", "directive24Rules": "DENIED", "deployed": false },
+    { "id": "SEC-02", "title": "Bootstrap backdoor !exists(companies/company_acme)", "fix": "All 29 lines removed; Admin-SDK seeding only", "evidence": "tests/rules/phase3-bootstrap.test.ts (208 tests: 4 database states x 2 actors x 26 writes)", "baselineRules": "VULNERABLE (208/208 writes succeeded)", "directive24Rules": "DENIED (208/208)", "deployed": false },
+    { "id": "SEC-03", "title": "App Owner by email string, no email_verified", "fix": "Custom claim + email_verified only; setAppOwner admin script with audit log", "evidence": "tests/rules/phase2-identity.test.ts 'App Owner authority' (24 impersonation tests) + tests/integration/adminScripts.test.ts", "baselineRules": "VULNERABLE (all 4 impersonations succeeded)", "directive24Rules": "DENIED", "deployed": false },
+    { "id": "SEC-04", "title": "App Owner UI reachable via demo persona; default visitor persona = company admin", "fix": "Personas/default persona DEVELOPMENT-only and removed from production bundle; UI App Owner role requires verified claim", "evidence": "tests/unit/authority.test.ts; production bundle scan (0 occurrences)", "deployed": false },
+    { "id": "SEC-08", "title": "Live security test runner exposed to all visitors", "fix": "Runner and its button DEVELOPMENT-only; removed from production bundle; legacy verifyRules.ts emulator-only", "evidence": "production bundle scan; `npm run test:security:legacy` exits 2 without emulator", "deployed": false },
+    { "id": "SEC-09", "title": "Unauthenticated / outsider connectionEvents injection", "fix": "Only parties of an existing connection, as themselves, participants bounded", "evidence": "tests/rules/phase4-connect.test.ts", "baselineRules": "VULNERABLE", "directive24Rules": "DENIED", "deployed": false },
+    { "id": "SEC-10", "title": "Fabricated signed-in profile when sign-up fails", "fix": "Fallbacks removed; registration fails closed and rolls back the Auth user", "evidence": "code review (AuthModal/CustomerRegistrationModal); not exercised end-to-end", "deployed": false },
+    { "id": "SEC-11", "title": "Client auto-seed in every environment", "fix": "Removed from AuthContext; scripts/admin/seedDemoData.ts", "evidence": "production bundle scan; tests/integration/adminScripts.test.ts", "deployed": false },
+    { "id": "SEC-12", "title": "Users could change their own status (self-unsuspend), email, tenant", "fix": "Users may change displayName only", "evidence": "tests/rules/phase2-identity.test.ts 'profile authority fields'", "baselineRules": "VULNERABLE", "directive24Rules": "DENIED", "deployed": false },
+    { "id": "SEC-13", "title": "Company admin could rewrite company ownership metadata; employees could read invoices; visitor connection requests unvalidated", "fix": "kind/ownerUid immutable; invoices admin-only; strict visitor payload", "evidence": "tests/rules/phase4-tenant-isolation.test.ts, phase4-connect.test.ts", "deployed": false }
+  ],
+  "testsExecuted": [
+    { "suite": "unit", "command": "npm run test:unit", "files": 3, "tests": 21, "passed": 21, "failed": 0 },
+    { "suite": "firestore rules (Directive 24 rules)", "command": "npm run test:rules", "files": 5, "tests": 433, "passed": 433, "failed": 0, "evidence": "docs/directive-24/evidence/rules-suite-vs-directive24-rules.json" },
+    { "suite": "firestore rules (same suite vs baseline rules d9a95d7)", "command": "DSBC_RULES_FILE=<baseline rules> firebase emulators:exec --only firestore --project demo-dsbc \"vitest run --config vitest.rules.config.ts\"", "tests": 433, "passed": 175, "failed": 258, "purpose": "proves the vulnerabilities existed", "evidence": "docs/directive-24/evidence/rules-suite-vs-baseline-rules.json" },
+    { "suite": "rules mutation check", "command": "DSBC_RULES_FILE=<mutated rules> npm run test:rules", "mutations": [
+      { "mutation": "isAppOwner without email_verified", "failedTests": 6 },
+      { "mutation": "users may change status", "failedTests": 1 },
+      { "mutation": "plans bootstrap clause re-added", "failedTests": 8 }
+    ] },
+    { "suite": "integration (Auth + Firestore emulators, Admin SDK)", "command": "npm run test:integration", "files": 1, "tests": 6, "passed": 6, "failed": 0 },
+    { "suite": "all", "command": "npm test", "exitCode": 0 },
+    { "suite": "typecheck", "command": "npm run typecheck", "exitCode": 0 },
+    { "suite": "build", "command": "npm run build", "exitCode": 0, "mainBundle": "index-D9Uz4uMB.js 1,900.48 kB (baseline 2,079.89 kB)" },
+    { "suite": "production bundle scan", "markersAbsent": ["Switch Test Persona", "Security Audit (Live Tests)", "Demo Workspace Personas", "Database empty, initializing", "theindianhotelindustry", "rzp_sec_dsbc_production_webhook_secret_2026"], "markersStillPresent": ["user_app_owner_demo (demo data, Phase 11)"] },
+    { "suite": "guard checks (no emulator)", "commands": { "npm run seed": 1, "npm run test:security:legacy": 2, "npm run admin:set-app-owner -- --project v-nexus-lite --email x@y.test": 1 } }
+  ],
+  "testsNotExecuted": [
+    "Browser end-to-end registration (registerAccount -> Auth -> batch -> rollback) against the Auth emulator: src/lib/firebase.ts is hard-wired to v-nexus-lite with no emulator wiring (Phase 12).",
+    "Any test against the live v-nexus-lite project (prohibited).",
+    "The legacy 206 in-browser tests (SecurityTestRunnerModal) — scheduled for re-classification in Phase 17; several will now behave differently because bootstrap writes are denied.",
+    "Storage rules tests (Phase 10).",
+    "ESLint (not configured; Phase 20)."
+  ],
+  "remainingBlockers": [
+    { "id": "B-01", "severity": "CRITICAL", "item": "New rules are NOT deployed. The live project still runs the baseline rules, so SEC-01/02/03/09/12 remain exploitable in production until deployment." },
+    { "id": "B-02", "severity": "CRITICAL", "item": "Before deployment the real App Owner must receive the claim via scripts/admin/setAppOwner.ts (requires Admin credentials and a verified email), otherwise the owner loses access." },
+    { "id": "B-03", "severity": "HIGH", "item": "firebase.json deploys rules to the (default) database; the app uses named database ai-studio-37d17c3e-…. Multi-database deploy config required." },
+    { "id": "B-04", "severity": "CRITICAL", "item": "Commercial authority (plans, entitlements, subscriptions, payments) is still localStorage + simulated payment (Phases 5-7). Clients can still self-grant Pro locally." },
+    { "id": "B-05", "severity": "HIGH", "item": "storage.rules still allow cross-tenant writes (Phase 10)." },
+    { "id": "B-06", "severity": "HIGH", "item": "?preview=true shows DRAFT/UNPUBLISHED entities to any visitor; publishing state is localStorage (Phase 8)." },
+    { "id": "B-07", "severity": "HIGH", "item": "Unauthenticated visitors are served demoStore data; demo data still in production bundle (Phase 11)." },
+    { "id": "B-08", "severity": "HIGH", "item": "No real environment separation; environmentConfig is cosmetic (Phase 12)." },
+    { "id": "B-09", "severity": "MEDIUM", "item": "Webhook secret still in source (src/services/paymentProvider.ts:30) although no longer in the production bundle (Phase 6)." },
+    { "id": "B-10", "severity": "MEDIUM", "item": "No CI, no ESLint (Phase 20)." }
+  ],
+  "decisionsTaken": [
+    "Individual tenant stored in a new tenants/{ind_<uid>} registry; users.companyId stays null so existing entitlement resolution is unchanged.",
+    "Registration enforced by Firestore rules on a single batch (server-side enforcement) rather than a Cloud Function, because backend implementation is deferred to Phase 5 by the directive.",
+    "App Owner via custom claims (not an owner registry document) to avoid extra get() calls in rules.",
+    "Demo-only switch uses Vite's import.meta.env.DEV until Phase 12 introduces full environment configuration.",
+    "Company invoices restricted to company admins; company subscription remains readable by all members (plan display).",
+    "DSBC emulator uses dedicated ports (hub 4480, logging 4580, firestore 8180, auth 9477) because another project's emulator suite occupies the defaults on this machine."
+  ]
+}
