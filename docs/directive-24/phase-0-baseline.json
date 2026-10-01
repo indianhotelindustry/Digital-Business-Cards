@@ -1,0 +1,607 @@
+{
+  "schema": "dsbc.directive24.baseline/v1",
+  "generatedAt": "2026-10-01T14:56:38.641Z",
+  "baseline": {
+    "commit": "d9a95d736cca34c7ccfb3a5393efa56fd958b32d",
+    "branch": "main",
+    "fileCount": 130
+  },
+  "toolchain": {
+    "node": "v22.23.2"
+  },
+  "packages": {
+    "name": "react-example",
+    "version": "0.0.0",
+    "scripts": {
+      "dev": "vite --port=3000 --host=0.0.0.0",
+      "build": "vite build",
+      "preview": "vite preview",
+      "clean": "rm -rf dist server.js",
+      "lint": "tsc --noEmit",
+      "seed": "tsx scripts/seedDatabase.ts",
+      "test:security": "tsx scripts/verifyRules.ts"
+    },
+    "dependencies": {
+      "@google/genai": {
+        "range": "^2.4.0",
+        "resolved": "2.22.0"
+      },
+      "@tailwindcss/vite": {
+        "range": "^4.1.14",
+        "resolved": "4.3.3"
+      },
+      "@vitejs/plugin-react": {
+        "range": "^5.0.4",
+        "resolved": "5.2.0"
+      },
+      "dotenv": {
+        "range": "^17.2.3",
+        "resolved": "17.4.2"
+      },
+      "express": {
+        "range": "^4.21.2",
+        "resolved": "4.22.2"
+      },
+      "firebase": {
+        "range": "^12.19.0",
+        "resolved": "12.19.0"
+      },
+      "lucide-react": {
+        "range": "^0.546.0",
+        "resolved": "0.546.0"
+      },
+      "motion": {
+        "range": "^12.23.24",
+        "resolved": "12.43.0"
+      },
+      "qrcode": {
+        "range": "^1.5.4",
+        "resolved": "1.5.4"
+      },
+      "react": {
+        "range": "^19.0.1",
+        "resolved": "19.3.0"
+      },
+      "react-dom": {
+        "range": "^19.0.1",
+        "resolved": "19.3.0"
+      },
+      "vite": {
+        "range": "^6.2.3",
+        "resolved": "6.4.3"
+      }
+    },
+    "devDependencies": {
+      "@types/express": {
+        "range": "^4.17.21",
+        "resolved": "4.17.25"
+      },
+      "@types/node": {
+        "range": "^22.14.0",
+        "resolved": "22.20.2"
+      },
+      "@types/qrcode": {
+        "range": "^1.5.6",
+        "resolved": "1.5.6"
+      },
+      "@types/react": {
+        "range": "^19.3.0",
+        "resolved": "19.3.0"
+      },
+      "@types/react-dom": {
+        "range": "^19.3.0",
+        "resolved": "19.3.0"
+      },
+      "autoprefixer": {
+        "range": "^10.4.21",
+        "resolved": "10.6.0"
+      },
+      "esbuild": {
+        "range": "^0.25.0",
+        "resolved": "0.25.12"
+      },
+      "tailwindcss": {
+        "range": "^4.1.14",
+        "resolved": "4.3.3"
+      },
+      "tsx": {
+        "range": "^4.21.0",
+        "resolved": "4.23.13"
+      },
+      "typescript": {
+        "range": "~5.8.2",
+        "resolved": "5.8.3"
+      },
+      "vite": {
+        "range": "^6.2.3",
+        "resolved": "6.4.3"
+      }
+    },
+    "lockfile": {
+      "path": "bun.lock",
+      "sha256": "6f162a1292836fab3e79cb96b26857ef7e42916c25bf888c691417032e299631"
+    }
+  },
+  "results": {
+    "typecheck": {
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "exitCode": 0,
+      "errors": 0
+    },
+    "lint": {
+      "command": "npm run lint",
+      "note": "lint script is \"tsc --noEmit\"; no ESLint configured",
+      "realLinter": false
+    },
+    "build": {
+      "command": "node node_modules/vite/bin/vite.js build",
+      "exitCode": 0,
+      "mainBundle": "dist/assets/index-CYt7GnzS.js 2,079.89 kB gzip: 474.49 kB",
+      "warnings": [
+        "single JS chunk > 500 kB"
+      ]
+    },
+    "automatedTestRunner": null
+  },
+  "testArtefacts": [
+    {
+      "path": "scripts/verifyRules.ts",
+      "declaredTests": 13,
+      "target": "LIVE Firebase project v-nexus-lite (no emulator)",
+      "authenticatedIdentities": false,
+      "networkErrorCountsAsPass": true,
+      "executedInBaseline": false
+    },
+    {
+      "path": "src/components/security/SecurityTestRunnerModal.tsx",
+      "declaredTests": 206,
+      "target": "Browser; mixes live Firestore writes and localStorage-only checks",
+      "labelledExecutionType": "LIVE_FIRESTORE_SDK (all tests)",
+      "containsTautologicalTests": true,
+      "executedInBaseline": false
+    }
+  ],
+  "firebase": {
+    "clientConfigSource": "hard-coded in src/lib/firebase.ts and firebase-applet-config.json",
+    "projectId": "v-nexus-lite",
+    "firestoreDatabaseId": "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5",
+    "perEnvironmentConfig": false,
+    "environmentConfigTsReportsProduction": {
+      "projectId": "dsbc-production",
+      "wiredToClient": false
+    },
+    "firebaseRc": false,
+    "functions": false,
+    "indexesDefined": 0
+  },
+  "firestoreRules": {
+    "path": "firestore.rules",
+    "sha256": "6c704a98e1fe84b7e7d5c22458bd0faa3a86ed4138d126544ceb07bbae76124a",
+    "lines": 564,
+    "collections": [
+      "databases",
+      "users",
+      "companies",
+      "departments",
+      "employees",
+      "cards",
+      "cardTemplates",
+      "analytics",
+      "contacts",
+      "connections",
+      "relationshipNotes",
+      "followUps",
+      "connectionEvents",
+      "events",
+      "eventMembers",
+      "campaigns",
+      "leads",
+      "leadNotes",
+      "leadEvents",
+      "digitalIdentityProfiles",
+      "plans",
+      "entitlementOverrides",
+      "globalPolicies",
+      "entitlementAuditLogs",
+      "subscriptions",
+      "invoices",
+      "commercialAuditLogs"
+    ],
+    "appOwnerEmailAllowList": [
+      "owner@saas-cards.io",
+      "theindianhotelindustry@gmail.com"
+    ],
+    "appOwnerChecksEmailVerified": false,
+    "bootstrapBackdoorLineCount": 29,
+    "bootstrapBackdoorLines": [
+      {
+        "line": 56,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme) &&"
+      },
+      {
+        "line": 77,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme) &&"
+      },
+      {
+        "line": 78,
+        "text": "companyId in ['company_acme', 'company_nexus']"
+      },
+      {
+        "line": 97,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme) &&"
+      },
+      {
+        "line": 98,
+        "text": "request.resource.data.companyId in ['company_acme', 'company_nexus']"
+      },
+      {
+        "line": 120,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme) &&"
+      },
+      {
+        "line": 121,
+        "text": "request.resource.data.companyId in ['company_acme', 'company_nexus']"
+      },
+      {
+        "line": 157,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme) &&"
+      },
+      {
+        "line": 158,
+        "text": "request.resource.data.companyId in ['company_acme', 'company_nexus']"
+      },
+      {
+        "line": 173,
+        "text": "allow write: if isAppOwner() || !exists(/databases/$(database)/documents/companies/company_acme);"
+      },
+      {
+        "line": 201,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 233,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 265,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 285,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 314,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 335,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 362,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 386,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 410,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 438,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 465,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 487,
+        "text": "!exists(/databases/$(database)/documents/companies/company_acme)"
+      },
+      {
+        "line": 510,
+        "text": "allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));"
+      },
+      {
+        "line": 520,
+        "text": "allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));"
+      },
+      {
+        "line": 525,
+        "text": "allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));"
+      },
+      {
+        "line": 530,
+        "text": "allow create: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));"
+      },
+      {
+        "line": 544,
+        "text": "allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));"
+      },
+      {
+        "line": 554,
+        "text": "allow write: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));"
+      },
+      {
+        "line": 559,
+        "text": "allow create: if isAppOwner() || (!exists(/databases/$(database)/documents/companies/company_acme));"
+      }
+    ]
+  },
+  "storageRules": {
+    "path": "storage.rules",
+    "sha256": "ca4f53bc14ef6b23d9fcd95f669fe0063bc7d8d2d382b86a9d7fae931823de0b",
+    "tenantScopedWrites": false,
+    "note": "any authenticated user may write companies/{anyCompany}/branding/** and companies/{anyCompany}/employees/**"
+  },
+  "localStorageBackedServices": [
+    {
+      "path": "src/services/conversionFunnelService.ts",
+      "localStorageCalls": 2,
+      "storageKeys": [
+        "dsbc_conversion_funnel_v1"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/demoStore.ts",
+      "localStorageCalls": 2,
+      "storageKeys": [
+        "dsbc_demo_store_v2"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/entitlementService.ts",
+      "localStorageCalls": 10,
+      "storageKeys": [
+        "dsbc_entitlement_plans_v1",
+        "dsbc_entitlement_overrides_v1",
+        "dsbc_entitlement_policy_v1",
+        "dsbc_entitlement_audit_v1",
+        "dsbc_entitlement_usage_v1"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/environmentConfig.ts",
+      "localStorageCalls": 3,
+      "storageKeys": [
+        "dsbc_env_override_v2"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/notificationService.ts",
+      "localStorageCalls": 2,
+      "storageKeys": [
+        "dsbc_notification_ledger_v1"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/pilotService.ts",
+      "localStorageCalls": 2,
+      "storageKeys": [
+        "dsbc_pilot_registry_v1",
+        "dsbc_pilot_operational_metrics_v1"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/publishingService.ts",
+      "localStorageCalls": 2,
+      "storageKeys": [
+        "dsbc_publishing_records_v1"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/slugService.ts",
+      "localStorageCalls": 4,
+      "storageKeys": [
+        "dsbc_registered_slugs_v1",
+        "dsbc_quarantined_slugs_v1"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/subscriptionService.ts",
+      "localStorageCalls": 6,
+      "storageKeys": [
+        "dsbc_subscriptions_v1",
+        "dsbc_invoices_v1",
+        "dsbc_commercial_audit_v1"
+      ],
+      "firestoreCalls": 0
+    },
+    {
+      "path": "src/services/supportService.ts",
+      "localStorageCalls": 2,
+      "storageKeys": [
+        "dsbc_support_tickets_v1"
+      ],
+      "firestoreCalls": 0
+    }
+  ],
+  "externalIntegrations": [
+    {
+      "name": "Razorpay",
+      "status": "SIMULATED",
+      "evidence": "src/services/paymentProvider.ts (format-only signature checks, hard-coded webhook secret line 30)"
+    },
+    {
+      "name": "Email/notifications",
+      "status": "SIMULATED",
+      "evidence": "src/services/notificationService.ts DefaultNotificationAdapter marks SENT without delivery"
+    },
+    {
+      "name": "Gemini/AI",
+      "status": "SIMULATED",
+      "evidence": "src/services/aiProviderService.ts MockAIProvider; @google/genai unused; no UI caller"
+    },
+    {
+      "name": "Backend (Functions/Cloud Run)",
+      "status": "ABSENT",
+      "evidence": "no functions/ or server code"
+    },
+    {
+      "name": "Firebase Auth",
+      "status": "REAL (optional)",
+      "evidence": "demo personas bypass it"
+    },
+    {
+      "name": "Cloud Firestore",
+      "status": "REAL",
+      "evidence": "tenant data only; commercial state in localStorage"
+    },
+    {
+      "name": "Cloud Storage",
+      "status": "REAL",
+      "evidence": "src/services/storageService.ts"
+    }
+  ],
+  "knownSecurityFindings": [
+    {
+      "id": "SEC-01",
+      "severity": "CRITICAL",
+      "title": "Self-assignable company_admin/companyId at registration",
+      "evidence": [
+        "firestore.rules:49-58",
+        "src/services/authService.ts registerWithEmail(role, companyId)"
+      ]
+    },
+    {
+      "id": "SEC-02",
+      "severity": "CRITICAL",
+      "title": "Bootstrap backdoor: !exists(companies/company_acme) grants unauthenticated writes",
+      "evidence": [
+        "firestore.rules:56",
+        "firestore.rules:77",
+        "firestore.rules:78",
+        "firestore.rules:97",
+        "firestore.rules:98",
+        "firestore.rules:120",
+        "firestore.rules:121",
+        "firestore.rules:157",
+        "firestore.rules:158",
+        "firestore.rules:173",
+        "firestore.rules:201",
+        "firestore.rules:233",
+        "firestore.rules:265",
+        "firestore.rules:285",
+        "firestore.rules:314",
+        "firestore.rules:335",
+        "firestore.rules:362",
+        "firestore.rules:386",
+        "firestore.rules:410",
+        "firestore.rules:438",
+        "firestore.rules:465",
+        "firestore.rules:487",
+        "firestore.rules:510",
+        "firestore.rules:520",
+        "firestore.rules:525",
+        "firestore.rules:530",
+        "firestore.rules:544",
+        "firestore.rules:554",
+        "firestore.rules:559"
+      ]
+    },
+    {
+      "id": "SEC-03",
+      "severity": "CRITICAL",
+      "title": "App Owner granted by email string without email_verified",
+      "evidence": [
+        "firestore.rules:14-21"
+      ]
+    },
+    {
+      "id": "SEC-04",
+      "severity": "CRITICAL",
+      "title": "App Owner UI reachable by any visitor via demo persona switch; default visitor persona is Acme company_admin",
+      "evidence": [
+        "src/components/navigation/Header.tsx:220",
+        "src/context/AuthContext.tsx:111-115"
+      ]
+    },
+    {
+      "id": "SEC-05",
+      "severity": "CRITICAL",
+      "title": "Commercial authority (plans, subscriptions, entitlements, payments) in client localStorage",
+      "evidence": [
+        "src/services/conversionFunnelService.ts",
+        "src/services/demoStore.ts",
+        "src/services/entitlementService.ts",
+        "src/services/environmentConfig.ts",
+        "src/services/notificationService.ts",
+        "src/services/pilotService.ts",
+        "src/services/publishingService.ts",
+        "src/services/slugService.ts",
+        "src/services/subscriptionService.ts",
+        "src/services/supportService.ts"
+      ]
+    },
+    {
+      "id": "SEC-06",
+      "severity": "CRITICAL",
+      "title": "Client-side upgrade marks PAID without payment; webhook secret shipped in bundle",
+      "evidence": [
+        "src/services/subscriptionService.ts:433",
+        "src/services/paymentProvider.ts:30"
+      ]
+    },
+    {
+      "id": "SEC-07",
+      "severity": "HIGH",
+      "title": "Storage rules allow cross-tenant writes",
+      "evidence": [
+        "storage.rules"
+      ]
+    },
+    {
+      "id": "SEC-08",
+      "severity": "HIGH",
+      "title": "Live security tests (writes to live DB) exposed to all visitors",
+      "evidence": [
+        "src/components/navigation/Header.tsx:164-172"
+      ]
+    },
+    {
+      "id": "SEC-09",
+      "severity": "MEDIUM",
+      "title": "Unauthenticated connectionEvents creation (timeline injection)",
+      "evidence": [
+        "firestore.rules:311-313"
+      ]
+    },
+    {
+      "id": "SEC-10",
+      "severity": "HIGH",
+      "title": "Registration fabricates a signed-in profile when Firebase sign-up fails",
+      "evidence": [
+        "src/components/auth/AuthModal.tsx:74-89",
+        "src/components/auth/CustomerRegistrationModal.tsx:91-105"
+      ]
+    },
+    {
+      "id": "SEC-11",
+      "severity": "HIGH",
+      "title": "Client auto-seeds demo tenants into Firestore on app load in every environment",
+      "evidence": [
+        "src/context/AuthContext.tsx:94-99"
+      ]
+    },
+    {
+      "id": "SEC-12",
+      "severity": "MEDIUM",
+      "title": "Users may change their own status field (self-unsuspend)",
+      "evidence": [
+        "firestore.rules:60-66"
+      ]
+    }
+  ]
+}
