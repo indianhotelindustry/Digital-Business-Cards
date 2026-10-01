@@ -9,8 +9,17 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "seed": "tsx scripts/seedDatabase.ts",
-    "test:security": "tsx scripts/verifyRules.ts"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:unit && npm run test:rules && npm run test:integration",
+    "test:unit": "vitest run",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-dsbc \"vitest run --config vitest.rules.config.ts\"",
+    "test:integration": "firebase emulators:exec --only auth,firestore --project demo-dsbc \"vitest run --config vitest.integration.config.ts\"",
+    "test:security": "npm run test:rules",
+    "test:security:legacy": "tsx scripts/verifyRules.ts",
+    "emulators": "firebase emulators:start --only firestore --project demo-dsbc",
+    "seed": "tsx scripts/admin/seedDemoData.ts",
+    "seed:legacy-client": "tsx scripts/seedDatabase.ts",
+    "admin:set-app-owner": "tsx scripts/admin/setAppOwner.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -27,6 +36,7 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
     "@types/qrcode": "^1.5.6",
@@ -34,9 +44,12 @@
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "firebase-admin": "^14.5.0",
+    "firebase-tools": "^15.32.1",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.3"
+    "vite": "^6.2.3",
+    "vitest": "^5.0.3"
   }
 }

@@ -4,6 +4,9 @@ export type CompanyStatus = 'active' | 'suspended';
 export type DepartmentStatus = 'active' | 'inactive';
 export type EmployeeStatus = 'active' | 'inactive';
 export type CardStatus = 'active' | 'inactive';
+// Account type requested at registration (Directive 24). Role and tenant are
+// derived from it and enforced by firestore.rules, never chosen by the client.
+export type AccountType = 'individual' | 'company';
 
 export interface UserProfile {
   id: string; // Firebase Auth UID
@@ -13,6 +16,8 @@ export interface UserProfile {
   companyId: string | null;
   employeeId: string | null;
   status: UserStatus;
+  accountType?: AccountType; // set at registration; immutable
+  tenantId?: string | null; // tenants/{tenantId}; 'ind_<uid>' or 'co_<uid>'
   createdAt: string;
   updatedAt: string;
 }
@@ -104,6 +109,8 @@ export interface Company {
   branding: CompanyBranding;
   status: CompanyStatus;
   planId: string; // e.g. 'starter', 'pro', 'enterprise'
+  kind?: 'company'; // set for companies created through self-registration
+  ownerUid?: string; // Firebase UID of the registering administrator; immutable
   createdAt: string;
   updatedAt: string;
 }

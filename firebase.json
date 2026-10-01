@@ -5,5 +5,27 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "emulators": {
+    "singleProjectMode": true,
+    "hub": {
+      "host": "127.0.0.1",
+      "port": 4480
+    },
+    "logging": {
+      "host": "127.0.0.1",
+      "port": 4580
+    },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8180
+    },
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9477
+    },
+    "ui": {
+      "enabled": false
+    }
   }
 }
