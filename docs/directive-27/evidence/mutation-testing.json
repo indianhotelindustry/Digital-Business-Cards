@@ -1,0 +1,703 @@
+{
+  "schema": "dsbc.mutationTesting/v1",
+  "directive": 27,
+  "generatedAt": "2026-10-02T18:31:45.118Z",
+  "environment": "Local: vitest (unit), Firebase Emulator Suite demo-dsbc (integration, rules, backend)",
+  "baseline": {
+    "unit": {
+      "exitCode": 0,
+      "summary": "Tests  27 passed (27)",
+      "failed": [],
+      "seconds": 4
+    },
+    "backend": {
+      "exitCode": 0,
+      "summary": "Tests  4 passed (4)",
+      "failed": [],
+      "seconds": 33
+    },
+    "integration": {
+      "exitCode": 0,
+      "summary": "Tests  13 passed (13)",
+      "failed": [],
+      "seconds": 28
+    },
+    "rules": {
+      "exitCode": 0,
+      "summary": "Tests  126 passed (126)",
+      "failed": [],
+      "seconds": 15
+    }
+  },
+  "summary": {
+    "total": 38,
+    "killed": 38,
+    "survived": []
+  },
+  "results": [
+    {
+      "id": "E01",
+      "area": "environment",
+      "runner": "unit",
+      "file": "src/lib/environmentResolver.ts",
+      "mutation": "an undesignated target (staging) is accepted",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-003 an undesignated target (staging) is refused instead of falling back"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E02",
+      "area": "environment",
+      "runner": "unit",
+      "file": "src/lib/environmentResolver.ts",
+      "mutation": "production may be pointed at the emulators by a build flag",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  2 failed | 14 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-005 production cannot be pointed at the emulators",
+        "tests/unit/environment.test.ts > ENV: deployment preflight > ENV-015 the production preflight has no FAIL (only owner designations may block)"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E03",
+      "area": "environment",
+      "runner": "unit",
+      "file": "src/lib/environmentResolver.ts",
+      "mutation": "production may use the (default) database",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-006 a registry that weakens production is refused"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E04",
+      "area": "environment",
+      "runner": "unit",
+      "file": "src/lib/environmentResolver.ts",
+      "mutation": "production may allow demo data / personas / dev tools",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-006 a registry that weakens production is refused"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E05",
+      "area": "environment",
+      "runner": "unit",
+      "file": "src/lib/environmentResolver.ts",
+      "mutation": "a missing VITE_DSBC_ENV silently means production",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-001 an unset or empty VITE_DSBC_ENV is refused (never guessed)"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E06",
+      "area": "environment",
+      "runner": "unit",
+      "file": "src/lib/environment.ts",
+      "mutation": "the environment can be overridden from localStorage",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-009 nothing in the client infers the environment from the hostname, URL or localStorage"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E07",
+      "area": "environment",
+      "runner": "unit",
+      "file": "src/lib/firebase.ts",
+      "mutation": "the client hard-codes the live project instead of the resolved target",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-009 nothing in the client infers the environment from the hostname, URL or localStorage"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E08",
+      "area": "environment",
+      "runner": "unit",
+      "file": "functions/src/shared/environment.ts",
+      "mutation": "backend accepts the wrong Firestore database",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  2 failed | 14 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: backend target check > ENV-012 every mismatch makes the backend refuse to load",
+        "tests/unit/environment.test.ts > ENV: deployment preflight > ENV-015 the production preflight has no FAIL (only owner designations may block)"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E09",
+      "area": "environment",
+      "runner": "unit",
+      "file": "functions/src/shared/environment.ts",
+      "mutation": "backend accepts the wrong project",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: backend target check > ENV-012 every mismatch makes the backend refuse to load"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E10",
+      "area": "environment",
+      "runner": "unit",
+      "file": "functions/src/shared/environment.ts",
+      "mutation": "backend accepts the wrong region",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: backend target check > ENV-012 every mismatch makes the backend refuse to load"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E11",
+      "area": "environment",
+      "runner": "unit",
+      "file": "functions/src/shared/environment.ts",
+      "mutation": "backend accepts PAYMENTS_ENABLED=true for a payments-disabled target",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: backend target check > ENV-012 every mismatch makes the backend refuse to load"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E12",
+      "area": "environment",
+      "runner": "unit",
+      "file": "functions/src/index.ts",
+      "mutation": "backend loads without asserting its target",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 15 passed (16)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: backend target check > ENV-013 the backend entry point asserts the target before configuring any function"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "P01",
+      "area": "routing",
+      "runner": "unit",
+      "file": "src/lib/routes.ts",
+      "mutation": "any text accepted as a slug (traversal, separators)",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/routes.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 10 passed (11)",
+      "failed": [
+        "tests/unit/routes.test.ts > ROUTE: canonical public paths > ROUTE-002 unknown, malformed and traversal paths are NOT_FOUND (never a fallback entity)"
+      ],
+      "seconds": 3
+    },
+    {
+      "id": "P02",
+      "area": "routing",
+      "runner": "unit",
+      "file": "src/lib/routes.ts",
+      "mutation": "unknown paths fall back to the home page instead of NOT_FOUND",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/routes.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 10 passed (11)",
+      "failed": [
+        "tests/unit/routes.test.ts > ROUTE: canonical public paths > ROUTE-002 unknown, malformed and traversal paths are NOT_FOUND (never a fallback entity)"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "P03",
+      "area": "routing",
+      "runner": "unit",
+      "file": "src/lib/routes.ts",
+      "mutation": "any preview parameter value turns preview on",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/routes.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 10 passed (11)",
+      "failed": [
+        "tests/unit/routes.test.ts > ROUTE: canonical public paths > ROUTE-003 ?preview=true is only a flag; it never changes which entity is requested"
+      ],
+      "seconds": 3
+    },
+    {
+      "id": "P04",
+      "area": "routing",
+      "runner": "unit",
+      "file": "firebase.production.json",
+      "mutation": "hosting catch-all rewrite (unknown paths answer 200)",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/routes.test.ts",
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  2 failed | 25 passed (27)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: deployment preflight > ENV-015 the production preflight has no FAIL (only owner designations may block)",
+        "tests/unit/routes.test.ts > ROUTE: canonical public paths > ROUTE-006 production hosting serves only public routes as the app; unknown paths get HTTP 404"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "H01",
+      "area": "health",
+      "runner": "unit",
+      "file": "shared/domain/platformHealth.ts",
+      "mutation": "a report missing required checks can be OK",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/routes.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 10 passed (11)",
+      "failed": [
+        "tests/unit/routes.test.ts > HEALTH: fail-closed aggregation > HEALTH-003 a missing or duplicated check fails closed"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "H02",
+      "area": "health",
+      "runner": "unit",
+      "file": "shared/domain/platformHealth.ts",
+      "mutation": "NOT_VERIFIED / NOT_CONFIGURED count as healthy",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/routes.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 10 passed (11)",
+      "failed": [
+        "tests/unit/routes.test.ts > HEALTH: fail-closed aggregation > HEALTH-002 OK only when every check is OK or intentionally DISABLED"
+      ],
+      "seconds": 3
+    },
+    {
+      "id": "H03",
+      "area": "health",
+      "runner": "unit",
+      "file": "functions/src/platform/health.ts",
+      "mutation": "ENVIRONMENT check reports OK for a mismatched backend",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/routes.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 10 passed (11)",
+      "failed": [
+        "tests/unit/routes.test.ts > HEALTH: fail-closed aggregation > HEALTH-004 the ENVIRONMENT check fails whenever the backend target does not match the registry"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "H04",
+      "area": "health",
+      "runner": "backend",
+      "file": "functions/src/platform/health.ts",
+      "mutation": "platform health callable without the App Owner gate",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/platform-health.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 3 passed (4)",
+      "failed": [
+        "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-101 only a verified App Owner may measure platform health"
+      ],
+      "seconds": 46
+    },
+    {
+      "id": "H05",
+      "area": "health",
+      "runner": "backend",
+      "file": "functions/src/platform/health.ts",
+      "mutation": "an undesignated public URL is reported OK",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/platform-health.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 3 passed (4)",
+      "failed": [
+        "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-102 an un-bootstrapped platform is FAIL, with every required check measured and sourced"
+      ],
+      "seconds": 28
+    },
+    {
+      "id": "H06",
+      "area": "health",
+      "runner": "backend",
+      "file": "functions/src/platform/health.ts",
+      "mutation": "claim holders without a verified email counted as App Owners",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/platform-health.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 3 passed (4)",
+      "failed": [
+        "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-102 an un-bootstrapped platform is FAIL, with every required check measured and sourced"
+      ],
+      "seconds": 23
+    },
+    {
+      "id": "H07",
+      "area": "health",
+      "runner": "backend",
+      "file": "functions/src/platform/health.ts",
+      "mutation": "an un-bootstrapped control plane reported OK",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/platform-health.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 3 passed (4)",
+      "failed": [
+        "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-102 an un-bootstrapped platform is FAIL, with every required check measured and sourced"
+      ],
+      "seconds": 28
+    },
+    {
+      "id": "H08",
+      "area": "health",
+      "runner": "backend",
+      "file": "functions/src/subscriptions/service.ts",
+      "mutation": "the reconciler no longer records its runs",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/platform-health.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 3 passed (4)",
+      "failed": [
+        "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-103 bootstrapping and a reconciler run turn those checks OK; unconfigured parts keep it from OK"
+      ],
+      "seconds": 29
+    },
+    {
+      "id": "B01",
+      "area": "bootstrap",
+      "runner": "integration",
+      "file": "functions/src/platform/bootstrap.ts",
+      "mutation": "a dry run writes",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-001 a dry run reports what it would create and writes nothing"
+      ],
+      "seconds": 37
+    },
+    {
+      "id": "B02",
+      "area": "bootstrap",
+      "runner": "integration",
+      "file": "functions/src/platform/bootstrap.ts",
+      "mutation": "platform configuration is overwritten on every run",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-003 is idempotent and never overwrites App Owner changes (drift is reported instead)"
+      ],
+      "seconds": 32
+    },
+    {
+      "id": "B03",
+      "area": "bootstrap",
+      "runner": "integration",
+      "file": "functions/src/entitlements/admin.ts",
+      "mutation": "existing plans (App Owner pricing) are overwritten",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-003 is idempotent and never overwrites App Owner changes (drift is reported instead)"
+      ],
+      "seconds": 38
+    },
+    {
+      "id": "B04",
+      "area": "bootstrap",
+      "runner": "integration",
+      "file": "functions/src/platform/bootstrap.ts",
+      "mutation": "the bootstrap seeds a demo company",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  2 failed | 11 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-002 creates plans, feature catalogue, global policy and platform configuration, and nothing else",
+        "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-004 never creates demo customers, subscriptions, invoices, payments or pilots"
+      ],
+      "seconds": 31
+    },
+    {
+      "id": "G01",
+      "area": "migration",
+      "runner": "integration",
+      "file": "functions/src/platform/migration.ts",
+      "mutation": "a stale preview (data changed) is still executed",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  2 failed | 11 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-003 a preview approved before the data changed is refused (hash mismatch)",
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-006 is idempotent: a second run finds nothing to do and cannot replay the approval or the run id"
+      ],
+      "seconds": 37
+    },
+    {
+      "id": "G02",
+      "area": "migration",
+      "runner": "integration",
+      "file": "functions/src/platform/migration.ts",
+      "mutation": "any account may approve a migration",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-002 the approval must come from a verified App Owner"
+      ],
+      "seconds": 33
+    },
+    {
+      "id": "G03",
+      "area": "migration",
+      "runner": "integration",
+      "file": "functions/src/platform/migration.ts",
+      "mutation": "demo candidates may be migrated",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-004 demo candidates, existing subscriptions and unevidenced grants are refused"
+      ],
+      "seconds": 36
+    },
+    {
+      "id": "G04",
+      "area": "migration",
+      "runner": "integration",
+      "file": "functions/src/platform/migration.ts",
+      "mutation": "complimentary grants without evidence",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-004 demo candidates, existing subscriptions and unevidenced grants are refused"
+      ],
+      "seconds": 34
+    },
+    {
+      "id": "G05",
+      "area": "migration",
+      "runner": "integration",
+      "file": "functions/src/platform/migration.ts",
+      "mutation": "existing subscriptions may be overwritten",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-004 demo candidates, existing subscriptions and unevidenced grants are refused"
+      ],
+      "seconds": 37
+    },
+    {
+      "id": "G06",
+      "area": "migration",
+      "runner": "integration",
+      "file": "functions/src/platform/migration.ts",
+      "mutation": "a migration run id can be replayed",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-006 is idempotent: a second run finds nothing to do and cannot replay the approval or the run id"
+      ],
+      "seconds": 37
+    },
+    {
+      "id": "G07",
+      "area": "migration",
+      "runner": "integration",
+      "file": "functions/src/platform/migration.ts",
+      "mutation": "a legacy browser-assigned paid plan is mapped without an owner decision",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  2 failed | 11 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-001 discovery is read-only and classifies every customer",
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-005 executes only approved decisions, preserves content and keeps an audit trail"
+      ],
+      "seconds": 33
+    },
+    {
+      "id": "G08",
+      "area": "migration",
+      "runner": "integration",
+      "file": "functions/src/platform/migration.ts",
+      "mutation": "a complimentary grant may use a plan of the wrong customer type",
+      "killed": true,
+      "testFiles": [
+        "tests/integration/productionOps.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  1 failed | 12 passed (13)",
+      "failed": [
+        "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-004 demo candidates, existing subscriptions and unevidenced grants are refused"
+      ],
+      "seconds": 32
+    },
+    {
+      "id": "R10",
+      "area": "rules",
+      "runner": "rules",
+      "file": "firestore.rules",
+      "mutation": "the App Owner browser may write platform configuration",
+      "killed": true,
+      "testFiles": [
+        "tests/rules/directive27-platform.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  5 failed | 121 passed (126)",
+      "failed": [
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > App Owner (verified claim) cannot create platformConfig",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > App Owner (verified claim) cannot overwrite deployment config",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > App Owner (verified claim) cannot update deployment config",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > App Owner (verified claim) cannot fake a reconciler heartbeat",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > App Owner (verified claim) cannot delete deployment config"
+      ],
+      "seconds": 19
+    },
+    {
+      "id": "R11",
+      "area": "rules",
+      "runner": "rules",
+      "file": "firestore.rules",
+      "mutation": "migration runs readable by any signed-in user",
+      "killed": true,
+      "testFiles": [
+        "tests/rules/directive27-platform.test.ts"
+      ],
+      "exitCode": 2,
+      "summary": "Tests  12 failed | 114 passed (126)",
+      "failed": [
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Company Admin A cannot read platform configuration or migration runs",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Company Admin B cannot read platform configuration or migration runs",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Employee A cannot read platform configuration or migration runs",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Employee B cannot read platform configuration or migration runs",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Individual A cannot read platform configuration or migration runs",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Individual B cannot read platform configuration or migration runs",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Admin of suspended company cannot read platform configuration or migration runs",
+        "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Owner allow-list email, verified, no claim cannot read platform configuration or migration runs"
+      ],
+      "seconds": 19
+    }
+  ]
+}
