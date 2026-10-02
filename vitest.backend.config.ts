@@ -7,7 +7,9 @@ export default defineConfig({
   test: {
     include: ['tests/backend/**/*.test.ts'],
     environment: 'node',
-    testTimeout: 60000,
+    // Some tests call several functions for the first time; each first call
+    // starts an emulator worker (seconds on Windows). Timing only, not logic.
+    testTimeout: 180000,
     hookTimeout: 120000,
     // One emulator suite, one shared world per file: run files sequentially.
     fileParallelism: false,
