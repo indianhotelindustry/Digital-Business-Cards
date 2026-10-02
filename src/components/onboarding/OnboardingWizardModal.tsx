@@ -57,22 +57,22 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
 
   // Individual Form Fields
   const [indName, setIndName] = useState(userProfile?.displayName || '');
-  const [indTitle, setIndTitle] = useState('Senior Solutions Consultant');
-  const [indCompany, setIndCompany] = useState('Acme Innovations Ltd');
+  const [indTitle, setIndTitle] = useState('');
+  const [indCompany, setIndCompany] = useState('');
   const [indEmail, setIndEmail] = useState(userProfile?.email || '');
-  const [indPhone, setIndPhone] = useState('+91 98765 43210');
-  const [indBio, setIndBio] = useState('Digital strategy & technology advisor specializing in enterprise systems.');
+  const [indPhone, setIndPhone] = useState('');
+  const [indBio, setIndBio] = useState('');
   const [indSlug, setIndSlug] = useState('');
   const [indTheme, setIndTheme] = useState<'classic' | 'modern' | 'minimal'>('classic');
   const [indPlan, setIndPlan] = useState<'individual_free' | 'individual_pro'>('individual_free');
 
   // Company Form Fields
-  const [compName, setCompName] = useState(activeCompany?.name || 'Acro Innovations');
-  const [compLegal, setCompLegal] = useState(activeCompany?.legalName || 'Acro Innovations Private Limited');
-  const [compTagline, setCompTagline] = useState('Leading Cloud & Digital Architecture Systems');
-  const [compIndustry, setCompIndustry] = useState('Enterprise Technology');
-  const [compEmail, setCompEmail] = useState(activeCompany?.email || 'contact@acro-innovations.example');
-  const [compPhone, setCompPhone] = useState(activeCompany?.phone || '+91 22 4987 6543');
+  const [compName, setCompName] = useState(activeCompany?.name || '');
+  const [compLegal, setCompLegal] = useState(activeCompany?.legalName || '');
+  const [compTagline, setCompTagline] = useState('');
+  const [compIndustry, setCompIndustry] = useState('');
+  const [compEmail, setCompEmail] = useState(activeCompany?.email || '');
+  const [compPhone, setCompPhone] = useState(activeCompany?.phone || '');
   const [compSlug, setCompSlug] = useState('');
   const [compPlan, setCompPlan] = useState<'company_free' | 'company_pro'>('company_free');
 
@@ -288,6 +288,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
 
             <button
               onClick={onClose}
+              aria-label="Close onboarding"
               className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/50 transition"
             >
               <X className="w-5 h-5" />

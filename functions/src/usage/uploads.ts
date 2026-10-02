@@ -60,7 +60,10 @@ export async function uploadAsset(caller: Caller, data: unknown) {
     const token = randomUUID();
     const file = bucket().file(path);
     await file.save(buf, { contentType: contentType!, resumable: false, metadata: { metadata: { firebaseStorageDownloadTokens: token, uploadedBy: caller.uid, tenantId: subject.tenantId } } });
-    const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${file.bucket.name}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
+    // In the emulator the object lives in the Storage emulator, never in Google Cloud Storage.
+    const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+    const origin = emulatorHost ? `http://${emulatorHost.replace(/^https?:\/\//, '')}` : 'https://firebasestorage.googleapis.com';
+    const downloadUrl = `${origin}/v0/b/${file.bucket.name}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
     return { path, bytes: buf.length, contentType, downloadUrl };
   } catch (err) {
     await releaseStorage(subject, buf.length); // compensate the reservation

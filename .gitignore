@@ -7,3 +7,8 @@ coverage/
 .env*
 !.env.example
 !functions/.env.demo-dsbc
+
+# Directive 26 browser tests
+dist-e2e/
+test-results/
+playwright-report/

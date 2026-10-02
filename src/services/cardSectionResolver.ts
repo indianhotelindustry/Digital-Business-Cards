@@ -187,6 +187,7 @@ export function resolveCardProfile(
     hasCompanyAssociation,
     companyId: hasCompanyAssociation ? employee.companyId : undefined,
     companyName: hasCompanyAssociation ? (company?.name || '') : '',
+    companyTagline: hasCompanyAssociation ? (company?.tagline || '') : '',
     companyLogoUrl: hasCompanyAssociation ? company?.logoUrl : undefined,
     companyAddress: hasCompanyAssociation ? company?.address : undefined,
     companyWebsite: hasCompanyAssociation ? company?.website : undefined,

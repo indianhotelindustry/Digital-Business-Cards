@@ -86,9 +86,11 @@ export const TemplateClassic: React.FC<CardTemplateRenderProps> = ({
                   <span className="text-[11px] font-bold text-slate-900 truncate">
                     {profile.companyName}
                   </span>
-                  <span className="text-[8px] text-slate-500 font-medium truncate mt-0.5">
-                    People. Ideas. Progress.
-                  </span>
+                  {profile.companyTagline && (
+                    <span className="text-[8px] text-slate-500 font-medium truncate mt-0.5">
+                      {profile.companyTagline}
+                    </span>
+                  )}
                 </div>
               </button>
             ) : (
@@ -120,14 +122,13 @@ export const TemplateClassic: React.FC<CardTemplateRenderProps> = ({
           </button>
         </div>
 
-        {/* Hero Slogans (matching reference image) */}
-        <div className="flex items-end justify-between pb-2 text-white/90 relative z-10 pointer-events-none">
-          <p className="text-[10px] font-medium leading-tight text-white/80 max-w-[120px] drop-shadow-sm">
-            Innovating today for a smarter tomorrow
-          </p>
-          <span className="text-[11px] font-serif italic text-teal-200 tracking-wide drop-shadow-sm">
-            Building What&apos;s Next
-          </span>
+        {/* Hero slogan: the company's own tagline only (Directive 26: no invented copy) */}
+        <div className="flex items-end justify-between pb-2 text-white/90 relative z-10 pointer-events-none min-h-[1.5rem]">
+          {profile.companyTagline && (
+            <p className="text-[10px] font-medium leading-tight text-white/80 max-w-[160px] drop-shadow-sm">
+              {profile.companyTagline}
+            </p>
+          )}
         </div>
       </div>
 

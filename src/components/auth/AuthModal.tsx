@@ -54,8 +54,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         if (!user) {
           setError('User document not found for these credentials.');
         } else {
+          // Directive 26: signing in goes straight to the workspace; the setup
+          // wizard is for newly registered accounts only.
           onClose();
-          onSuccess?.(customerType);
         }
       } else {
         if (!displayName.trim()) {

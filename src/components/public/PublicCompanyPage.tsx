@@ -474,11 +474,13 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-slate-950" />
 
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col items-center text-center space-y-4 sm:space-y-5">
-          {/* Verified Badge */}
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-[11px] sm:text-xs font-semibold shadow-sm animate-in fade-in duration-300 max-w-full">
-            <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-400 shrink-0" />
-            <span className="truncate">Verified Corporate Business Identity</span>
-          </div>
+          {/* Verified badge: only when the platform has actually verified the company */}
+          {resolvedWebsite.verified && (
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-[11px] sm:text-xs font-semibold shadow-sm animate-in fade-in duration-300 max-w-full">
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-400 shrink-0" />
+              <span className="truncate">Verified Corporate Business Identity</span>
+            </div>
+          )}
 
           {/* Company Name & Tagline */}
           <div className="space-y-1.5 sm:space-y-2 max-w-3xl w-full">
@@ -567,7 +569,7 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
               Enterprise Excellence
             </h2>
             <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Why Global Leaders Partner With {resolvedWebsite.name}
+              Why Work With {resolvedWebsite.name}
             </p>
           </div>
 

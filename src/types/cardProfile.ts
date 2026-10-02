@@ -181,6 +181,8 @@ export interface ResolvedCardProfile {
   hasCompanyAssociation: boolean;
   companyId?: string;
   companyName: string;
+  /** The company's own tagline (empty when the company has none). */
+  companyTagline?: string;
   companyLogoUrl?: string;
   companyAddress?: string;
   companyWebsite?: string;
