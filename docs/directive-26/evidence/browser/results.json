@@ -100,12 +100,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 15524,
+                  "duration": 9483,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T13:56:50.311Z",
+                  "startTime": "2026-10-02T13:59:50.297Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -124,7 +124,7 @@
           ],
           "id": "49ec2b88ba9186b665fe-b76f963b792c0d2bb057",
           "file": "demo-journey.spec.ts",
-          "line": 139,
+          "line": 124,
           "column": 1
         },
         {
@@ -152,12 +152,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5741,
+                  "duration": 2139,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T13:57:10.672Z",
+                  "startTime": "2026-10-02T14:00:02.776Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -176,7 +176,7 @@
           ],
           "id": "49ec2b88ba9186b665fe-9f225f1c22f204cda33a",
           "file": "demo-journey.spec.ts",
-          "line": 145,
+          "line": 130,
           "column": 1
         },
         {
@@ -204,12 +204,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2273,
+                  "duration": 1862,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T13:57:16.434Z",
+                  "startTime": "2026-10-02T14:00:04.942Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -228,7 +228,7 @@
           ],
           "id": "49ec2b88ba9186b665fe-c2e3315df4183c1d63fe",
           "file": "demo-journey.spec.ts",
-          "line": 158,
+          "line": 143,
           "column": 1
         },
         {
@@ -256,12 +256,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2621,
+                  "duration": 1094,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T13:57:18.726Z",
+                  "startTime": "2026-10-02T14:00:06.826Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -280,7 +280,7 @@
           ],
           "id": "49ec2b88ba9186b665fe-c4d89e21100e2e2999cd",
           "file": "demo-journey.spec.ts",
-          "line": 163,
+          "line": 148,
           "column": 1
         },
         {
@@ -308,12 +308,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 9156,
+                  "duration": 2018,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T13:57:21.462Z",
+                  "startTime": "2026-10-02T14:00:07.941Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -332,7 +332,7 @@
           ],
           "id": "49ec2b88ba9186b665fe-a3e7e9b4252a83750d7c",
           "file": "demo-journey.spec.ts",
-          "line": 180,
+          "line": 165,
           "column": 1
         },
         {
@@ -360,12 +360,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 6624,
+                  "duration": 2744,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T13:57:30.852Z",
+                  "startTime": "2026-10-02T14:00:09.978Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -384,7 +384,59 @@
           ],
           "id": "49ec2b88ba9186b665fe-2eb04e9d29b059c7a0fe",
           "file": "demo-journey.spec.ts",
-          "line": 192,
+          "line": 177,
+          "column": 1
+        },
+        {
+          "title": "Browser E: a third customer builds its own site; three-way isolation holds",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4736,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T14:00:12.745Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-3c7497a4baae39b7e9fd",
+          "file": "demo-journey.spec.ts",
+          "line": 191,
           "column": 1
         },
         {
@@ -412,12 +464,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1483,
+                  "duration": 1561,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T13:57:37.969Z",
+                  "startTime": "2026-10-02T14:00:17.503Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -436,11 +488,11 @@
           ],
           "id": "49ec2b88ba9186b665fe-4dc246a9a884c2ae4346",
           "file": "demo-journey.spec.ts",
-          "line": 206,
+          "line": 216,
           "column": 1
         },
         {
-          "title": "Browser D: App Owner sees both pilots demo ready",
+          "title": "Browser D: App Owner sees all three pilots demo ready",
           "ok": true,
           "tags": [],
           "tests": [
@@ -464,12 +516,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 22793,
+                  "duration": 10533,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T13:57:39.479Z",
+                  "startTime": "2026-10-02T14:00:19.090Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -486,9 +538,9 @@
               "status": "expected"
             }
           ],
-          "id": "49ec2b88ba9186b665fe-d0ac52870d575b3f4ab5",
+          "id": "49ec2b88ba9186b665fe-8956f60f779c6d77a0fa",
           "file": "demo-journey.spec.ts",
-          "line": 241,
+          "line": 251,
           "column": 1
         }
       ]
@@ -496,9 +548,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-02T13:56:45.781Z",
-    "duration": 79653.11499999999,
-    "expected": 8,
+    "startTime": "2026-10-02T13:59:46.759Z",
+    "duration": 46481.403,
+    "expected": 9,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

@@ -7,7 +7,9 @@
 //   Browser A  company admin of customer A (registers through the UI)
 //   Browser B  anonymous visitor
 //   Browser C  second customer
+//   Browser E  third customer
 //   Browser D  App Owner (Demo Readiness)
+import { readFileSync } from 'node:fs';
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { adminDb, createUser, idToken, ok, PASSWORD as OWNER_PASSWORD, resetEmulators } from '../backend/support/backendEnv';
 
@@ -30,36 +32,18 @@ interface Customer {
   employee: { first: string; last: string; title: string; email: string; slug: string };
 }
 
-const A: Customer = {
-  key: 'A',
-  company: 'Northwind Advisory',
-  email: 'admin@northwind-advisory.test',
-  websiteSlug: 'northwind-advisory',
-  tagline: 'Practical advice for growing firms',
-  about: 'Northwind Advisory helps growing firms plan finance and operations.',
-  service: 'Growth Planning Workshop',
-  product: 'Quarterly Finance Review',
-  employee: { first: 'Asha', last: 'Verma', title: 'Senior Consultant', email: 'asha@northwind-advisory.test', slug: 'asha-verma' },
-};
-
-const C: Customer = {
-  key: 'C',
-  company: 'Bluefin Logistics',
-  email: 'admin@bluefin-logistics.test',
-  websiteSlug: 'bluefin-logistics',
-  tagline: 'On-time freight across India',
-  about: 'Bluefin Logistics moves freight for manufacturers across India.',
-  service: 'Full Truckload Freight',
-  product: 'Shipment Tracking Portal',
-  employee: { first: 'Ravi', last: 'Menon', title: 'Operations Lead', email: 'ravi@bluefin-logistics.test', slug: 'ravi-menon' },
-};
+// Phase 11 pilot dataset: three customers, each driven through the real UI.
+const pilots = JSON.parse(readFileSync(new URL('./pilot-customers.json', import.meta.url), 'utf8')) as { customers: Customer[] };
+const [A, C, E] = pilots.customers;
 
 let ctxA: BrowserContext;
 let ctxB: BrowserContext;
 let ctxC: BrowserContext;
+let ctxE: BrowserContext;
 let pageA: Page;
 let pageB: Page;
 let pageC: Page;
+let pageE: Page;
 
 async function newBrowser(browser: Browser) {
   const ctx = await browser.newContext();
@@ -130,10 +114,11 @@ test.beforeAll(async ({ browser }) => {
   ({ ctx: ctxA, page: pageA } = await newBrowser(browser));
   ({ ctx: ctxB, page: pageB } = await newBrowser(browser));
   ({ ctx: ctxC, page: pageC } = await newBrowser(browser));
+  ({ ctx: ctxE, page: pageE } = await newBrowser(browser));
 });
 
 test.afterAll(async () => {
-  await Promise.all([ctxA, ctxB, ctxC].filter(Boolean).map((c) => c.close()));
+  await Promise.all([ctxA, ctxB, ctxC, ctxE].filter(Boolean).map((c) => c.close()));
 });
 
 test('Browser A: company registers, builds and publishes its website', async () => {
@@ -203,6 +188,31 @@ test('Browser C: a second customer builds its own site and never sees customer A
   await expect(pageB.getByText(A.company)).toHaveCount(0);
 });
 
+test('Browser E: a third customer builds its own site; three-way isolation holds', async () => {
+  await registerCompany(pageE, E);
+  await buildWebsite(pageE, E);
+  await addAndPublishEmployee(pageE, E);
+  await pageE.getByRole('button', { name: 'Employees & Cards' }).click();
+  await expect(pageE.getByText(`${E.employee.first} ${E.employee.last}`).first()).toBeVisible();
+  for (const other of [A, C]) await expect(pageE.getByText(`${other.employee.first} ${other.employee.last}`)).toHaveCount(0);
+  await pageC.getByRole('button', { name: 'Employees & Cards' }).click();
+  await expect(pageC.getByText(`${E.employee.first} ${E.employee.last}`)).toHaveCount(0);
+  await pageA.goto('/#app');
+  await pageA.getByRole('button', { name: 'Employees & Cards' }).click();
+  for (const other of [C, E]) await expect(pageA.getByText(`${other.employee.first} ${other.employee.last}`)).toHaveCount(0);
+
+  // Each public website shows exactly its own company and team.
+  for (const c of [A, C, E]) {
+    await pageB.goto(`/#company/${c.websiteSlug}`);
+    await expect(pageB.getByRole('heading', { name: c.company }).first()).toBeVisible();
+    for (const other of [A, C, E].filter((o) => o !== c)) {
+      await expect(pageB.getByText(other.company)).toHaveCount(0);
+      await expect(pageB.getByText(`${other.employee.first} ${other.employee.last}`)).toHaveCount(0);
+    }
+  }
+  await shot(pageE, '05b-browserE-third-customer');
+});
+
 test('unpublished, preview and unknown URLs never show content or demo data', async () => {
   // Customer A unpublishes the card; anonymous and other-customer previews get nothing.
   await pageA.getByRole('button', { name: 'Employees & Cards' }).click();
@@ -238,9 +248,9 @@ test('unpublished, preview and unknown URLs never show content or demo data', as
   await pageA.getByRole('button', { name: 'Close publishing' }).click();
 });
 
-test('Browser D: App Owner sees both pilots demo ready', async ({ browser }) => {
+test('Browser D: App Owner sees all three pilots demo ready', async ({ browser }) => {
   const owner = { uid: 'u_owner', email: 'u_owner@dsbc.test', token: await idToken('u_owner@dsbc.test') };
-  for (const c of [A, C]) {
+  for (const c of [A, C, E]) {
     const companyId = (await adminDb.collection('users').where('email', '==', c.email).get()).docs[0].get('companyId');
     await ok('adminSetCustomerClassification', { customerType: 'company', customerId: companyId, isPilot: true, stage: 'LIVE_WEBSITE', reason: 'Pilot customer' }, owner);
   }
@@ -258,8 +268,8 @@ test('Browser D: App Owner sees both pilots demo ready', async ({ browser }) => 
   await shot(page, '07a-browserD-app-owner-dashboard');
   await page.locator('button:visible', { hasText: 'Demo Readiness' }).first().click();
   const panel = page.getByTestId('demo-readiness');
-  await expect(panel.getByText('2 of 2 customer(s) demo ready', { exact: false })).toBeVisible({ timeout: 60_000 });
-  await expect(panel.getByTestId('demo-ready-badge')).toHaveText(['Demo ready', 'Demo ready']);
+  await expect(panel.getByText('3 of 3 customer(s) demo ready', { exact: false })).toBeVisible({ timeout: 60_000 });
+  await expect(panel.getByTestId('demo-ready-badge')).toHaveText(['Demo ready', 'Demo ready', 'Demo ready']);
   await shot(page, '07-browserD-app-owner-demo-readiness');
   await ctx.close();
 });

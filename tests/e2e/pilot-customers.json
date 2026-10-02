@@ -1,0 +1,39 @@
+{
+  "schema": "dsbc.pilotRehearsal/v1",
+  "purpose": "Directive 26 Phase 11 rehearsal input. Each pilot customer is created by driving the real product UI (registration, Company Profile, Employees & Cards, publishing) in its own browser session against the emulator. Nothing here is loaded by the application or written to any real project; the real pilots self-register with their own data.",
+  "customers": [
+    {
+      "key": "A",
+      "company": "Northwind Advisory",
+      "email": "admin@northwind-advisory.test",
+      "websiteSlug": "northwind-advisory",
+      "tagline": "Practical advice for growing firms",
+      "about": "Northwind Advisory helps growing firms plan finance and operations.",
+      "service": "Growth Planning Workshop",
+      "product": "Quarterly Finance Review",
+      "employee": { "first": "Asha", "last": "Verma", "title": "Senior Consultant", "email": "asha@northwind-advisory.test", "slug": "asha-verma" }
+    },
+    {
+      "key": "B",
+      "company": "Bluefin Logistics",
+      "email": "admin@bluefin-logistics.test",
+      "websiteSlug": "bluefin-logistics",
+      "tagline": "On-time freight across India",
+      "about": "Bluefin Logistics moves freight for manufacturers across India.",
+      "service": "Full Truckload Freight",
+      "product": "Shipment Tracking Portal",
+      "employee": { "first": "Ravi", "last": "Menon", "title": "Operations Lead", "email": "ravi@bluefin-logistics.test", "slug": "ravi-menon" }
+    },
+    {
+      "key": "C",
+      "company": "Kestrel Dental Clinics",
+      "email": "admin@kestrel-dental.test",
+      "websiteSlug": "kestrel-dental",
+      "tagline": "Gentle family dentistry",
+      "about": "Kestrel Dental Clinics provides family dental care in three city clinics.",
+      "service": "Preventive Check-up",
+      "product": "Annual Care Plan",
+      "employee": { "first": "Nikhil", "last": "Rao", "title": "Clinic Manager", "email": "nikhil@kestrel-dental.test", "slug": "nikhil-rao" }
+    }
+  ]
+}
