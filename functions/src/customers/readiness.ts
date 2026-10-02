@@ -116,7 +116,7 @@ export async function companyReadiness(companyId: string): Promise<CustomerReadi
     companyStatus: (c.status as string) || 'missing',
     publishingState,
     websiteSlug,
-    websitePath: websiteSlug ? `#company/${websiteSlug}` : null,
+    websitePath: websiteSlug ? `/company/${websiteSlug}` : null,
     websiteOutcome: website?.outcome ?? 'NOT_PUBLISHED',
     employees: employeeRows,
     checks,

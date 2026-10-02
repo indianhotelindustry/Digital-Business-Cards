@@ -13,7 +13,7 @@ export default defineConfig({
   expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
-  reporter: [['list'], ['json', { outputFile: 'docs/directive-26/evidence/browser/results.json' }]],
+  reporter: [['list'], ['json', { outputFile: process.env.DSBC_BROWSER_OUT || 'docs/directive-26/evidence/browser/results.json' }]],
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     channel: 'chrome',

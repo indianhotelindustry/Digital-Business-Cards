@@ -5,8 +5,15 @@
 //   * Emulator targets (FIRESTORE_EMULATOR_HOST set) are always allowed.
 //   * A real project must be named twice: --project <id> --confirm-project <id>.
 //   * Demo seeding is refused for anything that looks like production
-//     (project id contains "prod", or is listed in DSBC_PRODUCTION_PROJECT_IDS),
-//     and for any real project unless --allow-non-emulator is given.
+//     (project id contains "prod", is listed in DSBC_PRODUCTION_PROJECT_IDS, or
+//     is the production project of config/environments.json), and for any real
+//     project unless --allow-non-emulator is given.
+//   * Directive 27: every real-project operation must name its Firestore
+//     database (--database). The production project hosts other apps'
+//     databases, so "(default)" is never assumed; for the registry production
+//     project the database must be exactly the registered DSBC database.
+
+import { ENVIRONMENT_REGISTRY } from '../../src/lib/environmentResolver';
 
 export interface AdminArgs {
   [key: string]: string | boolean | undefined;
@@ -35,17 +42,25 @@ export function parseArgs(argv: string[]): AdminArgs {
   return out;
 }
 
+/** Production project + database from config/environments.json. */
+export const PRODUCTION_TARGET = {
+  projectId: ENVIRONMENT_REGISTRY.environments.production.firebase!.projectId,
+  databaseId: ENVIRONMENT_REGISTRY.environments.production.firestoreDatabaseId!,
+};
+
+export type AdminPurpose = 'seed-demo' | 'grant-app-owner' | 'bootstrap' | 'migrate';
+
 export function isProductionLike(projectId: string, env: Record<string, string | undefined> = process.env): boolean {
   const listed = (env.DSBC_PRODUCTION_PROJECT_IDS || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  return /prod/i.test(projectId) || listed.includes(projectId);
+  return /prod/i.test(projectId) || listed.includes(projectId) || projectId === PRODUCTION_TARGET.projectId;
 }
 
 export function resolveAdminTarget(
   args: AdminArgs,
-  purpose: 'seed-demo' | 'grant-app-owner',
+  purpose: AdminPurpose,
   env: Record<string, string | undefined> = process.env
 ): AdminTarget {
   const emulator = Boolean(env.FIRESTORE_EMULATOR_HOST);
@@ -63,6 +78,13 @@ export function resolveAdminTarget(
 
   if (args['confirm-project'] !== projectId) {
     throw new Error(`Refusing to touch real project "${projectId}" without --confirm-project ${projectId}.`);
+  }
+
+  if (typeof args.database !== 'string' || !args.database) {
+    throw new Error(`Refusing to touch real project "${projectId}" without --database <id>; the database is never assumed.`);
+  }
+  if (projectId === PRODUCTION_TARGET.projectId && databaseId !== PRODUCTION_TARGET.databaseId) {
+    throw new Error(`Project ${projectId} is the DSBC production project; its DSBC database is ${PRODUCTION_TARGET.databaseId}, not "${databaseId}" (other databases there belong to other apps).`);
   }
 
   if (purpose === 'seed-demo') {

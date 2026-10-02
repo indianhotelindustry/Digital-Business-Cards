@@ -27,6 +27,8 @@ import { SecurityTestRunnerModal } from './components/security/SecurityTestRunne
 import { AuthModal } from './components/auth/AuthModal';
 import { OnboardingWizardModal } from './components/onboarding/OnboardingWizardModal';
 import { DEMO_FEATURES_ENABLED } from './lib/runtimeFlags';
+import { canonicalizeLegacyHash, navigate, onRouteChange, routeFromLocation } from './lib/routes';
+import { NotFoundPage } from './components/public/NotFoundPage';
 import { Shield, Sparkles, Building2, ExternalLink, Lock } from 'lucide-react';
 
 function AppContent() {
@@ -47,83 +49,27 @@ function AppContent() {
   const [isMarketingPage, setIsMarketingPage] = useState(false);
   const [isAdminPreview, setIsAdminPreview] = useState(false);
 
-  // Sync route with hash
+  const [notFoundPath, setNotFoundPath] = useState<string | null>(null);
+
+  // Sync view with the canonical path route (Directive 27: /card/{slug} etc.;
+  // legacy #/card/{slug} links are parsed and rewritten to the path).
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace(/^#\/?/, '');
-      if (hash === 'pricing') {
-        setIsPricingPage(true);
-        setIsMarketingPage(false);
-        setPublicCardSlug(null);
-        setPublicProfileSlug(null);
-        setPublicCompanySlug(null);
-        setIsAdminPreview(false);
-      } else if (
-        hash === 'marketing' ||
-        hash === 'home' ||
-        hash === 'features' ||
-        hash === 'individual' ||
-        hash === 'company' ||
-        hash === 'how-it-works' ||
-        hash === 'faq' ||
-        hash === 'contact'
-      ) {
-        setIsMarketingPage(true);
-        setIsPricingPage(false);
-        setPublicCardSlug(null);
-        setPublicProfileSlug(null);
-        setPublicCompanySlug(null);
-        setIsAdminPreview(false);
-      } else if (hash.startsWith('card/')) {
-        setIsMarketingPage(false);
-        setIsPricingPage(false);
-        const full = hash.replace('card/', '').trim();
-        const [slug, query] = full.split('?');
-        const isPreview = query?.includes('preview=true') || false;
-        setPublicCardSlug(slug);
-        setPublicProfileSlug(null);
-        setPublicCompanySlug(null);
-        setIsAdminPreview(isPreview);
-      } else if (hash.startsWith('profile/')) {
-        setIsMarketingPage(false);
-        setIsPricingPage(false);
-        const full = hash.replace('profile/', '').trim();
-        const [slug, query] = full.split('?');
-        const isPreview = query?.includes('preview=true') || false;
-        setPublicProfileSlug(slug);
-        setPublicCardSlug(null);
-        setPublicCompanySlug(null);
-        setIsAdminPreview(isPreview);
-      } else if (hash.startsWith('company/')) {
-        setIsMarketingPage(false);
-        setIsPricingPage(false);
-        const full = hash.replace('company/', '').trim();
-        const [slug, query] = full.split('?');
-        const isPreview = query?.includes('preview=true') || false;
-        setPublicCompanySlug(slug);
-        setPublicCardSlug(null);
-        setPublicProfileSlug(null);
-        setIsAdminPreview(isPreview);
-      } else if (hash === 'app' || hash === 'dashboard') {
-        setIsMarketingPage(false);
-        setIsPricingPage(false);
-        setPublicCardSlug(null);
-        setPublicProfileSlug(null);
-        setPublicCompanySlug(null);
-        setIsAdminPreview(false);
-      } else {
-        // Root or empty hash
-        setIsPricingPage(false);
-        setPublicCardSlug(null);
-        setPublicProfileSlug(null);
-        setPublicCompanySlug(null);
-        setIsAdminPreview(false);
-      }
+    const applyRoute = () => {
+      const route = routeFromLocation(window.location);
+      const entity = route.kind === 'card' || route.kind === 'profile' || route.kind === 'company' ? route : null;
+      setNotFoundPath(route.kind === 'not_found' ? route.path : null);
+      setIsPricingPage(route.kind === 'pricing');
+      if (route.kind === 'marketing') setIsMarketingPage(true);
+      else if (route.kind !== 'home') setIsMarketingPage(false);
+      setPublicCardSlug(entity?.kind === 'card' ? entity.slug : null);
+      setPublicProfileSlug(entity?.kind === 'profile' ? entity.slug : null);
+      setPublicCompanySlug(entity?.kind === 'company' ? entity.slug : null);
+      setIsAdminPreview(entity?.preview ?? false);
     };
 
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    canonicalizeLegacyHash();
+    applyRoute();
+    return onRouteChange(applyRoute);
   }, []);
 
   // Set default view on role change
@@ -138,11 +84,11 @@ function AppContent() {
   }, [role]);
 
   const handleNavigateToCard = (slug: string, preview = false) => {
-    window.location.hash = `card/${slug}${preview ? '?preview=true' : ''}`;
+    navigate(`card/${slug}${preview ? '?preview=true' : ''}`);
   };
 
   const handleBackFromCard = () => {
-    window.location.hash = '';
+    navigate('');
     setIsPricingPage(false);
     setPublicCardSlug(null);
     setPublicProfileSlug(null);
@@ -172,13 +118,18 @@ function AppContent() {
     setIsOnboardingModalOpen(true);
   };
 
+  // Unknown path (hosting already answered HTTP 404 for it in production)
+  if (notFoundPath) {
+    return <NotFoundPage path={notFoundPath} onHome={() => navigate('')} />;
+  }
+
   // If viewing public pricing matrix standalone
   if (isPricingPage) {
     return (
       <PublicPricingPage
         onBackToApp={handleBackFromCard}
         onSelectPlan={(planId) => {
-          window.location.hash = '';
+          navigate('');
           setIsPricingPage(false);
           setActiveView('my-plan');
         }}
@@ -194,7 +145,7 @@ function AppContent() {
         onBackToApp={handleBackFromCard}
         onBackToCard={(cardSlug) => {
           if (cardSlug) {
-            window.location.hash = `card/${cardSlug}${isAdminPreview ? '?preview=true' : ''}`;
+            navigate(`card/${cardSlug}${isAdminPreview ? '?preview=true' : ''}`);
           } else {
             handleBackFromCard();
           }
@@ -210,7 +161,7 @@ function AppContent() {
       <PublicProfilePage
         slug={publicProfileSlug}
         onBackToCard={() => {
-          window.location.hash = `card/${publicProfileSlug}${isAdminPreview ? '?preview=true' : ''}`;
+          navigate(`card/${publicProfileSlug}${isAdminPreview ? '?preview=true' : ''}`);
         }}
         onBackToApp={handleBackFromCard}
         isAdminPreview={isAdminPreview}
@@ -248,12 +199,12 @@ function AppContent() {
           onStartIndividual={handleStartIndividualRegistration}
           onStartCompany={handleStartCompanyRegistration}
           onNavigateToPricing={() => {
-            window.location.hash = 'pricing';
+            navigate('pricing');
           }}
           onOpenLogin={handleOpenLogin}
           onGoToDashboard={() => {
             setIsMarketingPage(false);
-            window.location.hash = 'app';
+            navigate('app');
           }}
         />
 
@@ -264,7 +215,7 @@ function AppContent() {
           initialType={onboardingType}
           onPublishComplete={(slug, type) => {
             setIsOnboardingModalOpen(false);
-            window.location.hash = `${type}/${slug}`;
+            navigate(`${type}/${slug}`);
           }}
         />
 
@@ -402,7 +353,7 @@ function AppContent() {
           setIsOnboardingModalOpen(true);
         }}
         onOpenMarketing={() => {
-          window.location.hash = 'marketing';
+          navigate('marketing');
           setIsMarketingPage(true);
         }}
         onNavigateToCard={handleNavigateToCard}
@@ -432,7 +383,7 @@ function AppContent() {
         initialType={onboardingType}
         onPublishComplete={(slug, type) => {
           setIsOnboardingModalOpen(false);
-          window.location.hash = `${type}/${slug}`;
+          navigate(`${type}/${slug}`);
         }}
       />
 

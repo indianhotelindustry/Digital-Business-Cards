@@ -6,6 +6,8 @@ import { publicResolver } from '../../services/publicResolver';
 import { callBackend } from '../../lib/backend';
 import { sanitizeUrl, sanitizePhoneHref, sanitizeMailtoHref, sanitizeWhatsAppHref } from '../../lib/securityUtils';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { entityRoute, navigate, pathOf, publicEntityUrl } from '../../lib/routes';
+import { canonicalOrigin } from '../../lib/environment';
 import {
   Building2,
   ShieldCheck,
@@ -130,8 +132,16 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
     scrollToSection('contact');
   };
 
+  // Directive 27: team members link to their canonical /card/{slug} path; inside the app it is an in-place navigation.
+  const openMemberCard = (e: React.MouseEvent, cardSlug: string) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // let "open in new tab" use the real URL
+    e.preventDefault();
+    navigate(entityRoute('card', cardSlug, isAdminPreview));
+  };
+
   const handleCopyShareLink = () => {
-    const url = window.location.href;
+    // The canonical public URL, never the current address (which may carry ?preview=true).
+    const url = publicEntityUrl('company', companySlug, canonicalOrigin());
     navigator.clipboard.writeText(url).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
@@ -913,7 +923,8 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-start gap-3.5">
                     <a
-                      href={`#card/${member.cardSlug}${isAdminPreview ? '?preview=true' : ''}`}
+                      href={pathOf({ kind: 'card', slug: member.cardSlug, preview: isAdminPreview })}
+                      onClick={(e) => openMemberCard(e, member.cardSlug)}
                       aria-label={`View ${member.name}'s business card`}
                       className="relative shrink-0 focus:outline-none focus:ring-2 focus:ring-teal-400 rounded-2xl"
                     >
@@ -936,7 +947,8 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
 
                     <div className="flex-1 min-w-0">
                       <a
-                        href={`#card/${member.cardSlug}${isAdminPreview ? '?preview=true' : ''}`}
+                        href={pathOf({ kind: 'card', slug: member.cardSlug, preview: isAdminPreview })}
+                      onClick={(e) => openMemberCard(e, member.cardSlug)}
                         className="text-sm font-bold text-white hover:text-teal-300 transition truncate block tracking-tight"
                       >
                         {member.name}
@@ -962,7 +974,8 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
 
                 <div className="pt-3 border-t border-slate-800/80 space-y-2">
                   <a
-                    href={`#card/${member.cardSlug}${isAdminPreview ? '?preview=true' : ''}`}
+                    href={pathOf({ kind: 'card', slug: member.cardSlug, preview: isAdminPreview })}
+                      onClick={(e) => openMemberCard(e, member.cardSlug)}
                     aria-label={`Open digital business card for ${member.name}`}
                     className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-teal-600 text-slate-200 hover:text-white text-xs font-semibold transition text-center flex items-center justify-center gap-1.5 border border-slate-700 hover:border-teal-500 shadow-sm active:scale-95"
                   >

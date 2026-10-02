@@ -11,7 +11,8 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
 import { DATABASE_ID } from './shared/firebase';
-import { PAYMENTS_ENABLED, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET, REGION } from './shared/config';
+import { PAYMENTS_ENABLED, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET } from './shared/config';
+import { assertBackendEnvironment } from './shared/environment';
 import { loadCaller, type Caller } from './auth/identity';
 import * as ent from './entitlements/admin';
 import * as subs from './subscriptions/service';
@@ -22,10 +23,15 @@ import { adminGetDemoReadiness as demoReadiness } from './customers/readiness';
 import * as quota from './usage/quota';
 import { uploadAsset as uploadAssetHandler } from './usage/uploads';
 import { RazorpayProvider } from './billing/paymentProvider';
+import { adminGetPlatformHealth as platformHealth } from './platform/health';
 export { resolvePublicEntity } from './public/resolver';
 export { submitPublicLead } from './public/leads';
 
-setGlobalOptions({ region: REGION, maxInstances: 10 });
+// Directive 27: refuse to load (deploy discovery and cold start fail) unless
+// project, database, region, payments and public origin match the registry.
+const BACKEND_ENV = assertBackendEnvironment();
+
+setGlobalOptions({ region: BACKEND_ENV.region!, maxInstances: 10 });
 
 type Handler = (caller: Caller, data: unknown) => Promise<unknown>;
 
@@ -80,6 +86,13 @@ export const adminSetCustomerSuspension = callable(cust.adminSetCustomerSuspensi
 export const adminSetCustomerClassification = callable(cust.adminSetCustomerClassification);
 export const adminReviewDeletion = callable(cust.adminReviewDeletion);
 export const adminGetDemoReadiness = callable(demoReadiness);
+export const adminGetPlatformHealth = callable((c, d) =>
+  platformHealth(c, d, {
+    backendEnvironment: BACKEND_ENV,
+    paymentsEnabled: PAYMENTS_ENABLED.value(),
+    paymentKeyIdConfigured: Boolean(RAZORPAY_KEY_ID.value()),
+  })
+);
 
 // ---- Payment provider webhook (HMAC over the raw body) ----------------------
 export const razorpayWebhook = onRequest({ secrets: [RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET] }, async (req, res) => {

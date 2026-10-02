@@ -32,6 +32,8 @@ import { conversionFunnelService } from '../../services/conversionFunnelService'
 import { getCardByEmployeeId } from '../../services/cardService';
 import { updateCompany } from '../../services/companyService';
 import { describeBackendError } from '../../lib/backend';
+import { entityRoute, navigate, pathOf, publicEntityUrl } from '../../lib/routes';
+import { canonicalOrigin } from '../../lib/environment';
 
 interface OnboardingWizardModalProps {
   isOpen: boolean;
@@ -168,18 +170,18 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
   const handlePreview = () => {
     conversionFunnelService.trackEvent('PREVIEW_VIEWED', customerType);
     const targetSlug = slugService.sanitize(activeSlug);
-    window.open(`/#/${customerType === 'individual' ? 'card' : 'company'}/${targetSlug}?preview=true`, '_blank');
+    window.open(pathOf({ kind: customerType === 'individual' ? 'card' : 'company', slug: targetSlug, preview: true }), '_blank');
   };
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/#/${customerType === 'individual' ? 'card' : 'company'}/${publishedSlug || activeSlug}`;
+    const url = publicEntityUrl(customerType === 'individual' ? 'card' : 'company', publishedSlug || activeSlug, canonicalOrigin());
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const handleShare = () => {
-    const url = `${window.location.origin}/#/${customerType === 'individual' ? 'card' : 'company'}/${publishedSlug || activeSlug}`;
+    const url = publicEntityUrl(customerType === 'individual' ? 'card' : 'company', publishedSlug || activeSlug, canonicalOrigin());
     if (navigator.share) {
       navigator.share({
         title: customerType === 'individual' ? indName : compName,
@@ -250,7 +252,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
         customerType === 'individual' ? indEmail : compEmail,
         customerType === 'individual' ? indName : compName,
         {
-          ctaLink: `/#/${customerType === 'individual' ? 'card' : 'company'}/${slug}`,
+          ctaLink: pathOf({ kind: customerType === 'individual' ? 'card' : 'company', slug, preview: false }),
           ctaText: 'View Published Profile',
         }
       );
@@ -533,7 +535,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                 </label>
                 <div className="flex items-center rounded-xl border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-teal-500/20 focus-within:border-teal-500">
                   <span className="px-3 py-2.5 bg-slate-50 text-slate-500 font-mono text-xs border-r border-slate-200 select-none">
-                    dsbc.app/#{customerType === 'individual' ? 'card' : 'company'}/
+                    {canonicalOrigin().replace(/^https?:\/\//, '')}/{customerType === 'individual' ? 'card' : 'company'}/
                   </span>
                   <input
                     type="text"
@@ -715,7 +717,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                       type="button"
                       onClick={() => {
                         onClose();
-                        window.location.hash = `${customerType === 'individual' ? 'card' : 'company'}/${publishedSlug || activeSlug}`;
+                        navigate(entityRoute(customerType === 'individual' ? 'card' : 'company', publishedSlug || activeSlug));
                       }}
                       className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-xs transition flex items-center space-x-1.5"
                     >

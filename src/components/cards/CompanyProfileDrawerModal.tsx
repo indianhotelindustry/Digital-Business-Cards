@@ -10,6 +10,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { ResolvedCardProfile } from '../../types/cardProfile';
+import { entityRoute, isPreviewLocation, navigate } from '../../lib/routes';
 
 interface CompanyProfileDrawerModalProps {
   isOpen: boolean;
@@ -125,8 +126,7 @@ export const CompanyProfileDrawerModal: React.FC<CompanyProfileDrawerModalProps>
             <button
               onClick={() => {
                 onClose();
-                const isPreview = window.location.hash.includes('preview=true');
-                window.location.hash = `company/${companySlug}${isPreview ? '?preview=true' : ''}`;
+                navigate(entityRoute('company', companySlug, isPreviewLocation()));
               }}
               className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-teal-700 text-white font-semibold text-xs hover:bg-teal-800 transition flex items-center justify-center gap-1.5 shadow-sm"
             >

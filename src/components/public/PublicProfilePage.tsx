@@ -42,6 +42,7 @@ import {
   ShieldCheck,
   Send,
 } from 'lucide-react';
+import { entityRoute, navigate } from '../../lib/routes';
 
 interface PublicProfilePageProps {
   slug: string;
@@ -132,7 +133,7 @@ export const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
                 if (onBackToCard) {
                   onBackToCard();
                 } else {
-                  window.location.hash = `card/${slug}`;
+                  navigate(entityRoute('card', slug));
                 }
               }}
               className="inline-flex items-center px-4 py-2.5 rounded-xl bg-teal-700 text-white text-xs font-semibold hover:bg-teal-800 transition"
@@ -158,7 +159,7 @@ export const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
     if (onBackToCard) {
       onBackToCard();
     } else {
-      window.location.hash = `card/${slug}${isAdminPreview ? '?preview=true' : ''}`;
+      navigate(entityRoute('card', slug, isAdminPreview));
     }
   };
 
@@ -286,7 +287,7 @@ export const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
                       onClick={() => {
                         const cSlug = company ? resolveCompanySlug(company) : '';
                         if (cSlug) {
-                          window.location.hash = `company/${cSlug}${isAdminPreview ? '?preview=true' : ''}`;
+                          navigate(entityRoute('company', cSlug, isAdminPreview));
                         } else {
                           setIsCompanyDrawerOpen(true);
                         }

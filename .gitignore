@@ -7,8 +7,22 @@ coverage/
 .env*
 !.env.example
 !functions/.env.demo-dsbc
+# Directive 27: committed, non-secret environment selectors / deployment targets.
+# Secrets never live in these files (scripts/directive27/secretsAudit.mjs enforces it).
+!.env.production
+!.env.staging
+!.env.development
+!.env.e2e
+!.env.test
+!functions/.env.v-nexus-lite
 
 # Directive 26 browser tests
 dist-e2e/
 test-results/
 playwright-report/
+
+# Directive 27: migration previews/approvals contain customer names and emails; never commit them.
+migration-work/
+# Mutation harness crash-recovery manifests (transient).
+docs/directive-25/evidence/.mutation-backup/
+docs/directive-27/evidence/.mutation-backup/

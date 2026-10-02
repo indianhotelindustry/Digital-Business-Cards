@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "demo-dsbc",
+    "production": "v-nexus-lite"
+  }
+}

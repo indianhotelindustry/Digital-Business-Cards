@@ -13,7 +13,8 @@ export default defineConfig({
     hookTimeout: 120000,
     // One emulator suite, one shared world per file: run files sequentially.
     fileParallelism: false,
-    // Client modules loaded by AUTH-019/020 talk to the emulators, never the live project.
-    env: { VITE_DSBC_USE_EMULATORS: 'true' },
+    // Client modules loaded by AUTH-019/020 resolve the emulator-backed
+    // DEVELOPMENT target (Directive 27), never the live project.
+    env: { VITE_DSBC_ENV: 'development' },
   },
 });

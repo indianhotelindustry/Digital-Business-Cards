@@ -1,3 +1,4 @@
+import { DEMO_FEATURES_ENABLED } from '../lib/runtimeFlags';
 // ============================================================================
 // DSBC CUSTOMER SUPPORT & INQUIRY SERVICE (Directive 21)
 // ============================================================================
@@ -36,7 +37,8 @@ class SupportService {
 
   constructor() {
     this.loadStorage();
-    if (this.tickets.length === 0) {
+    // Directive 27: sample records exist only in DEVELOPMENT; production starts empty.
+    if (DEMO_FEATURES_ENABLED && this.tickets.length === 0) {
       this.seedBaselineTickets();
     }
   }

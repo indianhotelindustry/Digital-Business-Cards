@@ -207,7 +207,7 @@ class PilotService {
         category: 'PUBLIC',
         completed: Boolean(employee?.cardSlug || employee?.customSlug),
         requiredForLaunch: true,
-        details: employee?.cardSlug ? `#/card/${employee.cardSlug}` : 'Custom slug unassigned',
+        details: employee?.cardSlug ? `/card/${employee.cardSlug}` : 'Custom slug unassigned',
       },
       {
         id: 'publishing_status',
@@ -345,7 +345,7 @@ class PilotService {
         category: 'PUBLIC',
         completed: Boolean(company?.id),
         requiredForLaunch: true,
-        details: company?.id ? `#/company/${company.id.replace('company_', '')}` : 'Vanity URL unassigned',
+        details: company?.id ? `/company/${company.id.replace('company_', '')}` : 'Vanity URL unassigned',
       },
       {
         id: 'comp_publishing',

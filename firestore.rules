@@ -713,5 +713,19 @@ service cloud.firestore {
       allow read: if isAppOwner();
       allow write: if false;
     }
+
+    // Directive 27: platform configuration (production bootstrap, reconciler
+    // heartbeat) and the existing-customer migration run ledger are written
+    // only by the Admin SDK (scripts/admin/*, Cloud Functions). Never by a
+    // browser, including the App Owner's.
+    match /platformConfig/{configId} {
+      allow read: if isAppOwner();
+      allow write: if false;
+    }
+
+    match /migrationRuns/{runId} {
+      allow read: if isAppOwner();
+      allow write: if false;
+    }
   }
 }

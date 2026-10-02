@@ -1,0 +1,50 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
+  "storage": [
+    {
+      "bucket": "v-nexus-lite.firebasestorage.app",
+      "rules": "storage.rules"
+    }
+  ],
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"],
+      "ignore": ["node_modules", "src", ".secret.local", "*.log"]
+    }
+  ],
+  "hosting": [
+    {
+      "target": "dsbc-web",
+      "public": "dist",
+      "cleanUrls": false,
+      "trailingSlash": false,
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        { "regex": "^/(app|dashboard|pricing|marketing|home|features|individual|company|how-it-works|faq|contact)$", "destination": "/index.html" },
+        { "regex": "^/(card|profile|company)/[A-Za-z0-9][A-Za-z0-9_-]{0,95}$", "destination": "/index.html" }
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "X-Frame-Options", "value": "DENY" },
+            { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+          ]
+        },
+        { "source": "/assets/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+        { "source": "**/*.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+      ]
+    }
+  ]
+}

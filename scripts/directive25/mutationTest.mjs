@@ -192,7 +192,7 @@ spawnSync('npm', ['--prefix', 'functions', 'run', 'build'], { cwd: root, shell: 
 
 const report = {
   schema: 'dsbc.mutationTesting/v1',
-  directive: process.env.DSBC_MUTATION_OUT?.includes('directive-26') ? 26 : 25,
+  directive: Number(/directive-(\d+)/.exec(process.env.DSBC_MUTATION_OUT || '')?.[1] ?? 25),
   generatedAt: new Date().toISOString(),
   environment: 'Firebase Emulator Suite (demo-dsbc): auth, firestore, functions, storage',
   baseline: { summary: baseline.summary, seconds: baseline.seconds },

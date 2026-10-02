@@ -42,6 +42,9 @@ import { useEntitlement } from '../../context/EntitlementContext';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { supportService, SupportCategory } from '../../services/supportService';
 import { conversionFunnelService } from '../../services/conversionFunnelService';
+import { DEMO_FEATURES_ENABLED } from '../../lib/runtimeFlags';
+import { publicEntityUrl } from '../../lib/routes';
+import { canonicalOrigin } from '../../lib/environment';
 
 interface PublicMarketingPageProps {
   onStartIndividual: () => void;
@@ -109,7 +112,7 @@ export const PublicMarketingPage: React.FC<PublicMarketingPageProps> = ({
   const handleMockupCopy = () => {
     const slug = mockupTab === 'individual' ? 'rahul-sharma' : 'acme-innovations';
     const type = mockupTab === 'individual' ? 'card' : 'company';
-    navigator.clipboard.writeText(`${window.location.origin}/#/${type}/${slug}`);
+    navigator.clipboard.writeText(publicEntityUrl(type, slug, canonicalOrigin()));
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
@@ -465,13 +468,16 @@ export const PublicMarketingPage: React.FC<PublicMarketingPageProps> = ({
                         <span>{copiedLink ? 'Copied' : 'Share URL'}</span>
                       </button>
 
+                      {/* Sample pages exist only in the DEVELOPMENT demo dataset (Directive 27). */}
+                      {DEMO_FEATURES_ENABLED && (
                       <a
-                        href="/#/card/rahul-sharma"
+                        href="/card/rahul-sharma"
                         className="flex items-center space-x-1 text-teal-700 hover:text-teal-800 font-bold"
                       >
                         <span>View Live Card</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -520,13 +526,16 @@ export const PublicMarketingPage: React.FC<PublicMarketingPageProps> = ({
 
                     {/* Action Bar */}
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                      {/* Sample pages exist only in the DEVELOPMENT demo dataset (Directive 27). */}
+                      {DEMO_FEATURES_ENABLED && (
                       <a
-                        href="/#/company/acme-innovations"
+                        href="/company/acme-innovations"
                         className="flex items-center space-x-1 text-teal-700 hover:text-teal-800 font-bold"
                       >
                         <span>View Company Website</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
+                      )}
                     </div>
                   </div>
                 )}

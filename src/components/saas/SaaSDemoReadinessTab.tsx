@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, RefreshCw, XCircle } from 'lucide-react';
 import { callBackend, describeBackendError } from '../../lib/backend';
+import { publicEntityUrl } from '../../lib/routes';
+import { canonicalOrigin } from '../../lib/environment';
 
 // ============================================================================
 // App Owner — Demo Readiness (Directive 26 Phases 8 & 9)
@@ -64,7 +66,8 @@ const LABELS: Record<string, string> = {
   qr: 'QR',
 };
 
-const baseUrl = () => `${window.location.origin}${window.location.pathname}`;
+// Directive 27: canonical path URLs on the designated public origin.
+const baseUrl = () => canonicalOrigin().replace(/\/+$/, '');
 
 const QrImage: React.FC<{ url: string }> = ({ url }) => {
   const [src, setSrc] = useState<string | null>(null);
@@ -210,7 +213,7 @@ export const SaaSDemoReadinessTab: React.FC = () => {
                         <td className="pr-3">{e.publishingState}</td>
                         <td>
                           {e.publicOutcome === 'OK' && e.cardSlug ? (
-                            <a href={`${baseUrl()}#card/${e.cardSlug}`} target="_blank" rel="noreferrer" className="text-teal-700 hover:underline">
+                            <a href={publicEntityUrl('card', e.cardSlug, canonicalOrigin())} target="_blank" rel="noreferrer" className="text-teal-700 hover:underline">
                               /card/{e.cardSlug}
                             </a>
                           ) : (

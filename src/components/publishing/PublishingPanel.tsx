@@ -5,6 +5,8 @@ import { publishingService } from '../../services/publishingService';
 import { slugService } from '../../services/slugService';
 import { describeBackendError } from '../../lib/backend';
 import type { EntityPublishingRecord } from '../../types/publishing';
+import { publicEntityUrl } from '../../lib/routes';
+import { canonicalOrigin } from '../../lib/environment';
 
 // ============================================================================
 // Publishing panel (Directive 26 Phase 3/4)
@@ -37,7 +39,8 @@ export const PublishingPanel: React.FC<PublishingPanelProps> = ({ entityType, en
   const isPublished = state === 'PUBLISHED';
   const isSuspended = state === 'SUSPENDED';
   const publicSlug = record?.slug || '';
-  const publicUrl = publicSlug ? `${window.location.origin}${window.location.pathname}#${ROUTE[entityType]}/${publicSlug}` : '';
+  // Directive 27: the canonical path URL on the designated public origin (what the QR code carries).
+  const publicUrl = publicSlug ? publicEntityUrl(entityType, publicSlug, canonicalOrigin()) : '';
 
   useEffect(() => {
     let alive = true;

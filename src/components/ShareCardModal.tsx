@@ -4,6 +4,8 @@ import { Copy, Check, Download, Share2, X, ExternalLink, Smartphone } from 'luci
 import { Employee, Company } from '../types';
 import { downloadVCard } from '../services/vcardService';
 import { recordAnalyticsEvent } from '../services/analyticsService';
+import { publicEntityUrl } from '../lib/routes';
+import { canonicalOrigin } from '../lib/environment';
 
 interface ShareCardModalProps {
   isOpen: boolean;
@@ -24,9 +26,8 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [shareSuccess, setShareSuccess] = useState<boolean>(false);
 
-  // Construct stable public card URL
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const cardUrl = `${origin}/#card/${publicSlug}`;
+  // Canonical public card URL (Directive 27: path route, designated public origin when configured)
+  const cardUrl = publicEntityUrl('card', publicSlug, canonicalOrigin());
 
   useEffect(() => {
     if (!isOpen) return;

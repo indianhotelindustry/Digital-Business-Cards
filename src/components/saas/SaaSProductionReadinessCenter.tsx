@@ -40,6 +40,7 @@ import { productionAuditService, DependencyAuditItem, LaunchChecklistItem } from
 import { contaminationScannerService, ContaminationScanResult } from '../../services/contaminationScannerService';
 import { useSubscription } from '../../context/SubscriptionContext';
 import { useEntitlement } from '../../context/EntitlementContext';
+import { PlatformHealthPanel } from './PlatformHealthPanel';
 
 interface SaaSProductionReadinessCenterProps {
   companies: Company[];
@@ -114,11 +115,11 @@ export const SaaSProductionReadinessCenter: React.FC<SaaSProductionReadinessCent
     }
   };
 
-  // Readiness categorization (Directive 22 Section 15)
-  const isCodeReady = true; // 186/186 certified tests pass
-  const isConfigReady = dependencies.every((d) => d.status === 'CONNECTED' || (d.status === 'WARNING' && !env.isProduction));
-  const isOperationallyReady = contamination.status === 'PRODUCTION_CLEAN' || !env.isProduction;
-  const isBusinessLaunchReady = isCodeReady && isConfigReady && isOperationallyReady;
+  // Directive 27: the browser never certifies readiness. Demo readiness is
+  // measured by the backend (Demo Readiness tab), deployment readiness by the
+  // deployment preflight + Platform Health, and production certification is
+  // a separate, explicit step after a verified live deployment
+  // (docs/directive-27/DEPLOYMENT-GATE.md).
 
   return (
     <div className="space-y-6">
@@ -144,9 +145,9 @@ export const SaaSProductionReadinessCenter: React.FC<SaaSProductionReadinessCent
                 Launch Certification State
               </span>
               <div className="mt-1 flex items-center justify-center sm:justify-start space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="text-xs font-bold text-emerald-400 font-mono">
-                  {isBusinessLaunchReady ? 'PRODUCTION LAUNCH READY' : 'CODE READY — OPERATIONAL LAUNCH BLOCKED'}
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span className="text-xs font-bold text-amber-300 font-mono" data-testid="launch-certification-state">
+                  NOT CERTIFIED BY THE BROWSER — see the deployment gate
                 </span>
               </div>
             </div>
@@ -162,31 +163,19 @@ export const SaaSProductionReadinessCenter: React.FC<SaaSProductionReadinessCent
           </div>
         </div>
 
-        {/* 4-Pillar Readiness Meter */}
-        <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        {/* Directive 27: where each readiness level is actually decided */}
+        <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs" data-testid="readiness-levels">
           <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-            <span className="text-[10px] font-mono text-slate-400 block">1. Architecture</span>
-            <span className="font-bold text-emerald-400 flex items-center mt-0.5">
-              <Check className="w-3.5 h-3.5 mr-1" /> CODE READY (186/186)
-            </span>
+            <span className="text-[10px] font-mono text-slate-400 block">1. Demo Ready</span>
+            <span className="font-semibold text-slate-200 block mt-0.5">Measured by the backend: Demo Readiness tab</span>
           </div>
           <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-            <span className="text-[10px] font-mono text-slate-400 block">2. Dependencies</span>
-            <span className="font-bold text-emerald-400 flex items-center mt-0.5">
-              <Check className="w-3.5 h-3.5 mr-1" /> CONFIG READY
-            </span>
+            <span className="text-[10px] font-mono text-slate-400 block">2. Deployment Ready</span>
+            <span className="font-semibold text-slate-200 block mt-0.5">Deployment preflight + Platform Health (Health tab)</span>
           </div>
           <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-            <span className="text-[10px] font-mono text-slate-400 block">3. Data & Isolation</span>
-            <span className="font-bold text-emerald-400 flex items-center mt-0.5">
-              <Check className="w-3.5 h-3.5 mr-1" /> OPERATIONALLY READY
-            </span>
-          </div>
-          <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-            <span className="text-[10px] font-mono text-slate-400 block">4. Launch Gate</span>
-            <span className="font-bold text-teal-300 flex items-center mt-0.5">
-              <Check className="w-3.5 h-3.5 mr-1" /> BUSINESS LAUNCH
-            </span>
+            <span className="text-[10px] font-mono text-slate-400 block">3. Production Certified</span>
+            <span className="font-semibold text-slate-200 block mt-0.5">Only after a verified live deployment; never granted in the app</span>
           </div>
         </div>
       </div>
@@ -362,75 +351,8 @@ export const SaaSProductionReadinessCenter: React.FC<SaaSProductionReadinessCent
       )}
 
       {/* 3. OBSERVABILITY & FAIL-SAFE OBSERVABILITY */}
-      {activeTab === 'observability' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs">
-            <h3 className="text-sm font-bold text-slate-900 mb-1">
-              Production Observability & Failure-Safe Policy Matrix
-            </h3>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              Every critical subsystem implements deterministic fail-closed safety behaviors to prevent data loss or security bypass during network or service anomalies.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                {
-                  service: 'Payment Gateway (Razorpay)',
-                  failSafe: 'If gateway is offline, client-side success NEVER unlocks entitlements. Webhook remains authoritative.',
-                  icon: CreditCard,
-                  status: 'HEALTHY',
-                },
-                {
-                  service: 'Firestore Database',
-                  failSafe: 'If Firestore is unreachable, mutations fail cleanly. Zero simulated fake saves in production.',
-                  icon: Database,
-                  status: 'HEALTHY',
-                },
-                {
-                  service: 'Webhook Event Verifier',
-                  failSafe: 'If webhook processing fails, invoices remain in PENDING state with automatic exponential backoff retry.',
-                  icon: Radio,
-                  status: 'HEALTHY',
-                },
-                {
-                  service: 'Entitlement Engine',
-                  failSafe: 'Fails closed for all protected capabilities. Unverified users default strictly to Free Tier baseline.',
-                  icon: Shield,
-                  status: 'HEALTHY',
-                },
-                {
-                  service: 'Email & Notification Ledger',
-                  failSafe: 'If notification dispatch fails, commercial ledger state remains authoritative without transaction rollback.',
-                  icon: Mail,
-                  status: 'HEALTHY',
-                },
-                {
-                  service: 'Public Route Resolver',
-                  failSafe: 'DRAFT, PREVIEW, or SUSPENDED entities return 404/Protected. Edge resolver prevents draft exposure.',
-                  icon: Globe,
-                  status: 'HEALTHY',
-                },
-              ].map((sub, i) => {
-                const Icon = sub.icon;
-                return (
-                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="p-2 rounded-xl bg-white border border-slate-200">
-                          <Icon className="w-4 h-4 text-teal-700" />
-                        </div>
-                        {getStatusBadge(sub.status)}
-                      </div>
-                      <h4 className="text-xs font-bold text-slate-900 mb-1">{sub.service}</h4>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">{sub.failSafe}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Directive 27: measured by the backend (adminGetPlatformHealth), never asserted by the browser. */}
+      {activeTab === 'observability' && <PlatformHealthPanel />}
 
       {/* 4. DISASTER RECOVERY READINESS */}
       {activeTab === 'dr' && (

@@ -11,4 +11,5 @@ export const RAZORPAY_WEBHOOK_SECRET = defineSecret('RAZORPAY_WEBHOOK_SECRET');
 /** Real payments stay OFF until a real provider test has been completed. */
 export const PAYMENTS_ENABLED = defineBoolean('PAYMENTS_ENABLED', { default: false });
 
-export const REGION = 'us-central1';
+// The Functions region comes from DSBC_FUNCTIONS_REGION, checked against
+// config/environments.json by shared/environment.ts (Directive 27).

@@ -330,6 +330,10 @@ export async function reconcileSubscriptions(actor: AuditActor = SYSTEM_ACTOR) {
       changed.push({ id: doc.id, from: fresh.status, to: t.status });
     });
   }
+  // Directive 27: record the run so Platform Health can verify the reconciler is alive.
+  await db().collection('platformConfig').doc('reconciliation').set({
+    lastRunAt: serverNow(), examined: all.size, changed: changed.length, actor: actor.uid,
+  });
   return { examined: all.size, changed };
 }
 

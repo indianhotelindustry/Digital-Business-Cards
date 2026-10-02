@@ -20,6 +20,7 @@ import {
   sanitizeWhatsAppHref,
   sanitizeMailtoHref,
 } from '../../lib/securityUtils';
+import { entityRoute, isPreviewLocation, navigate } from '../../lib/routes';
 
 interface PublicCardViewProps {
   card: Card;
@@ -182,8 +183,7 @@ export const PublicCardView: React.FC<PublicCardViewProps> = ({
 
   const handleViewFullProfile = () => {
     if (card?.publicSlug) {
-      const isPreview = window.location.hash.includes('preview=true');
-      window.location.hash = `profile/${card.publicSlug}${isPreview ? '?preview=true' : ''}`;
+      navigate(entityRoute('profile', card.publicSlug, isPreviewLocation()));
     } else {
       setIsFullProfileOpen(true);
     }
@@ -193,8 +193,7 @@ export const PublicCardView: React.FC<PublicCardViewProps> = ({
     if (resolvedProfile.hasCompanyAssociation) {
       const cSlug = company ? resolveCompanySlug(company) : '';
       if (cSlug) {
-        const isPreview = window.location.hash.includes('preview=true');
-        window.location.hash = `company/${cSlug}${isPreview ? '?preview=true' : ''}`;
+        navigate(entityRoute('company', cSlug, isPreviewLocation()));
       } else {
         setIsCompanyProfileOpen(true);
       }

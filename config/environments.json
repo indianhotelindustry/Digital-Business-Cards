@@ -1,0 +1,60 @@
+{
+  "schema": "dsbc.environments/v1",
+  "description": "Directive 27: the ONLY source of DSBC deployment targets. The client build selects one with VITE_DSBC_ENV (committed .env.<mode> files); the backend reads functions/.env.<projectId>; scripts/directive27/preflight.ts checks all three agree. Nothing here is secret: Firebase web configuration is public by design and is protected by Auth, security rules and the backend.",
+  "environments": {
+    "development": {
+      "environment": "DEVELOPMENT",
+      "configured": true,
+      "emulators": {
+        "required": true,
+        "auth": "http://127.0.0.1:9477",
+        "firestoreHost": "127.0.0.1",
+        "firestorePort": 8180,
+        "storageHost": "127.0.0.1",
+        "storagePort": 9479,
+        "functionsHost": "127.0.0.1",
+        "functionsPort": 5481
+      },
+      "firebase": {
+        "projectId": "demo-dsbc",
+        "appId": "1:000000000000:web:0000000000000000000000",
+        "apiKey": "demo-api-key",
+        "authDomain": "demo-dsbc.firebaseapp.com",
+        "storageBucket": "demo-dsbc.appspot.com",
+        "messagingSenderId": "000000000000"
+      },
+      "firestoreDatabaseId": "(default)",
+      "functionsRegion": "us-central1",
+      "hosting": { "target": "dsbc-web", "site": "demo-dsbc" },
+      "publicOrigin": null,
+      "allow": { "demoData": true, "mockPersonas": true, "developmentTools": true, "securityTestRunner": true },
+      "payments": "disabled"
+    },
+    "staging": {
+      "environment": "STAGING",
+      "configured": false,
+      "notConfiguredReason": "No dedicated DSBC staging Firebase project has been designated. A staging build fails closed until the App Owner designates one (separate project, no production customer data, controlled test accounts)."
+    },
+    "production": {
+      "environment": "PRODUCTION",
+      "configured": true,
+      "emulators": { "required": false },
+      "firebase": {
+        "projectId": "v-nexus-lite",
+        "appId": "1:801214429564:web:6b4ce21ca9b2c009b08cf9",
+        "apiKey": "AIzaSyBfbd3Tslx4Lyj1XLAnQG7c34d-MDp8sT4",
+        "authDomain": "v-nexus-lite.firebaseapp.com",
+        "storageBucket": "v-nexus-lite.firebasestorage.app",
+        "messagingSenderId": "801214429564"
+      },
+      "firestoreDatabaseId": "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5",
+      "firestoreLocation": "us-west1",
+      "firestoreEdition": "ENTERPRISE",
+      "functionsRegion": "us-west1",
+      "hosting": { "target": "dsbc-web", "site": null },
+      "publicOrigin": null,
+      "allow": { "demoData": false, "mockPersonas": false, "developmentTools": false, "securityTestRunner": false },
+      "payments": "disabled"
+    }
+  }
+}

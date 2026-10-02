@@ -1,0 +1,39 @@
+{
+  "schema": "dsbc.productionRehearsal/v1",
+  "purpose": "Directive 27 Phase 6 acceptance input: three independent customers, each driven through the real product UI in its own browser (registration, company, at least one employee, employee card published, company website published) against the emulator. Never loaded by the application and never written to any real project.",
+  "customers": [
+    {
+      "key": "R1",
+      "company": "Harbourline Architects",
+      "email": "admin@harbourline-architects.test",
+      "websiteSlug": "harbourline-architects",
+      "tagline": "Buildings that age gracefully",
+      "about": "Harbourline Architects designs schools, libraries and civic buildings.",
+      "service": "Civic Design Studio",
+      "product": "Site Feasibility Report",
+      "employee": { "first": "Leela", "last": "Kapoor", "title": "Principal Architect", "email": "leela@harbourline-architects.test", "slug": "leela-kapoor" }
+    },
+    {
+      "key": "R2",
+      "company": "Sunpeak Solar Installers",
+      "email": "admin@sunpeak-solar.test",
+      "websiteSlug": "sunpeak-solar",
+      "tagline": "Rooftop solar, installed right",
+      "about": "Sunpeak Solar Installers fits rooftop solar for homes and small factories.",
+      "service": "Rooftop Survey",
+      "product": "Five-Year Maintenance Plan",
+      "employee": { "first": "Arjun", "last": "Pillai", "title": "Installation Lead", "email": "arjun@sunpeak-solar.test", "slug": "arjun-pillai" }
+    },
+    {
+      "key": "R3",
+      "company": "Mosaic Learning Labs",
+      "email": "admin@mosaic-learning.test",
+      "websiteSlug": "mosaic-learning",
+      "tagline": "Coding clubs for curious kids",
+      "about": "Mosaic Learning Labs runs after-school coding and robotics clubs.",
+      "service": "Robotics Club",
+      "product": "Holiday Coding Camp",
+      "employee": { "first": "Farah", "last": "Siddiqui", "title": "Head of Curriculum", "email": "farah@mosaic-learning.test", "slug": "farah-siddiqui" }
+    }
+  ]
+}

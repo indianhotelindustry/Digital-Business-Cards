@@ -1,3 +1,4 @@
+import { DEMO_FEATURES_ENABLED } from '../lib/runtimeFlags';
 // ============================================================================
 // DSBC CONVERSION FUNNEL & PRODUCT ANALYTICS SERVICE (Directive 21)
 // ============================================================================
@@ -45,7 +46,8 @@ class ConversionFunnelService {
 
   constructor() {
     this.loadStorage();
-    if (this.events.length === 0) {
+    // Directive 27: sample records exist only in DEVELOPMENT; production starts empty.
+    if (DEMO_FEATURES_ENABLED && this.events.length === 0) {
       this.seedBaselineFunnel();
     }
   }

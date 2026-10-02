@@ -370,8 +370,8 @@ export const SaaSPilotControlTab: React.FC<SaaSPilotControlTabProps> = ({
                       </button>
                       <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
                         {record.customerType === 'individual'
-                          ? `#/card/${record.customerId.replace('emp_', '')}`
-                          : `#/company/${record.customerId.replace('company_', '')}`}
+                          ? `/card/${record.customerId.replace('emp_', '')}`
+                          : `/company/${record.customerId.replace('company_', '')}`}
                       </span>
                     </td>
 

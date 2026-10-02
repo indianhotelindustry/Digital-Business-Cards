@@ -40,6 +40,7 @@ import {
 import { conversionFunnelService } from '../../services/conversionFunnelService';
 import { supportService, SupportStatus } from '../../services/supportService';
 import { runBackendAction } from '../../lib/backend';
+import { PlatformHealthPanel } from './PlatformHealthPanel';
 
 interface SaaSProductionControlTabProps {
   companies: Company[];
@@ -73,102 +74,24 @@ export const SaaSProductionControlTab: React.FC<SaaSProductionControlTabProps> =
   const [individualRegEnabled, setIndividualRegEnabled] = useState(true);
   const [companyRegEnabled, setCompanyRegEnabled] = useState(true);
   const [newCompanyCreationEnabled, setNewCompanyCreationEnabled] = useState(true);
-  const [publishingEnabled, setPublishingEnabled] = useState(envConfig.allowPublicPublishing);
-  const [paymentsEnabled, setPaymentsEnabled] = useState(true);
+  const [publishingEnabled, setPublishingEnabled] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(globalPolicy.maintenanceMode);
   const [defaultIndPlan, setDefaultIndPlan] = useState(globalPolicy.defaultIndividualPlanId);
   const [defaultCompPlan, setDefaultCompPlan] = useState(globalPolicy.defaultCompanyPlanId);
   const [defaultTrialDays, setDefaultTrialDays] = useState(globalPolicy.defaultTrialDays);
 
-  // System Health Components
-  const systemComponents = [
-    {
-      name: 'Authentication Service',
-      service: 'Firebase Auth',
-      status: 'HEALTHY',
-      latency: '24ms',
-      uptime: '99.98%',
-      details: 'Email/Password, Google OAuth Client, Multi-Tenant Session Tokens',
-      icon: Lock,
-    },
-    {
-      name: 'Primary Database',
-      service: 'Google Cloud Firestore',
-      status: 'HEALTHY',
-      latency: '18ms',
-      uptime: '100%',
-      details: 'Live zero-trust security rules enforced; collection group queries nominal',
-      icon: Database,
-    },
-    {
-      name: 'Asset & Media Storage',
-      service: 'Firebase Cloud Storage',
-      status: 'HEALTHY',
-      latency: '45ms',
-      uptime: '99.95%',
-      details: 'Public media assets delivery; virus scanning & size quota validation active',
-      icon: Cloud,
-    },
-    {
-      name: 'Payment Gateway',
-      service: 'Razorpay API Adapter',
-      status: envConfig.isProduction ? 'LIVE' : 'TEST',
-      latency: '112ms',
-      uptime: '99.99%',
-      details: 'HMAC signature verification enabled; webhook replay window (5 min) enforced',
-      icon: CreditCard,
-    },
-    {
-      name: 'Webhook Event Processor',
-      service: 'SaaS Event Ingestion',
-      status: 'HEALTHY',
-      latency: '9ms',
-      uptime: '100%',
-      details: 'Idempotency deduplication verified; zero duplicate event transactions',
-      icon: Radio,
-    },
-    {
-      name: 'Entitlement & Quota Engine',
-      service: 'DSBC Authoritative Engine',
-      status: 'HEALTHY',
-      latency: '<1ms',
-      uptime: '100%',
-      details: 'Zero permission-drift; 121/121 regression test certification passing',
-      icon: Shield,
-    },
-    {
-      name: 'Email & Notification Foundation',
-      service: 'Universal Notification Adapter',
-      status: 'HEALTHY',
-      latency: '32ms',
-      uptime: '100%',
-      details: 'Transactional email queue ready; 11 customer lifecycle templates operational',
-      icon: Mail,
-    },
-    {
-      name: 'Public Dynamic Pages & Edge CDN',
-      service: 'Digital Cards & Mini-Websites',
-      status: 'HEALTHY',
-      latency: '14ms',
-      uptime: '100%',
-      details: 'Publishing governance active; drafts & suspended tenants gated from public',
-      icon: Globe,
-    },
-  ];
-
-  // Simulated failed payments ledger
-  const failedPayments = [
-    {
-      id: 'pay_fail_001',
-      customer: 'Nexus Global Ventures',
-      customerId: 'company_nexus',
-      amount: 500,
-      currency: 'INR',
-      failureReason: 'INSUFFICIENT_FUNDS: Gateway declined transaction',
-      retryState: 'Retry 2 of 3 scheduled',
-      gracePeriodEnds: '2026-10-18T00:00:00.000Z',
-    },
-  ];
+  // Directive 27: failed payments come from the server invoice ledger only
+  // (no simulated rows); with payments disabled this list is normally empty.
+  const failedPayments = allInvoices
+    .filter((inv) => inv.paymentStatus === 'FAILED')
+    .map((inv) => ({
+      id: inv.invoiceId,
+      customer: inv.customerName,
+      amount: inv.amount,
+      failureReason: 'Payment failed (server ledger)',
+      retryState: 'Manual follow-up',
+      gracePeriodEnds: inv.issuedAt,
+    }));
 
   const handleApplySafetyPolicy = async () => {
     const saved = await runBackendAction(() => entitlementService.updateGlobalPolicy(
@@ -217,21 +140,9 @@ export const SaaSProductionControlTab: React.FC<SaaSProductionControlTabProps> =
         </div>
 
         <div className="flex items-center space-x-2">
-          <span className="text-xs text-slate-400">Environment Switch:</span>
-          {(['DEVELOPMENT', 'STAGING', 'PRODUCTION'] as const).map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => environmentConfig.setEnvironment(e)}
-              className={`px-3 py-1.5 rounded-xl text-[11px] font-mono font-bold transition ${
-                envConfig.environment === e
-                  ? 'bg-teal-500 text-white shadow-xs'
-                  : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
-              }`}
-            >
-              {e}
-            </button>
-          ))}
+          <span className="text-[11px] text-slate-400 font-mono">
+            {envConfig.firebaseProjectId} / {envConfig.firestoreDatabaseId} (fixed at build time)
+          </span>
         </div>
       </div>
 
@@ -253,7 +164,7 @@ export const SaaSProductionControlTab: React.FC<SaaSProductionControlTabProps> =
           }`}
         >
           <Activity className="w-3.5 h-3.5 text-teal-500" />
-          <span>System Health (8)</span>
+          <span>System Health</span>
         </button>
 
         <button
@@ -329,46 +240,8 @@ export const SaaSProductionControlTab: React.FC<SaaSProductionControlTabProps> =
         </button>
       </div>
 
-      {/* VIEW 1: SYSTEM HEALTH */}
-      {activeSubView === 'health' && (
-        <div className="space-y-4 animate-in fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {systemComponents.map((c) => {
-              const Icon = c.icon;
-              return (
-                <div
-                  key={c.name}
-                  className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs hover:shadow-xs transition"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-700 flex items-center justify-center border border-slate-200">
-                        <Icon className="w-5 h-5 text-teal-600" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900">{c.name}</h4>
-                        <span className="text-[11px] font-mono text-slate-500">{c.service}</span>
-                      </div>
-                    </div>
-
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      {c.status}
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] text-slate-600 mt-3">{c.details}</p>
-
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono text-slate-500">
-                    <span>Latency: {c.latency}</span>
-                    <span>Uptime: {c.uptime}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* VIEW 1: SYSTEM HEALTH (measured by the backend, Directive 27 Phase 10) */}
+      {activeSubView === 'health' && <PlatformHealthPanel />}
 
       {/* VIEW 2: PRODUCTION SAFETY CONTROLS */}
       {activeSubView === 'safety' && (
@@ -448,21 +321,11 @@ export const SaaSProductionControlTab: React.FC<SaaSProductionControlTabProps> =
             <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-slate-900 block">Payment & Checkout Gateway</span>
-                <span className="text-[11px] text-slate-500">Allow Pro upgrades & subscription charges</span>
+                <span className="text-[11px] text-slate-500">Online payments stay off until a payment-launch directive enables them on the server</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setPaymentsEnabled(!paymentsEnabled)}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  paymentsEnabled ? 'bg-teal-600' : 'bg-slate-300'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 rounded-full bg-white transition-transform transform shadow-xs ${
-                    paymentsEnabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200" data-testid="payments-disabled">
+                DISABLED (server PAYMENTS_ENABLED=false)
+              </span>
             </div>
           </div>
 
@@ -627,6 +490,11 @@ export const SaaSProductionControlTab: React.FC<SaaSProductionControlTabProps> =
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
+                {failedPayments.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-6 px-4 text-center text-[11px] text-slate-500">No failed payments recorded by the server.</td>
+                  </tr>
+                )}
                 {failedPayments.map((f) => (
                   <tr key={f.id} className="hover:bg-slate-50/80 transition">
                     <td className="py-3 px-4 font-mono text-slate-900">{f.id}</td>

@@ -51,6 +51,7 @@ export const BACKEND_CALLABLES = [
   'adminSetCustomerClassification',
   'adminReviewDeletion',
   'adminGetDemoReadiness',
+  'adminGetPlatformHealth',
 ] as const;
 
 export type BackendCallable = (typeof BACKEND_CALLABLES)[number];

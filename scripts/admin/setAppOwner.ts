@@ -5,9 +5,12 @@
 // user with a VERIFIED email. It can only be set with Admin SDK credentials —
 // never by registration, never by an email string, never from the browser.
 //
-//   npm run admin:set-app-owner -- --project <id> --confirm-project <id> --email <email>
-//   npm run admin:set-app-owner -- --project <id> --confirm-project <id> --uid <uid> --revoke
-//   [--database <firestoreDatabaseId>]
+//   npm run admin:set-app-owner -- --project <id> --confirm-project <id> --database <db> --email <email>
+//   npm run admin:set-app-owner -- --project <id> --confirm-project <id> --database <db> --uid <uid> --revoke
+//   npm run admin:set-app-owner -- --project <id> --confirm-project <id> --database <db> --email <email> --verify
+// --database is mandatory for real projects (Directive 27): the production
+// project hosts other apps' databases, so "(default)" is never assumed.
+// --verify is read-only: it prints the account, its claims and its profile.
 //
 // Against the emulator, FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST
 // are honoured and --confirm-project is not needed for demo-* projects.
@@ -86,10 +89,48 @@ export async function setAppOwner(opts: SetAppOwnerOptions): Promise<{ uid: stri
   return { uid: user.uid, email: user.email, action };
 }
 
+export interface AppOwnerVerification {
+  uid: string;
+  email: string | null;
+  emailVerified: boolean;
+  disabled: boolean;
+  claim: unknown;
+  isAppOwner: boolean;
+  tokensValidAfter: string | null;
+  profileRole: string | null;
+}
+
+/** Read-only: does this account currently hold verified App Owner authority? */
+export async function verifyAppOwner(auth: Auth, db: Firestore, who: { email?: string; uid?: string }): Promise<AppOwnerVerification> {
+  if (!who.email && !who.uid) throw new Error('Provide --email or --uid.');
+  const user = who.uid ? await auth.getUser(who.uid) : await auth.getUserByEmail(who.email!);
+  const claim = user.customClaims?.[APP_OWNER_CLAIM];
+  const profile = await db.collection('users').doc(user.uid).get();
+  return {
+    uid: user.uid,
+    email: user.email ?? null,
+    emailVerified: user.emailVerified,
+    disabled: user.disabled,
+    claim: claim ?? null,
+    // Mirrors functions/src/auth/identity.ts: claim AND verified email (and not disabled).
+    isAppOwner: claim === 'app_owner' && user.emailVerified && !user.disabled,
+    tokensValidAfter: user.tokensValidAfterTime ?? null,
+    profileRole: profile.exists ? ((profile.get('role') as string) ?? null) : null,
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const target = resolveAdminTarget(args, 'grant-app-owner');
   const app = getApps()[0] || initializeApp({ projectId: target.projectId });
+  if (args.verify === true) {
+    const v = await verifyAppOwner(getAuth(app), getFirestore(app, target.databaseId), {
+      email: typeof args.email === 'string' ? args.email : undefined,
+      uid: typeof args.uid === 'string' ? args.uid : undefined,
+    });
+    console.log(JSON.stringify({ projectId: target.projectId, databaseId: target.databaseId, ...v }, null, 2));
+    process.exit(v.isAppOwner ? 0 : 2);
+  }
   const result = await setAppOwner({
     auth: getAuth(app),
     db: getFirestore(app, target.databaseId),

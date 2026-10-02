@@ -10,29 +10,14 @@
 //   Browser E  third customer
 //   Browser D  App Owner (Demo Readiness)
 import { readFileSync } from 'node:fs';
-import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { addAndPublishEmployee, buildWebsite, newBrowser, registerCompany, shot, type Customer } from './support/journey';
 import { adminDb, createUser, idToken, ok, PASSWORD as OWNER_PASSWORD, resetEmulators } from '../backend/support/backendEnv';
 
 test.describe.configure({ mode: 'serial' });
 
-const SHOTS = 'docs/directive-26/evidence/browser';
-const PASSWORD = 'Pilot-Demo-2026!';
-// A real (decodable) 1x1 PNG, so the test proves the logo renders from storage.
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
-
-interface Customer {
-  key: string;
-  company: string;
-  email: string;
-  websiteSlug: string;
-  tagline: string;
-  about: string;
-  service: string;
-  product: string;
-  employee: { first: string; last: string; title: string; email: string; slug: string };
-}
-
 // Phase 11 pilot dataset: three customers, each driven through the real UI.
+// Journey steps live in ./support/journey.ts (shared with the Directive 27 rehearsal).
 const pilots = JSON.parse(readFileSync(new URL('./pilot-customers.json', import.meta.url), 'utf8')) as { customers: Customer[] };
 const [A, C, E] = pilots.customers;
 
@@ -44,67 +29,6 @@ let pageA: Page;
 let pageB: Page;
 let pageC: Page;
 let pageE: Page;
-
-async function newBrowser(browser: Browser) {
-  const ctx = await browser.newContext();
-  return { ctx, page: await ctx.newPage() };
-}
-
-const shot = (page: Page, name: string) => page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: false });
-
-async function registerCompany(page: Page, c: Customer) {
-  await page.goto('/');
-  await page.locator('button:visible', { hasText: 'Create Company Profile' }).first().click();
-  const form = page.locator('form', { has: page.getByRole('button', { name: 'Create Company Profile & Start Onboarding' }) });
-  await form.getByPlaceholder('e.g. Acme Innovations').fill(c.company);
-  await form.getByPlaceholder('name@example.com').fill(c.email);
-  await form.getByPlaceholder('••••••••').fill(PASSWORD);
-  await form.getByRole('button', { name: 'Create Company Profile & Start Onboarding' }).click();
-  await page.getByRole('button', { name: 'Close onboarding' }).click();
-  await page.goto('/#app');
-  await expect(page.getByRole('button', { name: 'Profile & Branding' })).toBeVisible();
-}
-
-async function buildWebsite(page: Page, c: Customer) {
-  await page.getByRole('button', { name: 'Profile & Branding' }).click();
-  await page.locator('label:has-text("Company Tagline") + input').fill(c.tagline);
-  await page.getByTestId('logo-upload').setInputFiles({ name: `logo-${c.key}.png`, mimeType: 'image/png', buffer: PNG });
-  await expect(page.getByText('Upload logo')).toBeVisible(); // upload finished
-  await page.getByRole('button', { name: 'Overview & Story' }).click();
-  await page.locator('textarea[placeholder^="Detailed corporate background"]').fill(c.about);
-  await page.getByRole('button', { name: /^Services \(\d+\)$/ }).click();
-  await page.getByRole('button', { name: 'Add Service' }).click();
-  await page.locator('label:has-text("Service Title") + input').first().fill(c.service);
-  await page.getByRole('button', { name: /^Products \(\d+\)$/ }).click();
-  await page.getByRole('button', { name: 'Add Product' }).click();
-  await page.locator('label:has-text("Product Name") + input').first().fill(c.product);
-  await page.getByRole('button', { name: 'Save Company Profile' }).click();
-  await expect(page.getByText('Company profile saved')).toBeVisible();
-
-  const panel = page.getByTestId('publishing-panel-company');
-  await panel.getByTestId('publishing-slug').fill(c.websiteSlug);
-  await panel.getByTestId('publish-button').click();
-  await expect(panel.getByTestId('public-url')).toContainText(`#company/${c.websiteSlug}`);
-  await expect(panel.getByTestId('publishing-state')).toHaveText('Published');
-}
-
-async function addAndPublishEmployee(page: Page, c: Customer) {
-  await page.getByRole('button', { name: 'Employees & Cards' }).click();
-  await expect(page.getByText(/0 \/ 3 employees used/)).toBeVisible(); // server entitlement snapshot loaded
-  await page.getByRole('button', { name: 'Add Employee' }).first().click();
-  await page.locator('label:has-text("First Name") + input').fill(c.employee.first);
-  await page.locator('label:has-text("Last Name") + input').fill(c.employee.last);
-  await page.locator('label:has-text("Job Designation") + input').fill(c.employee.title);
-  await page.locator('label:text-is("Email *") + input').fill(c.employee.email);
-  await page.getByRole('button', { name: 'Create & Generate Card' }).click();
-  await expect(page.getByText(`${c.employee.first} ${c.employee.last}`).first()).toBeVisible();
-  await page.locator('[data-testid^="publish-card-"]').first().click();
-  const panel = page.getByTestId('publishing-panel-card');
-  await panel.getByTestId('publishing-slug').fill(c.employee.slug);
-  await panel.getByTestId('publish-button').click();
-  await expect(panel.getByTestId('public-url')).toContainText(`#card/${c.employee.slug}`);
-  await page.getByRole('button', { name: 'Close publishing' }).click();
-}
 
 test.beforeAll(async ({ browser }) => {
   await resetEmulators();
@@ -155,10 +79,10 @@ test('Browser B: the real employee card appears; website → card → website lo
 
   await pageB.goto(`/#company/${A.websiteSlug}`);
   await pageB.getByRole('link', { name: `Open digital business card for ${name}` }).click();
-  await expect(pageB).toHaveURL(new RegExp(`#card/${A.employee.slug}`));
+  await expect(pageB).toHaveURL(new RegExp(`/card/${A.employee.slug}$`)); // Directive 27: canonical path
   await expect(pageB.getByText(name).first()).toBeVisible();
   await pageB.getByRole('button', { name: `Visit ${A.company} company profile` }).first().click();
-  await expect(pageB).toHaveURL(new RegExp(`#company/${A.websiteSlug}`));
+  await expect(pageB).toHaveURL(new RegExp(`/company/${A.websiteSlug}$`));
   await expect(pageB.getByRole('heading', { name: A.company }).first()).toBeVisible();
 });
 

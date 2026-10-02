@@ -46,7 +46,7 @@ const suites = { unit: count('unit'), rulesDirective24: count('rules-directive24
 const all = Object.values(steps).every((s) => s.exitCode === 0) && Object.values(suites).every((s) => s.success);
 const report = {
   schema: 'dsbc.baseline/v1',
-  directive: 26,
+  directive: Number(/directive-(\d+)/.exec(outRel)?.[1] ?? 26),
   generatedAt: new Date().toISOString(),
   branch: git('rev-parse', '--abbrev-ref', 'HEAD'),
   commit: startCommit,

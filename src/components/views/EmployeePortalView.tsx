@@ -50,6 +50,8 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { downloadVCard } from '../../services/vcardService';
+import { publicEntityUrl } from '../../lib/routes';
+import { canonicalOrigin } from '../../lib/environment';
 
 interface EmployeePortalViewProps {
   onNavigateToCard?: (slug: string) => void;
@@ -217,7 +219,7 @@ export const EmployeePortalView: React.FC<EmployeePortalViewProps> = ({ onNaviga
   }, [employeeId]);
 
   const publicSlug = customSlug || card?.publicSlug || employee?.displayName.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'card';
-  const cardUrl = `${window.location.origin}${window.location.pathname}#card/${publicSlug}`;
+  const cardUrl = publicEntityUrl('card', publicSlug, canonicalOrigin());
 
   useEffect(() => {
     if (publicSlug) {
@@ -833,7 +835,7 @@ export const EmployeePortalView: React.FC<EmployeePortalViewProps> = ({ onNaviga
                 <label className="block font-semibold text-slate-700">Custom Public Slug</label>
                 <div className="flex items-center">
                   <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-slate-500 font-mono text-[11px]">
-                    #/card/
+                    /card/
                   </span>
                   <input
                     type="text"

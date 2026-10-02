@@ -211,7 +211,7 @@ describe('Demo readiness (Phase 8/9)', () => {
     expect(r.summary).toEqual({ total: 3, demoReady: 3 });
     for (const c of r.customers) {
       expect(c.checks.filter((k: { ok: boolean }) => !k.ok)).toEqual([]);
-      expect(c.websitePath).toBe(`#company/${t[c.companyId.slice(3).toUpperCase() as Key].websiteSlug}`);
+      expect(c.websitePath).toBe(`/company/${t[c.companyId.slice(3).toUpperCase() as Key].websiteSlug}`);
     }
   });
 

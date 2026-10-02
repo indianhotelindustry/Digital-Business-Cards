@@ -1,0 +1,88 @@
+{
+  "schema": "dsbc.directive27.preflight/v1",
+  "generatedAt": "2026-10-02T17:53:30.311Z",
+  "target": "production",
+  "status": "BLOCKED",
+  "counts": {
+    "pass": 12,
+    "fail": 0,
+    "blocked": 3
+  },
+  "checks": [
+    {
+      "id": "CLIENT_SELECTOR .env.production",
+      "status": "PASS",
+      "detail": ".env.production selects production."
+    },
+    {
+      "id": "CLIENT_SELECTOR .env.staging",
+      "status": "PASS",
+      "detail": ".env.staging selects staging."
+    },
+    {
+      "id": "CLIENT_SELECTOR .env.development",
+      "status": "PASS",
+      "detail": ".env.development selects development."
+    },
+    {
+      "id": "CLIENT_SELECTOR .env.e2e",
+      "status": "PASS",
+      "detail": ".env.e2e selects development."
+    },
+    {
+      "id": "CLIENT_SELECTOR .env.test",
+      "status": "PASS",
+      "detail": ".env.test selects development."
+    },
+    {
+      "id": "CLIENT_RESOLVES",
+      "status": "PASS",
+      "detail": "production resolves: v-nexus-lite / ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5 / us-west1, emulators false."
+    },
+    {
+      "id": "CLIENT_REFUSES_EMULATOR_OVERRIDE",
+      "status": "PASS",
+      "detail": "production refuses VITE_DSBC_USE_EMULATORS=true."
+    },
+    {
+      "id": "BACKEND_PARAMS",
+      "status": "PASS",
+      "detail": "functions/.env.v-nexus-lite matches the registry (project, database, region, origin, payments off)."
+    },
+    {
+      "id": "BACKEND_REFUSES_WRONG_DATABASE",
+      "status": "PASS",
+      "detail": "The backend refuses to start against the (default) database."
+    },
+    {
+      "id": "DEPLOY_CONFIG",
+      "status": "PASS",
+      "detail": "firebase.production.json: database ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5, bucket v-nexus-lite.firebasestorage.app, hosting target dsbc-web, public routes rewritten, unknown paths 404."
+    },
+    {
+      "id": "DEPLOY_PROJECT_ALIAS",
+      "status": "PASS",
+      "detail": ".firebaserc: default demo-dsbc (emulator), production alias v-nexus-lite."
+    },
+    {
+      "id": "BUNDLE",
+      "status": "PASS",
+      "detail": "dist: built for production, 404.html present, no browser environment override."
+    },
+    {
+      "id": "HOSTING_SITE_DESIGNATED",
+      "status": "BLOCKED",
+      "detail": "No DSBC hosting site is designated (config/environments.json hosting.site, then firebase target:apply hosting dsbc-web <site>)."
+    },
+    {
+      "id": "PUBLIC_ORIGIN_DESIGNATED",
+      "status": "BLOCKED",
+      "detail": "No public origin is designated; share links and QR codes would carry the hosting default domain."
+    },
+    {
+      "id": "STAGING_DESIGNATED",
+      "status": "BLOCKED",
+      "detail": "No staging project is designated; nothing can be rehearsed on real infrastructure before production."
+    }
+  ]
+}

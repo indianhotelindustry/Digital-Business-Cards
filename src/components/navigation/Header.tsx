@@ -15,6 +15,7 @@ import {
 import { DEMO_USERS } from '../../services/seedService';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { DEMO_FEATURES_ENABLED } from '../../lib/runtimeFlags';
+import { navigate } from '../../lib/routes';
 
 interface HeaderProps {
   onOpenSecurityModal: () => void;
@@ -153,7 +154,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Pricing Link */}
         <button
           onClick={() => {
-            window.location.hash = 'pricing';
+            navigate('pricing');
           }}
           className="hidden md:inline-flex items-center px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition"
           title="View Public SaaS Pricing Matrix"
