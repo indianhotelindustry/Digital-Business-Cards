@@ -30,7 +30,7 @@ import type {
 } from '../../../shared/domain/entitlementTypes';
 import type { CustomerType, Subscription } from '../../../shared/domain/subscriptionTypes';
 import type { CommercialSubject } from '../auth/identity';
-import { METERED_UNITS, periodKeyForUnit, usageCounterId, type UsageTarget } from '../../../shared/domain/usageKeys';
+import { METERED_UNITS, periodKeyForUnit, usageCounterId, usageUnitOf, type UsageTarget } from '../../../shared/domain/usageKeys';
 
 export const POLICY_DOC = 'platform';
 type Getter = Pick<Transaction, 'get' | 'getAll'> | null;
@@ -132,8 +132,9 @@ export async function loadUsage(
 ): Promise<UsageLookup> {
   const ids = new Map<string, string>();
   for (const f of cp.features.values()) {
-    if (!f.limitUnit) continue;
-    ids.set(f.id, usageCounterId(usageTargetFor(f, subject), f.id, periodKeyFor(f.limitUnit, nowMs)));
+    const unit = usageUnitOf(f);
+    if (!unit) continue;
+    ids.set(f.id, usageCounterId(usageTargetFor(f, subject), f.id, periodKeyFor(unit, nowMs)));
   }
   const refs = [...ids.values()].map((id) => db().collection('usageCounters').doc(id));
   const snaps = refs.length ? await (tx ? tx.getAll(...refs) : db().getAll(...refs)) : [];

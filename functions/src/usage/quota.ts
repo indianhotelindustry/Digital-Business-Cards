@@ -25,7 +25,8 @@ import { ID_PATTERN, num, obj, str } from '../shared/validate';
 import { resolveCommercialSubject, type Caller, type CommercialSubject } from '../auth/identity';
 import { fitsLimit } from '../../../shared/domain/entitlementResolver';
 import type { LimitUnit } from '../../../shared/domain/entitlementTypes';
-import { METERED_UNITS, periodKeyFor, usageCounterId, usageTargetFor, type UsageTarget } from '../entitlements/controlPlane';
+import { periodKeyFor, usageCounterId, usageTargetFor, type UsageTarget } from '../entitlements/controlPlane';
+import { isMetered, usageUnitOf } from '../../../shared/domain/usageKeys';
 import { buildResolutionContext } from '../entitlements/resolution';
 
 const counters = () => db().collection('usageCounters');
@@ -73,17 +74,20 @@ export async function consumeQuota(caller: Caller, data: unknown) {
     const def = ctx.cp.features.get(featureId);
     if (!def) invalid(`Unknown feature ${featureId}.`);
     const eff = ctx.resolve(featureId);
-    const unit: LimitUnit = eff.limitUnit && METERED_UNITS.includes(eff.limitUnit) ? eff.limitUnit : def!.badge === 'AI' ? 'AI_USAGE' : (eff.limitUnit as LimitUnit);
-    if (!METERED_UNITS.includes(unit)) invalid(`${featureId} is not a metered feature; its usage is measured by the backend.`);
+    const unit = usageUnitOf(def, eff.limitUnit);
+    if (!isMetered(unit)) invalid(`${featureId} is not a metered feature; its usage is measured by the backend.`);
 
-    if (eff.status === 'DISABLED' || !fitsLimit(eff, amount)) {
-      fail('resource-exhausted', `QUOTA_EXCEEDED: ${featureId} (${eff.used ?? 0}/${eff.limit ?? 0} ${unit}).`, { featureId, used: eff.used, limit: eff.limit });
-    }
+    // The limit is checked against the counter read in THIS transaction, so
+    // concurrent requests cannot both spend the last remaining unit.
     const target = usageTargetFor(def, subject);
     const periodKey = periodKeyFor(unit, now);
     const ref = counters().doc(usageCounterId(target, featureId, periodKey));
-    const current = (await tx.get(ref)).get('currentValue') ?? 0;
-    const value = Number(current) + amount;
+    const current = Number((await tx.get(ref)).get('currentValue')) || 0;
+    const limited = eff.status === 'LIMITED' && eff.limit !== undefined;
+    if (eff.status === 'DISABLED' || (limited && current + amount > eff.limit!)) {
+      fail('resource-exhausted', `QUOTA_EXCEEDED: ${featureId} (${current}/${eff.limit ?? 0} ${unit}).`, { featureId, used: current, limit: eff.limit ?? 0 });
+    }
+    const value = current + amount;
     tx.set(ref, counterDoc(target, subject.tenantId, featureId, unit, periodKey, value));
     const result = { allowed: true, featureId, used: value, limit: eff.status === 'UNLIMITED' || eff.status === 'ENABLED' ? null : eff.limit ?? null, unit, periodKey };
     tx.create(ledgerRef, { uid: caller.uid, tenantId: subject.tenantId, featureId, amount, operationId, result, createdAt: serverNow() });

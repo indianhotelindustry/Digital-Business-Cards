@@ -36,7 +36,7 @@ import {
   usageOf,
 } from '../../shared/domain/entitlementResolver';
 import { effectiveSubscriptionState } from '../../shared/domain/subscriptionLifecycle';
-import { periodKeyForUnit } from '../../shared/domain/usageKeys';
+import { periodKeyForUnit, usageUnitOf } from '../../shared/domain/usageKeys';
 import type {
   EffectiveEntitlement,
   EntitlementAuditLog,
@@ -134,7 +134,7 @@ class EntitlementService {
       const target = def?.category !== 'individual' && subject.companyId
         ? { type: 'company', id: subject.companyId }
         : { type: 'individual', id: subject.userId || '' };
-      const period = periodKeyForUnit(def?.limitUnit, Date.now());
+      const period = periodKeyForUnit(usageUnitOf(def), Date.now());
       return commercialStore.usageCounters.find((c) => c.targetType === target.type && c.targetId === target.id && c.featureId === fid && c.periodKey === period)?.currentValue ?? 0;
     };
     return resolveEntitlement(
