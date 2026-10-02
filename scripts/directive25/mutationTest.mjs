@@ -80,6 +80,8 @@ const MUTANTS = [
     find: "if (!isAdmin && !(entityType !== 'company' && isSelf)) deny('You may only publish entities you own.');", replace: '/* mutant: anyone publishes */', tests: [F.tenancy, F.client] },
   { id: 'M22', area: 'publishing', file: 'functions/src/publishing/service.ts', desc: 'unpublished state not mirrored to the entity',
     find: "tx.update(entity.ref, { publicationHidden: state === 'PUBLISHED' ? FieldValue.delete() : true });", replace: '/* mutant: no visibility mirror */', tests: [F.client] },
+  { id: 'M23', area: 'publishing', file: 'functions/src/publishing/service.ts', desc: 'released slugs free for takeover immediately (no quarantine)',
+    find: "if (slugSnap.exists && slugSnap.get('entityId') !== entityId && !quarantineEnded)", replace: "if (slugSnap.exists && slugSnap.get('entityId') !== entityId && !slugSnap.get('releasedAt'))", tests: [F.client] },
   // ---- firestore.rules ----------------------------------------------------------------
   { id: 'R01', area: 'rules', file: 'firestore.rules', desc: 'customers may write their subscription',
     find: '      allow read: if isAppOwner() || isSubscriptionCustomer(resource.data.customerType, resource.data.customerId);\n      allow write: if false;\n    }\n\n    match /invoices/{invoiceId} {',
@@ -119,8 +121,8 @@ function runTests(files) {
     shell: process.platform === 'win32',
     maxBuffer: 64 * 1024 * 1024,
   });
-  const out = `${r.stdout}\n${r.stderr}`;
-  const summary = out.match(/Tests\s+([^\n]+)/g)?.pop()?.replace(/\u001b\[[0-9;]*m/g, '').trim() ?? 'no summary';
+  const out = `${r.stdout}\n${r.stderr}`.replace(/\u001b\[[0-9;]*m/g, '');
+  const summary = out.match(/^\s*Tests\s+\d+[^\n]*\(\d+\)\s*$/gm)?.pop()?.trim() ?? 'no summary';
   const failed = [...out.matchAll(/FAIL\s+(tests\/backend\/\S+) > ([^\n]+)/g)].map((x) => `${x[1]} > ${x[2].replace(/\u001b\[[0-9;]*m/g, '').trim()}`);
   return { exitCode: r.status, summary, failed: [...new Set(failed)].slice(0, 10), seconds: Math.round((Date.now() - started) / 1000) };
 }

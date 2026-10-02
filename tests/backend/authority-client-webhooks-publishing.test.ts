@@ -324,4 +324,22 @@ describe('AUTH-024 unauthorized publishing mutations are rejected', () => {
     await ok('adminSetPublishingSuspension', { entityType: 'card', entityId: 'card_a1', suspended: false, reason: 'Resolved' }, w.owner);
     expect((await adminDb.doc('cards/card_a1').get()).get('platformSuspended')).toBeUndefined();
   });
+
+  it('a released slug is quarantined against takeover; only its previous owner may reclaim it', async () => {
+    await ok('setPublishingState', { entityType: 'card', entityId: 'card_a1', state: 'PUBLISHED', slug: 'employee-a1-renamed' }, w.employeeA);
+    const released = (await adminDb.doc('slugs/employee-a1').get()).data()!;
+    expect(released.entityId).toBe('card_a1');
+    expect(released.quarantinedUntil.toMillis()).toBeGreaterThan(Date.now() + 89 * 86_400_000);
+    expect((await call('setPublishingState', { entityType: 'card', entityId: 'card_b1', state: 'PUBLISHED', slug: 'employee-a1' }, w.adminB)).status).toBe('ALREADY_EXISTS');
+
+    // After the quarantine window another tenant may take it.
+    await adminDb.doc('slugs/employee-a1').update({ quarantinedUntil: Timestamp.fromMillis(Date.now() - 1000) });
+    await ok('setPublishingState', { entityType: 'card', entityId: 'card_b1', state: 'PUBLISHED', slug: 'employee-a1' }, w.adminB);
+    expect((await adminDb.doc('slugs/employee-a1').get()).data()).toMatchObject({ entityId: 'card_b1', quarantinedUntil: null });
+
+    // The previous owner reclaims its own quarantined slug.
+    await ok('setPublishingState', { entityType: 'card', entityId: 'card_a1', state: 'PUBLISHED', slug: 'employee-a1-final' }, w.employeeA);
+    await ok('setPublishingState', { entityType: 'card', entityId: 'card_a1', state: 'PUBLISHED', slug: 'employee-a1-renamed' }, w.employeeA);
+    expect((await adminDb.doc('slugs/employee-a1-renamed').get()).data()).toMatchObject({ entityId: 'card_a1', quarantinedUntil: null });
+  });
 });

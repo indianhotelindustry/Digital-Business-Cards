@@ -1,0 +1,518 @@
+{
+  "schema": "dsbc.backendReadiness/v1",
+  "directive": 25,
+  "generatedAt": "2026-10-02T11:49:29.307Z",
+  "branch": "security-foundation/directive-25",
+  "commit": "3116cb6a7b8cd548c7d1c015fb9ce338b73fbc28",
+  "workingTreeClean": false,
+  "environment": "Firebase Emulator Suite only (project demo-dsbc). No live Firebase project was contacted.",
+  "finalStatus": "BLOCKED — BACKEND AUTHORITY INCOMPLETE",
+  "productionCertified": false,
+  "productionCertifiedReason": "Backend authority certification is not production certification; see deploymentBlockers.",
+  "summary": {
+    "backendConfigured": "BLOCKED",
+    "emulatorTested": "BLOCKED",
+    "clientAuthorityRemoved": "BLOCKED",
+    "commercialStatePersistent": "BLOCKED",
+    "entitlementAuthorityServerSide": "BLOCKED",
+    "subscriptionAuthorityServerSide": "BLOCKED",
+    "quotaAuthorityServerSide": "BLOCKED",
+    "paymentSecretsBackendOnly": "BLOCKED",
+    "webhookCryptographicVerification": "BLOCKED",
+    "auditImmutability": "BLOCKED",
+    "tenantIsolationVerified": "BLOCKED",
+    "directive24RegressionPassing": "BLOCKED"
+  },
+  "tests": {
+    "unit": {
+      "passed": 0,
+      "total": 0
+    },
+    "rulesDirective24": {
+      "passed": 0,
+      "total": 0
+    },
+    "integration": {
+      "passed": 0,
+      "total": 0
+    },
+    "backendAuthority": {
+      "passed": 0,
+      "total": 0
+    },
+    "authCases": {
+      "AUTH-001": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-002": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-003": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-004": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-005": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-006": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-007": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-008": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-009": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-010": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-011": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-012": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-013": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-014": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-015": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-016": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-017": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-018": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-019": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-020": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-021": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-022": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-023": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-024": {
+        "tests": 0,
+        "passed": false
+      },
+      "AUTH-025": {
+        "tests": 0,
+        "passed": false
+      }
+    },
+    "mutation": null
+  },
+  "steps": {},
+  "items": [
+    {
+      "key": "backendConfigured",
+      "title": "Backend configured (Cloud Functions, Node 22, params/secrets)",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "functions/src/index.ts exports the control plane",
+          "ok": true
+        },
+        {
+          "check": "functions/package.json engine node 22",
+          "ok": true
+        },
+        {
+          "check": "firebase.json declares the functions codebase",
+          "ok": true
+        },
+        {
+          "check": "secrets via defineSecret, payments behind PAYMENTS_ENABLED param",
+          "ok": true
+        },
+        {
+          "check": "functions typecheck",
+          "ok": false
+        },
+        {
+          "check": "functions build",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "emulatorTested",
+      "title": "Backend authority tested on the Firebase Emulator (AUTH-001..025)",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "backend suite executed against auth/firestore/functions/storage emulators",
+          "ok": false,
+          "detail": "0/0"
+        },
+        {
+          "check": "every AUTH-001..025 has passing tests",
+          "ok": false,
+          "detail": [
+            "AUTH-001",
+            "AUTH-002",
+            "AUTH-003",
+            "AUTH-004",
+            "AUTH-005",
+            "AUTH-006",
+            "AUTH-007",
+            "AUTH-008",
+            "AUTH-009",
+            "AUTH-010",
+            "AUTH-011",
+            "AUTH-012",
+            "AUTH-013",
+            "AUTH-014",
+            "AUTH-015",
+            "AUTH-016",
+            "AUTH-017",
+            "AUTH-018",
+            "AUTH-019",
+            "AUTH-020",
+            "AUTH-021",
+            "AUTH-022",
+            "AUTH-023",
+            "AUTH-024",
+            "AUTH-025"
+          ]
+        },
+        {
+          "check": "mutation testing: every authorization mutant killed",
+          "ok": false,
+          "detail": "not run"
+        }
+      ]
+    },
+    {
+      "key": "clientAuthorityRemoved",
+      "title": "Client authority removed",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "no source reads a legacy authority localStorage key",
+          "ok": true
+        },
+        {
+          "check": "no browser write path to commercial collections",
+          "ok": true
+        },
+        {
+          "check": "browser payment \"verification\" removed",
+          "ok": true
+        },
+        {
+          "check": "browser mutations go through backend callables",
+          "ok": true
+        },
+        {
+          "check": "AUTH-019/020 (forged localStorage has no effect) pass",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "commercialStatePersistent",
+      "title": "Commercial state persistent in Firestore (server-written)",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "rules: plans is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: featureCatalogue is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: globalPolicies is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: entitlementOverrides is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: subscriptions is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: invoices is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: usageCounters is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: usageLedger is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: paymentOrders is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: webhookEvents is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: publishingRecords is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: slugs is server-written only",
+          "ok": true
+        },
+        {
+          "check": "rules: customerClassifications is server-written only",
+          "ok": true
+        },
+        {
+          "check": "AUTH-016 App Owner plan change persisted with server timestamps",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "entitlementAuthorityServerSide",
+      "title": "Entitlement authority server-side",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "server resolver exported (getEffectiveEntitlement / can / getLimit / getUsage / checkLimit / isFeatureLocked)",
+          "ok": true
+        },
+        {
+          "check": "browser displays the server snapshot (getMyCommercialState) and fails closed",
+          "ok": true
+        },
+        {
+          "check": "AUTH-006 / AUTH-013 pass",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "subscriptionAuthorityServerSide",
+      "title": "Subscription authority server-side",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "customer callables limited to checkout / confirm / cancel",
+          "ok": true
+        },
+        {
+          "check": "AUTH-003 / 004 / 005 / 009 / 014 / 015 pass",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "quotaAuthorityServerSide",
+      "title": "Quota authority server-side",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "usage counters and ledger server-written only",
+          "ok": true
+        },
+        {
+          "check": "consumeQuota checks the limit inside its transaction",
+          "ok": true
+        },
+        {
+          "check": "AUTH-010 / AUTH-011 pass (incl. concurrent overspend)",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "paymentSecretsBackendOnly",
+      "title": "Payment secrets backend-only",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "production bundle built",
+          "ok": false
+        },
+        {
+          "check": "bundle contains no secret material",
+          "ok": true
+        },
+        {
+          "check": "browser sources reference no secret",
+          "ok": true
+        },
+        {
+          "check": "functions/.secret.local is git-ignored and untracked",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "webhookCryptographicVerification",
+      "title": "Webhook cryptographic verification present",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "HMAC-SHA256 with constant-time compare in the backend provider",
+          "ok": true
+        },
+        {
+          "check": "webhook verifies the raw body before parsing",
+          "ok": true
+        },
+        {
+          "check": "unit tests of signature verification pass",
+          "ok": false
+        },
+        {
+          "check": "AUTH-021 / 022 / 023 pass",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "auditImmutability",
+      "title": "Audit immutability present",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "rules: entitlementAuditLogs not writable by any client",
+          "ok": true
+        },
+        {
+          "check": "rules: commercialAuditLogs not writable by any client",
+          "ok": true
+        },
+        {
+          "check": "rules: platformAuditLogs not writable by any client",
+          "ok": true
+        },
+        {
+          "check": "ledger writes use create() only (no update/set/delete)",
+          "ok": true
+        },
+        {
+          "check": "AUTH-017 / AUTH-018 pass",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "tenantIsolationVerified",
+      "title": "Tenant isolation verified",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "AUTH-012 passes",
+          "ok": false
+        },
+        {
+          "check": "Directive 24 tenant-isolation rules suite passes",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "key": "directive24RegressionPassing",
+      "title": "Directive 24 regression suite passing",
+      "status": "BLOCKED",
+      "checks": [
+        {
+          "check": "rules suite 433/433",
+          "ok": false,
+          "detail": "0/0"
+        },
+        {
+          "check": "integration suite",
+          "ok": false,
+          "detail": "0/0"
+        },
+        {
+          "check": "unit suite",
+          "ok": false,
+          "detail": "0/0"
+        },
+        {
+          "check": "frontend typecheck",
+          "ok": false
+        }
+      ]
+    }
+  ],
+  "deploymentBlockers": [
+    {
+      "key": "notDeployed",
+      "status": "BLOCKED",
+      "detail": "Nothing has been deployed (Directive 25: DO NOT DEPLOY). Functions, rules and indexes run only in the emulator."
+    },
+    {
+      "key": "appOwnerClaimNotGranted",
+      "status": "BLOCKED",
+      "detail": "No real account holds platformRole=app_owner (scripts/admin/setAppOwner.ts not run against the live project)."
+    },
+    {
+      "key": "liveDatabaseTarget",
+      "status": "BLOCKED",
+      "detail": "Live client uses the named database ai-studio-37d17c3e-…; functions need DSBC_FIRESTORE_DATABASE set for that project and firebase.json must target the same database before deployment."
+    },
+    {
+      "key": "realPaymentProviderTest",
+      "status": "BLOCKED",
+      "detail": "PAYMENTS_ENABLED=false. Razorpay createOrder / payment lookup / webhook have only been exercised with a stubbed transport and emulator-signed webhooks; no request has been made to Razorpay."
+    },
+    {
+      "key": "liveCommercialDataMigration",
+      "status": "BLOCKED",
+      "detail": "Existing live customers have no subscriptions/{id} records (their plan lived in browser storage / companies.planId). Without an App-Owner-reviewed migration they resolve to the free plan once the backend is authoritative (content retained, paid features locked)."
+    },
+    {
+      "key": "controlPlaneBootstrap",
+      "status": "BLOCKED",
+      "detail": "plans / featureCatalogue / globalPolicies must be seeded in the live database by the App Owner (bootstrapControlPlane) after deployment."
+    }
+  ]
+}

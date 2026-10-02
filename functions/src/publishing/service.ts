@@ -14,12 +14,15 @@
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { db } from '../shared/firebase';
 import { deny, fail, invalid } from '../shared/errors';
-import { nowMs, serverNow } from '../shared/time';
+import { isoInDays, nowMs, serverNow, toIso, ts } from '../shared/time';
 import { ID_PATTERN, obj, oneOf, reason, str } from '../shared/validate';
 import { actorOf, requireActiveProfile, requireAppOwner, resolveCommercialSubject, type Caller } from '../auth/identity';
 import { appendAudit } from '../audit/ledger';
 import { buildResolutionContext } from '../entitlements/resolution';
 import { validateSlugFormat } from '../../../shared/domain/slugRules';
+
+/** Days a released slug stays reserved for its previous owner. */
+export const SLUG_QUARANTINE_DAYS = 90;
 
 type EntityType = 'card' | 'company' | 'profile';
 const ENTITY_COLLECTION: Record<EntityType, string> = { card: 'cards', company: 'companies', profile: 'digitalIdentityProfiles' };
@@ -87,16 +90,19 @@ export async function setPublishingState(caller: Caller, data: unknown) {
       const eff = (await buildResolutionContext(subject, nowMs(), tx)).resolve(REQUIRED_FEATURE[entityType]);
       if (!eff.isGranted) fail('permission-denied', `ENTITLEMENT_REQUIRED: ${REQUIRED_FEATURE[entityType]}`);
       slugSnap = await tx.get(db().collection('slugs').doc(finalSlug));
-      if (slugSnap.exists && slugSnap.get('entityId') !== entityId) fail('already-exists', `Slug ${finalSlug} is taken.`);
+      // A slug released by a slug change stays reserved for its previous owner
+      // for SLUG_QUARANTINE_DAYS (takeover protection, Directive 20).
+      const quarantineEnded = !!slugSnap.get('quarantinedUntil') && toIso(slugSnap.get('quarantinedUntil'))! <= new Date(nowMs()).toISOString();
+      if (slugSnap.exists && slugSnap.get('entityId') !== entityId && !quarantineEnded) fail('already-exists', `Slug ${finalSlug} is taken.`);
     }
 
     // ---- writes ----
-    if (state === 'PUBLISHED' && slugSnap && !slugSnap.exists) {
-      tx.create(slugSnap.ref, { slug: finalSlug, entityId, entityType, tenantId: entity.companyId, createdAt: serverNow() });
+    if (state === 'PUBLISHED' && slugSnap && (!slugSnap.exists || slugSnap.get('entityId') !== entityId || slugSnap.get('quarantinedUntil'))) {
+      tx.set(slugSnap.ref, { slug: finalSlug, entityId, entityType, tenantId: entity.companyId, createdAt: serverNow(), releasedAt: null, quarantinedUntil: null });
     }
     const prevSlug = record.get('slug') as string | undefined;
     if (state === 'PUBLISHED' && prevSlug && prevSlug !== finalSlug) {
-      tx.delete(db().collection('slugs').doc(prevSlug));
+      tx.set(db().collection('slugs').doc(prevSlug), { releasedAt: serverNow(), quarantinedUntil: ts(isoInDays(SLUG_QUARANTINE_DAYS)) }, { merge: true });
     }
     tx.set(recordRef, {
       id: entityId, entityType, slug: finalSlug, ownerId: entity.employeeId || entity.companyId, tenantId: entity.companyId,

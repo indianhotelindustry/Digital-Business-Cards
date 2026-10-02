@@ -5,6 +5,16 @@
 import { environmentConfig, EnvironmentConfig } from './environmentConfig';
 import { entitlementService } from './entitlementService';
 import { slugService } from './slugService';
+// Directive 25: backend-authority items are taken from the machine-readable
+// report (scripts/directive25/backendReadiness.mjs), never asserted here.
+import backendReadiness from '../../docs/directive-25/backend-readiness.json';
+
+type ReadinessKey = keyof typeof backendReadiness.summary;
+const READINESS_SOURCE = `backend-readiness.json ${backendReadiness.generatedAt.slice(0, 10)} @ ${backendReadiness.commit.slice(0, 7)}`;
+const fromReport = (...keys: ReadinessKey[]): ChecklistStatus => (keys.every((k) => backendReadiness.summary[k] === 'PASS') ? 'PASS' : 'FAIL');
+const authCase = (...ids: string[]): ChecklistStatus =>
+  ids.every((id) => (backendReadiness.tests.authCases as Record<string, { passed: boolean }>)[id]?.passed) ? 'PASS' : 'FAIL';
+const t = backendReadiness.tests;
 
 export type DependencyStatus = 'CONNECTED' | 'NOT_CONFIGURED' | 'ERROR' | 'WARNING';
 export type ChecklistStatus = 'PASS' | 'FAIL' | 'WARNING' | 'NOT_CONFIGURED';
@@ -94,9 +104,10 @@ class ProductionAuditService {
         id: 'dep_razorpay_webhook',
         name: 'Razorpay Webhook Endpoint',
         category: 'PAYMENTS',
-        status: 'CONNECTED',
-        currentValue: '/api/webhooks/razorpay (HMAC-SHA256)',
-        details: 'Replay-protected, timestamp-validated idempotent signature verifier',
+        status: backendReadiness.summary.webhookCryptographicVerification === 'PASS' ? 'WARNING' : 'ERROR',
+        currentValue: 'razorpayWebhook Cloud Function (HMAC-SHA256 over raw body)',
+        details: `Emulator-verified, idempotent per event and order; not deployed (${READINESS_SOURCE})`,
+        remediation: 'Deploy functions and register the webhook URL + secret in Razorpay',
       },
       {
         id: 'dep_email_provider',
@@ -134,9 +145,9 @@ class ProductionAuditService {
         id: 'dep_firestore_rules',
         name: 'Firestore Security Rules',
         category: 'DATABASE',
-        status: 'CONNECTED',
-        currentValue: 'firestore.rules (Certified)',
-        details: '141+ Live SDK tests verify zero cross-tenant leakage or client-side forgery',
+        status: backendReadiness.summary.directive24RegressionPassing === 'PASS' ? 'WARNING' : 'ERROR',
+        currentValue: 'firestore.rules (Directive 24/25, emulator-tested, not deployed)',
+        details: `Rules ${t.rulesDirective24.passed}/${t.rulesDirective24.total}, backend authority ${t.backendAuthority.passed}/${t.backendAuthority.total} on the emulator (${READINESS_SOURCE})`,
       },
       {
         id: 'dep_firestore_indexes',
@@ -236,15 +247,15 @@ class ProductionAuditService {
           {
             id: 'CHK-C1',
             title: 'Firestore security rules reject cross-tenant reads & writes',
-            status: 'PASS',
-            details: 'All tenant collections protected at database layer',
+            status: fromReport('tenantIsolationVerified'),
+            details: `AUTH-012 + Directive 24 tenant suite (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
           {
             id: 'CHK-C2',
             title: 'Append-only immutable audit logging enforced for commercial events',
-            status: 'PASS',
-            details: 'Firestore rules block updates/deletions on audit log collections',
+            status: fromReport('auditImmutability'),
+            details: `Create-only, content-hashed ledger; client writes denied (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
         ],
@@ -269,15 +280,15 @@ class ProductionAuditService {
           {
             id: 'CHK-E1',
             title: 'Razorpay payment abstraction integration with live/test modes',
-            status: config.isProduction ? 'PASS' : 'WARNING',
-            details: `Active mode: ${config.paymentGatewayMode}. Test mode enabled for staging.`,
+            status: 'FAIL',
+            details: 'Payments disabled (PAYMENTS_ENABLED=false); no real Razorpay test has been run',
             blockerForLiveLaunch: config.isProduction,
           },
           {
             id: 'CHK-E2',
             title: 'Client-side payment forgery strictly blocked from granting entitlements',
-            status: 'PASS',
-            details: 'Entitlements only activate via verified webhook payloads',
+            status: fromReport('subscriptionAuthorityServerSide', 'clientAuthorityRemoved'),
+            details: `Paid access only after backend payment verification (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
         ],
@@ -289,15 +300,15 @@ class ProductionAuditService {
           {
             id: 'CHK-F1',
             title: 'HMAC-SHA256 signature verification on Razorpay events',
-            status: 'PASS',
-            details: 'Verified cryptographically before subscription state updates',
+            status: fromReport('webhookCryptographicVerification'),
+            details: `Backend HMAC-SHA256, constant-time compare (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
           {
             id: 'CHK-F2',
             title: 'Idempotency and replay attack protection',
-            status: 'PASS',
-            details: 'Duplicate event tracking prevents multiple entitlement allocations',
+            status: authCase('AUTH-023'),
+            details: `Webhook ledger + per-order idempotency (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
         ],
@@ -329,15 +340,15 @@ class ProductionAuditService {
           {
             id: 'CHK-H1',
             title: '100% configuration-driven pricing matrix without hardcoded values',
-            status: 'PASS',
-            details: `${plans.length} Authoritative plans in Entitlement Engine`,
+            status: fromReport('commercialStatePersistent'),
+            details: `${plans.length} plans loaded from Firestore; App Owner-only mutations (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
           {
             id: 'CHK-H2',
             title: 'Fail-closed behavior for protected capabilities when unentitled',
-            status: 'PASS',
-            details: 'Unentitled access triggers UpgradeModal without data destruction',
+            status: fromReport('entitlementAuthorityServerSide'),
+            details: `Server-resolved entitlements; locked when no server answer (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
         ],
@@ -349,15 +360,15 @@ class ProductionAuditService {
           {
             id: 'CHK-I1',
             title: 'DRAFT, PREVIEW, and SUSPENDED states blocked from public visitors',
-            status: 'PASS',
-            details: 'Only PUBLISHED records resolvable on /card and /company routes',
+            status: authCase('AUTH-024'),
+            details: `Backend publishing state enforced by firestore.rules (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
           {
             id: 'CHK-I2',
             title: 'Reserved slug protection against route collisions',
-            status: 'PASS',
-            details: 'Blocks takeovers on system endpoints (admin, pricing, api, login)',
+            status: authCase('AUTH-024'),
+            details: `Reserved routes and slug ownership checked by the backend (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
         ],
@@ -369,8 +380,8 @@ class ProductionAuditService {
           {
             id: 'CHK-J1',
             title: 'Customer Data preserved across subscription downgrades & cancellations',
-            status: 'PASS',
-            details: 'DATA != DELETED invariant verified in commercial tests',
+            status: authCase('AUTH-015'),
+            details: `Downgrade locks seats, deletes nothing (${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
           {
@@ -388,9 +399,9 @@ class ProductionAuditService {
         items: [
           {
             id: 'CHK-K1',
-            title: 'Certified security test suite coverage (156 baseline + 30 PLG tests)',
-            status: 'PASS',
-            details: '186/186 Tests executing live against SDK and rule assertions',
+            title: 'Emulator security suites: backend authority + Directive 24 rules regression',
+            status: fromReport('emulatorTested', 'directive24RegressionPassing'),
+            details: `Backend ${t.backendAuthority.passed}/${t.backendAuthority.total}, rules ${t.rulesDirective24.passed}/${t.rulesDirective24.total}, unit ${t.unit.passed}/${t.unit.total} (emulator; ${READINESS_SOURCE})`,
             blockerForLiveLaunch: true,
           },
         ],

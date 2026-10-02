@@ -1,0 +1,486 @@
+{
+  "schema": "dsbc.mutationTesting/v1",
+  "directive": 25,
+  "generatedAt": "2026-10-02T12:12:34.024Z",
+  "environment": "Firebase Emulator Suite (demo-dsbc): auth, firestore, functions, storage",
+  "baseline": {
+    "summary": "Tests  84 passed (84)",
+    "seconds": 146
+  },
+  "total": 26,
+  "killed": 26,
+  "survived": [],
+  "mutationScore": 1,
+  "results": [
+    {
+      "id": "M01",
+      "area": "auth",
+      "file": "functions/src/auth/identity.ts",
+      "mutation": "requireAppOwner() no longer denies",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-identity-plans.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 10 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-identity-plans.test.ts > AUTH-002 browser cannot assign itself app_owner > a profile that says app_owner without the verified claim is not the App Owner",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-002 browser cannot assign itself app_owner > the claim on an unverified email is not the App Owner",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-002 browser cannot assign itself app_owner > a payload claiming platformRole is rejected",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-003 browser cannot change its own plan > the App Owner plan-assignment callable is denied to a company admin",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-003 browser cannot change its own plan > checkout cannot grant a plan while payments are disabled, and nothing changes",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-016 App Owner can modify plans > creates, edits the matrix of, duplicates and archives a plan; standard plans cannot be deleted",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-017 App Owner modifications create audit records > pricing change is recorded with actor, previous/new value, reason and a content hash",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-017 App Owner modifications create audit records > every control-plane mutation in this file wrote exactly one audit record",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-025 unauthorized platform safety mutations are rejected > company admin cannot switch maintenance mode or self-registration",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-025 unauthorized platform safety mutations are rejected > the App Owner can change safety controls; unknown fields are rejected; the change is audited"
+      ],
+      "seconds": 45
+    },
+    {
+      "id": "M02",
+      "area": "auth",
+      "file": "functions/src/auth/identity.ts",
+      "mutation": "App Owner claim accepted on an unverified email",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-identity-plans.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 4 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-identity-plans.test.ts > AUTH-002 browser cannot assign itself app_owner > the claim on an unverified email is not the App Owner",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-017 App Owner modifications create audit records > every control-plane mutation in this file wrote exactly one audit record",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-025 unauthorized platform safety mutations are rejected > company admin cannot switch maintenance mode or self-registration",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-025 unauthorized platform safety mutations are rejected > the App Owner can change safety controls; unknown fields are rejected; the change is audited"
+      ],
+      "seconds": 43
+    },
+    {
+      "id": "M03",
+      "area": "auth",
+      "file": "functions/src/auth/identity.ts",
+      "mutation": "users/{uid}.role == app_owner trusted as App Owner",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-identity-plans.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 8 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-identity-plans.test.ts > AUTH-002 browser cannot assign itself app_owner > a profile that says app_owner without the verified claim is not the App Owner",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-002 browser cannot assign itself app_owner > the claim on an unverified email is not the App Owner",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-002 browser cannot assign itself app_owner > a payload claiming platformRole is rejected",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-017 App Owner modifications create audit records > pricing change is recorded with actor, previous/new value, reason and a content hash",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-017 App Owner modifications create audit records > every control-plane mutation in this file wrote exactly one audit record",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-018 audit records cannot be modified > out-of-band tampering is detectable through the content hash",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-025 unauthorized platform safety mutations are rejected > company admin cannot switch maintenance mode or self-registration",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-025 unauthorized platform safety mutations are rejected > the App Owner can change safety controls; unknown fields are rejected; the change is audited"
+      ],
+      "seconds": 49
+    },
+    {
+      "id": "M04",
+      "area": "auth",
+      "file": "functions/src/auth/identity.ts",
+      "mutation": "every company member treated as billing contact / admin",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-identity-plans.test.ts",
+        "tests/backend/authority-commercial-forgery.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 2 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-004 browser cannot forge subscription ACTIVE > status changes are App Owner only; the customer path can only cancel",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-003 browser cannot change its own plan > checkout refuses a plan for the wrong customer type and a non-billing employee"
+      ],
+      "seconds": 136
+    },
+    {
+      "id": "M05",
+      "area": "validation",
+      "file": "functions/src/shared/validate.ts",
+      "mutation": "unknown payload fields (role, customerId, price…) accepted",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-identity-plans.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 2 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-identity-plans.test.ts > AUTH-001 browser cannot assign itself company_admin > backend rejects a payload that claims a role",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-003 browser cannot change its own plan > a payload cannot name the customer or price"
+      ],
+      "seconds": 50
+    },
+    {
+      "id": "M06",
+      "area": "entitlements",
+      "file": "functions/src/entitlements/admin.ts",
+      "mutation": "upsertOverride callable without App Owner check",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-commercial-forgery.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 4 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-006 browser cannot forge an entitlement > override callables are App Owner only",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-006 browser cannot forge an entitlement > the client may ask, never tell: an entitlement in the payload is rejected and the server answer stands",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-009 browser cannot grant complimentary access > customers cannot call complimentary / trial / override grants",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-010 browser cannot modify quota > customers cannot raise their limits or forge measured usage"
+      ],
+      "seconds": 84
+    },
+    {
+      "id": "M07",
+      "area": "audit",
+      "file": "functions/src/audit/ledger.ts",
+      "mutation": "audit record silently not written",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-identity-plans.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 6 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-identity-plans.test.ts > AUTH-017 App Owner modifications create audit records > pricing change is recorded with actor, previous/new value, reason and a content hash",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-017 App Owner modifications create audit records > every control-plane mutation in this file wrote exactly one audit record",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-018 audit records cannot be modified > nobody can update, delete or forge an audit record from a browser (App Owner included)",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-018 audit records cannot be modified > customers cannot even read the ledger; the App Owner can",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-018 audit records cannot be modified > out-of-band tampering is detectable through the content hash",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-025 unauthorized platform safety mutations are rejected > the App Owner can change safety controls; unknown fields are rejected; the change is audited"
+      ],
+      "seconds": 44
+    },
+    {
+      "id": "M08",
+      "area": "payments",
+      "file": "functions/src/billing/paymentProvider.ts",
+      "mutation": "any well-formed hex signature accepted",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-commercial-forgery.test.ts",
+        "tests/backend/authority-client-webhooks-publishing.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 5 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-021 forged webhook rejected > wrong secret, missing signature, legacy format and a re-signed tampered body are all 401",
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-021 forged webhook rejected > nothing was recorded or activated",
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-022 malformed webhook rejected > validly signed but malformed requests are 400 and nothing is written",
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-023 duplicate webhook is idempotent > a verified capture activates the server-priced plan once",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-005 browser cannot forge payment success > fabricated, legacy-format and wrong-secret signatures are rejected"
+      ],
+      "seconds": 92
+    },
+    {
+      "id": "M09",
+      "area": "payments",
+      "file": "functions/src/billing/payments.ts",
+      "mutation": "webhook processed without signature verification",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 4 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-021 forged webhook rejected > wrong secret, missing signature, legacy format and a re-signed tampered body are all 401",
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-021 forged webhook rejected > nothing was recorded or activated",
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-022 malformed webhook rejected > validly signed but malformed requests are 400 and nothing is written",
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-023 duplicate webhook is idempotent > a verified capture activates the server-priced plan once"
+      ],
+      "seconds": 34
+    },
+    {
+      "id": "M10",
+      "area": "payments",
+      "file": "functions/src/billing/payments.ts",
+      "mutation": "webhook event ledger idempotency removed",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-023 duplicate webhook is idempotent > the same event delivered again changes nothing"
+      ],
+      "seconds": 30
+    },
+    {
+      "id": "M11",
+      "area": "payments",
+      "file": "functions/src/billing/payments.ts",
+      "mutation": "paid order can be applied twice",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 2 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-023 duplicate webhook is idempotent > a second event for the same order (order.paid) is ALREADY_APPLIED",
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-023 duplicate webhook is idempotent > a capture whose amount differs from the server-priced order is rejected"
+      ],
+      "seconds": 31
+    },
+    {
+      "id": "M12",
+      "area": "payments",
+      "file": "functions/src/billing/payments.ts",
+      "mutation": "captured amount not compared with the server-priced order",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts > webhooks > AUTH-023 duplicate webhook is idempotent > a capture whose amount differs from the server-priced order is rejected"
+      ],
+      "seconds": 34
+    },
+    {
+      "id": "M13",
+      "area": "payments",
+      "file": "functions/src/billing/payments.ts",
+      "mutation": "payment confirmation without order ownership check",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-commercial-forgery.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-005 browser cannot forge payment success > another tenant cannot confirm the order (even with a valid signature); a missing order is not found"
+      ],
+      "seconds": 58
+    },
+    {
+      "id": "M14",
+      "area": "subscriptions",
+      "file": "functions/src/subscriptions/service.ts",
+      "mutation": "any member may cancel the subscription",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-commercial-forgery.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-004 browser cannot forge subscription ACTIVE > status changes are App Owner only; the customer path can only cancel"
+      ],
+      "seconds": 59
+    },
+    {
+      "id": "M15",
+      "area": "subscriptions",
+      "file": "shared/domain/subscriptionLifecycle.ts",
+      "mutation": "expired trials keep paid access",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts > AUTH-014 expired subscription locks paid features > an expired trial falls back to the free plan on the next read and the reconciler persists it"
+      ],
+      "seconds": 65
+    },
+    {
+      "id": "M16",
+      "area": "entitlements",
+      "file": "shared/domain/entitlementResolver.ts",
+      "mutation": "expired overrides stay in force",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 2 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts > AUTH-013 expired override falls back (Directive 18 precedence) > individual > company > plan, and an expired individual grant falls back to the company override",
+        "tests/backend/authority-tenancy-lifecycle.test.ts > AUTH-013 expired override falls back (Directive 18 precedence) > an expired temporary company grant falls back to the plan without any write"
+      ],
+      "seconds": 116
+    },
+    {
+      "id": "M17",
+      "area": "entitlements",
+      "file": "shared/domain/entitlementResolver.ts",
+      "mutation": "individual overrides ignored (precedence broken)",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts > AUTH-013 expired override falls back (Directive 18 precedence) > individual > company > plan, and an expired individual grant falls back to the company override"
+      ],
+      "seconds": 78
+    },
+    {
+      "id": "M18",
+      "area": "quota",
+      "file": "functions/src/usage/quota.ts",
+      "mutation": "metered limit not enforced",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-commercial-forgery.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 4 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-010 browser cannot modify quota > metered usage stops at the limit",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-010 browser cannot modify quota > concurrent requests cannot overspend (no TOCTOU)",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-011 browser cannot reset usage > rules reject deleting or zeroing a counter",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-011 browser cannot reset usage > replaying an operation id is idempotent (no double count, no reset)"
+      ],
+      "seconds": 83
+    },
+    {
+      "id": "M19",
+      "area": "quota",
+      "file": "functions/src/usage/quota.ts",
+      "mutation": "operation-id idempotency removed",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-commercial-forgery.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-011 browser cannot reset usage > replaying an operation id is idempotent (no double count, no reset)"
+      ],
+      "seconds": 60
+    },
+    {
+      "id": "M20",
+      "area": "quota",
+      "file": "functions/src/usage/quota.ts",
+      "mutation": "seats beyond the plan limit never locked",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 2 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts > AUTH-015 downgrade preserves data (DATA != DELETED, FEATURE = LOCKED) > downgrading locks seats beyond the new limit without deleting anything",
+        "tests/backend/authority-tenancy-lifecycle.test.ts > AUTH-015 downgrade preserves data (DATA != DELETED, FEATURE = LOCKED) > locked content is hidden from the public, still visible to the tenant, and cannot be published"
+      ],
+      "seconds": 85
+    },
+    {
+      "id": "M21",
+      "area": "publishing",
+      "file": "functions/src/publishing/service.ts",
+      "mutation": "publishing without ownership check",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-tenancy-lifecycle.test.ts",
+        "tests/backend/authority-client-webhooks-publishing.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 3 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts > AUTH-024 unauthorized publishing mutations are rejected > another tenant cannot publish, unpublish or take the slug",
+        "tests/backend/authority-client-webhooks-publishing.test.ts > AUTH-024 unauthorized publishing mutations are rejected > browsers cannot write publishing records, slugs or backend visibility flags",
+        "tests/backend/authority-tenancy-lifecycle.test.ts > AUTH-012 Company A cannot access Company B commercial state > the backend never serves another tenant"
+      ],
+      "seconds": 77
+    },
+    {
+      "id": "M22",
+      "area": "publishing",
+      "file": "functions/src/publishing/service.ts",
+      "mutation": "unpublished state not mirrored to the entity",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts > AUTH-024 unauthorized publishing mutations are rejected > unpublishing hides the card from the public (rule-enforced, not a URL flag)"
+      ],
+      "seconds": 30
+    },
+    {
+      "id": "R01",
+      "area": "rules",
+      "file": "firestore.rules",
+      "mutation": "customers may write their subscription",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-commercial-forgery.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 5 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-004 browser cannot forge subscription ACTIVE > rules reject creating or editing a subscription document",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-004 browser cannot forge subscription ACTIVE > status changes are App Owner only; the customer path can only cancel",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-005 browser cannot forge payment success > rules reject marking an order or subscription paid from the browser",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-005 browser cannot forge payment success > nothing changed: order CREATED, subscription TRIAL/PENDING, no invoice",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-009 browser cannot grant complimentary access > rules reject a COMPLIMENTARY subscription written from the browser"
+      ],
+      "seconds": 75
+    },
+    {
+      "id": "R02",
+      "area": "rules",
+      "file": "firestore.rules",
+      "mutation": "App Owner may edit the entitlement audit ledger",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-identity-plans.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 2 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-identity-plans.test.ts > AUTH-018 audit records cannot be modified > nobody can update, delete or forge an audit record from a browser (App Owner included)",
+        "tests/backend/authority-identity-plans.test.ts > AUTH-018 audit records cannot be modified > out-of-band tampering is detectable through the content hash"
+      ],
+      "seconds": 40
+    },
+    {
+      "id": "R03",
+      "area": "rules",
+      "file": "firestore.rules",
+      "mutation": "company members may write usage counters",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-commercial-forgery.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 3 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-010 browser cannot modify quota > rules reject writing usage counters or the usage ledger",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-011 browser cannot reset usage > rules reject deleting or zeroing a counter",
+        "tests/backend/authority-commercial-forgery.test.ts > AUTH-011 browser cannot reset usage > replaying an operation id is idempotent (no double count, no reset)"
+      ],
+      "seconds": 59
+    },
+    {
+      "id": "R04",
+      "area": "rules",
+      "file": "firestore.rules",
+      "mutation": "unpublished cards remain publicly readable",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests 1 ⎯⎯⎯⎯⎯⎯⎯",
+      "failed": [
+        "tests/backend/authority-client-webhooks-publishing.test.ts > AUTH-024 unauthorized publishing mutations are rejected > unpublishing hides the card from the public (rule-enforced, not a URL flag)"
+      ],
+      "seconds": 31
+    }
+  ]
+}

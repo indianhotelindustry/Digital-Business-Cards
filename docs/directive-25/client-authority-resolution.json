@@ -1,0 +1,29 @@
+{
+  "schema": "dsbc.clientAuthorityResolution/v1",
+  "directive": 25,
+  "source": "docs/directive-24/phase-1-client-authority-classification.json",
+  "note": "Status of every Directive 24 client-authority item in the commercial / publishing scope. Evidence ids refer to tests/backend (AUTH-xxx, Firebase Emulator) and tests/unit.",
+  "items": [
+    { "id": "CA-11", "value": "Plan catalogue and pricing", "previously": "localStorage dsbc_entitlement_plans_v1", "now": "plans/{planId}; written only by upsertPlan / setPlanPricing / setPlanFeature / duplicatePlan / deletePlan (App Owner)", "status": "FIXED_D25", "evidence": ["AUTH-003", "AUTH-016", "AUTH-019"] },
+    { "id": "CA-12", "value": "Entitlement overrides (company / individual / temporary grants)", "previously": "localStorage dsbc_entitlement_overrides_v1", "now": "entitlementOverrides/{id} with explicit tenantId; upsertOverride / deleteOverride (App Owner); expiry evaluated server-side", "status": "FIXED_D25", "evidence": ["AUTH-006", "AUTH-009", "AUTH-013", "AUTH-019"] },
+    { "id": "CA-13", "value": "Global platform policy (defaults, maintenance, registration)", "previously": "localStorage dsbc_entitlement_policy_v1", "now": "globalPolicies/platform; updateGlobalPolicy (App Owner), PLATFORM_SAFETY_CHANGED audit", "status": "FIXED_D25", "evidence": ["AUTH-025"] },
+    { "id": "CA-14", "value": "Usage / quota counters", "previously": "localStorage dsbc_entitlement_usage_v1", "now": "usageCounters (server-measured or consumeQuota, transactional, idempotent) + usageLedger", "status": "FIXED_D25", "evidence": ["AUTH-010", "AUTH-011", "AUTH-015"] },
+    { "id": "CA-15", "value": "Entitlement audit log", "previously": "localStorage dsbc_entitlement_audit_v1", "now": "entitlementAuditLogs / commercialAuditLogs / platformAuditLogs, create-only in the mutation's transaction, content-hashed, client-unwritable", "status": "FIXED_D25", "evidence": ["AUTH-017", "AUTH-018"] },
+    { "id": "CA-16", "value": "Subscription plan / status / payment status", "previously": "localStorage dsbc_subscriptions_v1 + client upgradeSubscription()", "now": "subscriptions/{type}_{id}; backend lifecycle; customers can only check out (verified payment) or cancel", "status": "FIXED_D25", "evidence": ["AUTH-003", "AUTH-004", "AUTH-005", "AUTH-014", "AUTH-020"] },
+    { "id": "CA-17", "value": "Plan chosen during onboarding triggers immediate upgrade", "previously": "client-provided planId", "now": "onboarding requests a server-priced checkout; refused while payments are disabled, publishing continues on Free", "status": "FIXED_D25", "evidence": ["AUTH-003", "AUTH-020"] },
+    { "id": "CA-18", "value": "Invoices and commercial audit log", "previously": "localStorage dsbc_invoices_v1, dsbc_commercial_audit_v1", "now": "invoices/INV-YYYY-NNNNNN (backend-issued, counter-numbered) + commercialAuditLogs", "status": "FIXED_D25", "evidence": ["AUTH-007", "AUTH-008", "AUTH-023"] },
+    { "id": "CA-19", "value": "Payment verification and webhook secret", "previously": "client JavaScript (secret in bundle, any 16+ char signature accepted)", "now": "functions/src/billing: HMAC-SHA256 with Secret Manager secrets, constant-time compare, raw-body webhook verification, provider re-check of captured amount", "status": "FIXED_D25", "evidence": ["AUTH-005", "AUTH-021", "AUTH-022", "AUTH-023", "tests/unit/paymentProvider.test.ts"] },
+    { "id": "CA-20", "value": "Actor role passed into service mutations ({ role: 'app_owner' })", "previously": "client-provided App Owner identity", "now": "role derived from the verified token claim + users/{uid}; payload role fields rejected", "status": "FIXED_D25", "evidence": ["AUTH-001", "AUTH-002"] },
+    { "id": "CA-21", "value": "Publishing state (DRAFT/PUBLISHED/SUSPENDED)", "previously": "localStorage dsbc_publishing_records_v1", "now": "publishingRecords/{entityId} + backend-mirrored publicationHidden / platformSuspended enforced by firestore.rules", "status": "FIXED_D25", "evidence": ["AUTH-024"] },
+    { "id": "CA-22", "value": "Admin preview of drafts via ?preview=true", "previously": "URL parameter bypassed the local check", "now": "hidden entities are unreadable by the public under firestore.rules; the preview flag only chooses which notice a member sees", "status": "FIXED_D25", "evidence": ["AUTH-024"] },
+    { "id": "CA-23", "value": "Slug registry and quarantine", "previously": "localStorage dsbc_registered_slugs_v1, dsbc_quarantined_slugs_v1", "now": "slugs/{slug} written by setPublishingState (ownership, takeover protection, reserved routes from shared/domain/slugRules)", "status": "FIXED_D25", "evidence": ["AUTH-024"], "quarantine": "A slug released by a slug change is quarantined for 90 days (slugs/{slug}.quarantinedUntil); only its previous owner may reclaim it." },
+    { "id": "CA-24", "value": "Pilot registry and account deletion state", "previously": "localStorage dsbc_pilot_registry_v1", "now": "customerClassifications/{type}_{id}; adminSetCustomerClassification, setMyDeletionRequest, adminReviewDeletion", "status": "FIXED_D25", "evidence": ["AUTH-012"] }
+  ],
+  "outOfScope": [
+    { "id": "CA-25", "value": "Environment override", "reason": "not commercial authority; later directive" },
+    { "id": "CA-26", "value": "Notification ledger", "reason": "class C; later directive" },
+    { "id": "CA-27", "value": "Support tickets", "reason": "class C; later directive" },
+    { "id": "CA-28", "value": "Conversion funnel events", "reason": "class C; later directive" },
+    { "id": "CA-31", "value": "Demo data store served to signed-out visitors", "reason": "class D; later directive. Note: anonymous slug queries are also refused by the Directive 24 rules (query cannot prove isCompanyActive), so public pages for real customers need a slug-index lookup when CA-31 is addressed." }
+  ]
+}
