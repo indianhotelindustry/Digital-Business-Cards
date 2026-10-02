@@ -3,8 +3,7 @@
     "argv": [
       "C:\\nvm4w\\nodejs\\node.exe",
       "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\node_modules\\@playwright\\test\\cli.js",
-      "test",
-      "tests/e2e/production-rehearsal.spec.ts"
+      "test"
     ],
     "configFile": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\playwright.config.ts",
     "rootDir": "C:/Users/SIPL Server/Downloads/DSS/digital-business-card-saas/tests/e2e",
@@ -71,6 +70,482 @@
   },
   "suites": [
     {
+      "title": "demo-journey.spec.ts",
+      "file": "demo-journey.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Browser A: company registers, builds and publishes its website",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6587,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:36.691Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-b76f963b792c0d2bb057",
+          "file": "demo-journey.spec.ts",
+          "line": 48,
+          "column": 1
+        },
+        {
+          "title": "Browser B: the real company website appears for an anonymous visitor",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2004,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:46.148Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-9f225f1c22f204cda33a",
+          "file": "demo-journey.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "Browser A: adds an employee and publishes the card",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 740,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:48.171Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-c2e3315df4183c1d63fe",
+          "file": "demo-journey.spec.ts",
+          "line": 67,
+          "column": 1
+        },
+        {
+          "title": "Browser B: the real employee card appears; website → card → website loop works",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 812,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:48.929Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-c4d89e21100e2e2999cd",
+          "file": "demo-journey.spec.ts",
+          "line": 72,
+          "column": 1
+        },
+        {
+          "title": "Browser B: enquiry from the website reaches customer A",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2126,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:49.765Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-a3e7e9b4252a83750d7c",
+          "file": "demo-journey.spec.ts",
+          "line": 89,
+          "column": 1
+        },
+        {
+          "title": "Browser C: a second customer builds its own site and never sees customer A data",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2590,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:51.912Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-2eb04e9d29b059c7a0fe",
+          "file": "demo-journey.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "Browser E: a third customer builds its own site; three-way isolation holds",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3322,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:54.522Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-3c7497a4baae39b7e9fd",
+          "file": "demo-journey.spec.ts",
+          "line": 115,
+          "column": 1
+        },
+        {
+          "title": "unpublished, preview and unknown URLs never show content or demo data",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1927,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:57.866Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-4dc246a9a884c2ae4346",
+          "file": "demo-journey.spec.ts",
+          "line": 140,
+          "column": 1
+        },
+        {
+          "title": "Browser D: App Owner sees all three pilots demo ready",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4828,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:51:59.814Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-8956f60f779c6d77a0fa",
+          "file": "demo-journey.spec.ts",
+          "line": 175,
+          "column": 1
+        }
+      ]
+    },
+    {
       "title": "production-rehearsal.spec.ts",
       "file": "production-rehearsal.spec.ts",
       "column": 0,
@@ -101,12 +576,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 6796,
+                  "duration": 2583,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:15:49.972Z",
+                  "startTime": "2026-10-02T19:52:04.825Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -153,12 +628,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2662,
+                  "duration": 2429,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:15:58.613Z",
+                  "startTime": "2026-10-02T19:52:07.653Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -205,12 +680,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2507,
+                  "duration": 2419,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:01.292Z",
+                  "startTime": "2026-10-02T19:52:10.094Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -257,12 +732,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 137,
+                  "duration": 161,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:03.821Z",
+                  "startTime": "2026-10-02T19:52:12.528Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -309,12 +784,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 7086,
+                  "duration": 5311,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:03.979Z",
+                  "startTime": "2026-10-02T19:52:12.703Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -361,12 +836,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1608,
+                  "duration": 1678,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:11.104Z",
+                  "startTime": "2026-10-02T19:52:18.036Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -413,12 +888,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1275,
+                  "duration": 1374,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:12.736Z",
+                  "startTime": "2026-10-02T19:52:19.732Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -465,12 +940,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3689,
+                  "duration": 3744,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:14.034Z",
+                  "startTime": "2026-10-02T19:52:21.129Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -517,12 +992,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3886,
+                  "duration": 3666,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:17.753Z",
+                  "startTime": "2026-10-02T19:52:24.901Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -569,12 +1044,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1130,
+                  "duration": 1095,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:21.668Z",
+                  "startTime": "2026-10-02T19:52:28.593Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -621,12 +1096,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 6444,
+                  "duration": 4164,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-02T18:16:22.821Z",
+                  "startTime": "2026-10-02T19:52:29.706Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -653,9 +1128,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-02T18:15:46.623Z",
-    "duration": 43619.369,
-    "expected": 11,
+    "startTime": "2026-10-02T19:51:33.298Z",
+    "duration": 61933.655,
+    "expected": 20,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

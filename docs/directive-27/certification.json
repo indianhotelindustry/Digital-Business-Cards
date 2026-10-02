@@ -1,0 +1,492 @@
+{
+  "schema": "dsbc.directive27.certification/v1",
+  "directive": 27,
+  "generatedAt": "2026-10-02T19:53:47.925Z",
+  "branch": "security-foundation/directive-27",
+  "commit": "37c5c7bd5094cfa2bd40f675fd14080fc2b07d65",
+  "environment": "Tests: Firebase Emulator Suite (demo-dsbc) + real Chrome against a production-mode bundle. Live levels: read-only measurements of the production target by scripts/directive27/liveProbe.mjs. This script deploys nothing.",
+  "gate": "BLOCKED",
+  "readiness": {
+    "demoReady": "PASS",
+    "deploymentReady": "BLOCKED",
+    "liveDeploymentComplete": "NOT COMPLETE",
+    "liveAcceptancePassed": "NOT EXECUTED",
+    "productionCertified": "FAIL"
+  },
+  "liveProbe": {
+    "commit": "37c5c7bd5094cfa2bd40f675fd14080fc2b07d65",
+    "generatedAt": "2026-10-02T19:48:22.021Z",
+    "current": true,
+    "target": {
+      "projectId": "v-nexus-lite",
+      "databaseId": "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5",
+      "functionsRegion": "us-west1",
+      "hostingSite": null,
+      "publicOrigin": null,
+      "storageBucket": "v-nexus-lite.firebasestorage.app"
+    },
+    "liveDeployment": "NOT_COMPLETE",
+    "liveHealth": "NOT_EXECUTED",
+    "liveAcceptance": "NOT_EXECUTED"
+  },
+  "finalStatus": "DEMO READY · DEPLOYMENT BLOCKED · LIVE DEPLOYMENT NOT COMPLETE · LIVE ACCEPTANCE NOT EXECUTED · PRODUCTION NOT CERTIFIED",
+  "deploymentBlockers": [
+    "HOSTING_SITE_DESIGNATED: No DSBC hosting site is designated (config/environments.json hosting.site, then firebase target:apply hosting dsbc-web <site>).",
+    "PUBLIC_ORIGIN_DESIGNATED: No public origin is designated; share links and QR codes would carry the hosting default domain.",
+    "STAGING_DESIGNATED: No staging project is designated; nothing can be rehearsed on real infrastructure before production.",
+    "LIVE_REQUIRED_APIS: not enabled: cloudfunctions.googleapis.com, cloudbuild.googleapis.com, eventarc.googleapis.com, cloudscheduler.googleapis.com, secretmanager.googleapis.com (enabling them is a project change the owner must approve)",
+    "LIVE_FUNCTION_SECRETS: Secret Manager API disabled; RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET cannot exist, so `firebase deploy --only functions` cannot succeed",
+    "LIVE_HOSTING_SITE: config/environments.json production.hosting.site is null; the owner must create or choose a dedicated DSBC site",
+    "LIVE_PUBLIC_ORIGIN: config/environments.json production.publicOrigin is null; share links and QR codes have no canonical origin",
+    "APP_OWNER_ON_LIVE: no App Owner claim has been granted/verified on v-nexus-lite; the owner must designate the identity (runbook: grant right after the rules deploy, then setAppOwner.ts --verify).",
+    "MIGRATION_DECISION: live discovery found only legacy demo-candidate companies (docs/overnight/evidence/migration-discovery-summary.json); the App Owner records SKIP for each (nothing migrated, nothing deleted).",
+    "STORAGE_BUCKET_OWNERSHIP: deploying storage.rules replaces the rules of v-nexus-lite.firebasestorage.app for every app using it; confirm ownership or provision a dedicated bucket.",
+    "ENTERPRISE_EDITION: the DSBC database is Firestore Enterprise edition; the emulator runs Standard edition, so rules and Firestore triggers must be verified on a real Enterprise database first.",
+    "NOTIFICATIONS: no email provider; Platform Health can never be OK until one is integrated or the owner accepts NOT_CONFIGURED."
+  ],
+  "productionCertificationRequires": [
+    "Every deployment blocker resolved and the runbook (docs/directive-27/RUNBOOK.md) executed under App Owner control.",
+    "Live Platform Health overall OK (or only intentionally DISABLED checks).",
+    "The three-customer scenario repeated on the real public URLs from clean devices, App Owner Demo Readiness 3 of 3.",
+    "Existing-customer migration decisions recorded by the App Owner against a fresh preview hash (overnight discovery: only legacy demo candidates, so SKIP) and the audit trail reviewed; rollback path rehearsed."
+  ],
+  "summary": {
+    "regression": "PASS",
+    "environment": "PASS",
+    "productionConfig": "PASS",
+    "bootstrap": "PASS",
+    "migration": "PASS",
+    "platformHealth": "PASS",
+    "publicRouting": "PASS",
+    "rehearsal": "PASS",
+    "mutation": "PASS",
+    "typescript": "PASS",
+    "build": "PASS"
+  },
+  "totals": {
+    "unit": "76/76",
+    "rules": "559/559",
+    "integration": "19/19",
+    "backend": "134/134",
+    "browser": "20/20",
+    "mutation": "41/41"
+  },
+  "lines": [
+    {
+      "key": "regression",
+      "title": "No regression of Directives 24–26",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "inherited D27 Phase 0 baseline recorded (615/615)",
+          "ok": true,
+          "detail": "615/615 @ ac9df16"
+        },
+        {
+          "check": "Directive 24 rules",
+          "ok": true,
+          "detail": "433/433"
+        },
+        {
+          "check": "Directive 25 backend authority",
+          "ok": true,
+          "detail": "85/85"
+        },
+        {
+          "check": "Directive 26 public resolution + three-customer (emulator)",
+          "ok": true,
+          "detail": "20/20, 25/25"
+        },
+        {
+          "check": "Directive 26 browser journey (real Chrome)",
+          "ok": true,
+          "detail": "9/9"
+        },
+        {
+          "check": "pre-D27 integration (App Owner, demo seed)",
+          "ok": true,
+          "detail": "6/6"
+        }
+      ]
+    },
+    {
+      "key": "environment",
+      "title": "Phase 1 — environment authority",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "ENV-001",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-002",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-003",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-004",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-005",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-006",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-007",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-008",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-009",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-010",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-011",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-012",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-013",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-014",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-015",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ENV-016",
+          "ok": true,
+          "detail": "1/1"
+        }
+      ]
+    },
+    {
+      "key": "productionConfig",
+      "title": "Phase 1 — production configuration",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "preflight has no FAIL",
+          "ok": true,
+          "detail": "BLOCKED (13 pass, 0 fail, 3 blocked)"
+        },
+        {
+          "check": "no secret in source or production bundle",
+          "ok": true,
+          "detail": "source PASS, bundles PASS, history INVESTIGATE"
+        }
+      ]
+    },
+    {
+      "key": "bootstrap",
+      "title": "Phase 2 — production bootstrap",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "BOOT-001",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "BOOT-002",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "BOOT-003",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "BOOT-004",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "BOOT-005",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "BOOT-006",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "D27 rules: platform config Admin-SDK only",
+          "ok": true,
+          "detail": "126/126"
+        }
+      ]
+    },
+    {
+      "key": "migration",
+      "title": "Phase 3 — existing-customer migration",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "MIG-001",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "MIG-002",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "MIG-003",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "MIG-004",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "MIG-005",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "MIG-006",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "MIG-007",
+          "ok": true,
+          "detail": "1/1"
+        }
+      ]
+    },
+    {
+      "key": "platformHealth",
+      "title": "Phase 4 — platform health (measured, fail closed)",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "HEALTH-001",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "HEALTH-002",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "HEALTH-003",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "HEALTH-004",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "HEALTH-101",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "HEALTH-102",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "HEALTH-103",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "HEALTH-104",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "browser: App Owner sees measured health, no fake readiness",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "publicRouting",
+      "title": "Phase 5 — public production routing",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "ROUTE-001",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ROUTE-002",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ROUTE-003",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ROUTE-004",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ROUTE-005",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ROUTE-006",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "ROUTE-007",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "server-authoritative resolver PUBLIC-001..015",
+          "ok": true
+        },
+        {
+          "check": "clean-browser /card /profile /company, isolation, no demo",
+          "ok": true
+        },
+        {
+          "check": "canonical navigation + history",
+          "ok": true
+        },
+        {
+          "check": "unpublished hidden; ?preview=true no bypass",
+          "ok": true
+        },
+        {
+          "check": "404 for unknown slugs and paths",
+          "ok": true
+        },
+        {
+          "check": "legacy hash links rewritten",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "rehearsal",
+      "title": "Phase 6 — three-customer production-like rehearsal",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "customer R1: register → company → employee → card + website published",
+          "ok": true
+        },
+        {
+          "check": "customer R2: register → company → employee → card + website published",
+          "ok": true
+        },
+        {
+          "check": "customer R3: register → company → employee → card + website published",
+          "ok": true
+        },
+        {
+          "check": "employees, cards and records belong to their own company",
+          "ok": true
+        },
+        {
+          "check": "data survives reload and a new browser",
+          "ok": true
+        },
+        {
+          "check": "App Owner sees all three correctly",
+          "ok": true
+        },
+        {
+          "check": "all rehearsal scenarios",
+          "ok": true,
+          "detail": "11/11"
+        }
+      ]
+    },
+    {
+      "key": "mutation",
+      "title": "Phase 7 — mutation testing",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "every D27 mutant killed",
+          "ok": true,
+          "detail": "41/41"
+        },
+        {
+          "check": "unmutated baselines passed first",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "typescript",
+      "title": "TypeScript",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "frontend + functions typecheck",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "build",
+      "title": "Build",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "production frontend + functions bundle",
+          "ok": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "dsbc.overnight.migrationDiscoverySummary/v1",
+  "note": "Non-PII summary of a READ-ONLY discovery (scripts/admin/migrateCustomers.ts discover) against v-nexus-lite / ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5. The full preview (names, emails) stays in git-ignored migration-work/. Nothing was written, migrated or deleted.",
+  "generatedFrom": "migration-work/preview-overnight.json",
+  "previewHash": "49d3a426f733b7fbb9435b180906b8534fd2a81d4f1acfed07e9208d067c4121",
+  "summary": {
+    "customers": 2,
+    "excluded": 1,
+    "proposal_OWNER_DECISION_REQUIRED": 2,
+    "flag_DEMO_CANDIDATE": 2,
+    "flag_AUTH_ACCOUNT_MISSING": 1,
+    "flag_NO_VERIFIED_IDENTITY": 2,
+    "flag_LEGACY_PAID_PLAN_CLAIM": 2
+  },
+  "customers": [
+    {
+      "customerType": "company",
+      "legacyDemoId": true,
+      "adminAccounts": 0,
+      "verifiedAccounts": 0,
+      "flags": [
+        "DEMO_CANDIDATE",
+        "AUTH_ACCOUNT_MISSING",
+        "NO_VERIFIED_IDENTITY",
+        "LEGACY_PAID_PLAN_CLAIM"
+      ],
+      "content": {
+        "employees": 1,
+        "departments": 1,
+        "profiles": 0,
+        "publishingState": "NO_PUBLISHING_RECORD"
+      },
+      "existingSubscription": null,
+      "legacyPlanId": "enterprise",
+      "proposal": "OWNER_DECISION_REQUIRED"
+    },
+    {
+      "customerType": "company",
+      "legacyDemoId": true,
+      "adminAccounts": 0,
+      "verifiedAccounts": 0,
+      "flags": [
+        "DEMO_CANDIDATE",
+        "NO_VERIFIED_IDENTITY",
+        "LEGACY_PAID_PLAN_CLAIM"
+      ],
+      "content": {
+        "employees": 1,
+        "departments": 1,
+        "profiles": 0,
+        "publishingState": "NO_PUBLISHING_RECORD"
+      },
+      "existingSubscription": null,
+      "legacyPlanId": "growth",
+      "proposal": "OWNER_DECISION_REQUIRED"
+    }
+  ],
+  "excluded": [
+    {
+      "reason": "platform App Owner (not a customer)"
+    }
+  ],
+  "conclusion": "No real customer exists on the live DSBC database: both companies are legacy demo candidates without a verified sign-in. Only SKIP is permitted for them. No paid customer is converted, no content is deleted, no migration execution is needed; the App Owner records SKIP decisions."
+}

@@ -1,37 +1,37 @@
 {
   "schema": "dsbc.mutationTesting/v1",
   "directive": 27,
-  "generatedAt": "2026-10-02T18:31:45.118Z",
+  "generatedAt": "2026-10-02T19:47:28.140Z",
   "environment": "Local: vitest (unit), Firebase Emulator Suite demo-dsbc (integration, rules, backend)",
   "baseline": {
     "unit": {
       "exitCode": 0,
-      "summary": "Tests  27 passed (27)",
+      "summary": "Tests  30 passed (30)",
       "failed": [],
-      "seconds": 4
+      "seconds": 2
     },
     "backend": {
       "exitCode": 0,
       "summary": "Tests  4 passed (4)",
       "failed": [],
-      "seconds": 33
+      "seconds": 21
     },
     "integration": {
       "exitCode": 0,
       "summary": "Tests  13 passed (13)",
       "failed": [],
-      "seconds": 28
+      "seconds": 26
     },
     "rules": {
       "exitCode": 0,
       "summary": "Tests  126 passed (126)",
       "failed": [],
-      "seconds": 15
+      "seconds": 9
     }
   },
   "summary": {
-    "total": 38,
-    "killed": 38,
+    "total": 41,
+    "killed": 41,
     "survived": []
   },
   "results": [
@@ -46,7 +46,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-003 an undesignated target (staging) is refused instead of falling back"
       ],
@@ -63,7 +63,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  2 failed | 14 passed (16)",
+      "summary": "Tests  2 failed | 17 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-005 production cannot be pointed at the emulators",
         "tests/unit/environment.test.ts > ENV: deployment preflight > ENV-015 the production preflight has no FAIL (only owner designations may block)"
@@ -81,7 +81,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-006 a registry that weakens production is refused"
       ],
@@ -98,7 +98,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-006 a registry that weakens production is refused"
       ],
@@ -115,7 +115,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-001 an unset or empty VITE_DSBC_ENV is refused (never guessed)"
       ],
@@ -132,7 +132,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-009 nothing in the client infers the environment from the hostname, URL or localStorage"
       ],
@@ -149,7 +149,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: client target resolution fails closed > ENV-009 nothing in the client infers the environment from the hostname, URL or localStorage"
       ],
@@ -166,7 +166,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  2 failed | 14 passed (16)",
+      "summary": "Tests  2 failed | 17 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: backend target check > ENV-012 every mismatch makes the backend refuse to load",
         "tests/unit/environment.test.ts > ENV: deployment preflight > ENV-015 the production preflight has no FAIL (only owner designations may block)"
@@ -184,7 +184,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: backend target check > ENV-012 every mismatch makes the backend refuse to load"
       ],
@@ -201,7 +201,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: backend target check > ENV-012 every mismatch makes the backend refuse to load"
       ],
@@ -218,7 +218,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: backend target check > ENV-012 every mismatch makes the backend refuse to load"
       ],
@@ -235,9 +235,60 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  1 failed | 15 passed (16)",
+      "summary": "Tests  1 failed | 18 passed (19)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: backend target check > ENV-013 the backend entry point asserts the target before configuring any function"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E13",
+      "area": "environment",
+      "runner": "unit",
+      "file": "scripts/directive27/preflight.ts",
+      "mutation": "a bundle built for another project/database/region passes the preflight",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 18 passed (19)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: build artifact identity (overnight Phase 6) > ENV-018 a bundle built for another project, database or region fails the preflight"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E14",
+      "area": "environment",
+      "runner": "unit",
+      "file": "scripts/directive27/preflight.ts",
+      "mutation": "a bundle built at another commit may be deployed",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 18 passed (19)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: build artifact identity (overnight Phase 6) > ENV-019 a bundle built at another commit cannot be deployed"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "E15",
+      "area": "environment",
+      "runner": "unit",
+      "file": "scripts/directive27/preflight.ts",
+      "mutation": "a bundle without build identity passes the preflight",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/environment.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 18 passed (19)",
+      "failed": [
+        "tests/unit/environment.test.ts > ENV: build artifact identity (overnight Phase 6) > ENV-017 a bundle without build-info.json fails the preflight"
       ],
       "seconds": 2
     },
@@ -256,7 +307,7 @@
       "failed": [
         "tests/unit/routes.test.ts > ROUTE: canonical public paths > ROUTE-002 unknown, malformed and traversal paths are NOT_FOUND (never a fallback entity)"
       ],
-      "seconds": 3
+      "seconds": 2
     },
     {
       "id": "P02",
@@ -290,7 +341,7 @@
       "failed": [
         "tests/unit/routes.test.ts > ROUTE: canonical public paths > ROUTE-003 ?preview=true is only a flag; it never changes which entity is requested"
       ],
-      "seconds": 3
+      "seconds": 2
     },
     {
       "id": "P04",
@@ -304,7 +355,7 @@
         "tests/unit/environment.test.ts"
       ],
       "exitCode": 1,
-      "summary": "Tests  2 failed | 25 passed (27)",
+      "summary": "Tests  2 failed | 28 passed (30)",
       "failed": [
         "tests/unit/environment.test.ts > ENV: deployment preflight > ENV-015 the production preflight has no FAIL (only owner designations may block)",
         "tests/unit/routes.test.ts > ROUTE: canonical public paths > ROUTE-006 production hosting serves only public routes as the app; unknown paths get HTTP 404"
@@ -343,7 +394,7 @@
       "failed": [
         "tests/unit/routes.test.ts > HEALTH: fail-closed aggregation > HEALTH-002 OK only when every check is OK or intentionally DISABLED"
       ],
-      "seconds": 3
+      "seconds": 2
     },
     {
       "id": "H03",
@@ -372,12 +423,12 @@
       "testFiles": [
         "tests/backend/platform-health.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 3 passed (4)",
       "failed": [
         "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-101 only a verified App Owner may measure platform health"
       ],
-      "seconds": 46
+      "seconds": 22
     },
     {
       "id": "H05",
@@ -389,12 +440,12 @@
       "testFiles": [
         "tests/backend/platform-health.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 3 passed (4)",
       "failed": [
         "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-102 an un-bootstrapped platform is FAIL, with every required check measured and sourced"
       ],
-      "seconds": 28
+      "seconds": 21
     },
     {
       "id": "H06",
@@ -411,7 +462,7 @@
       "failed": [
         "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-102 an un-bootstrapped platform is FAIL, with every required check measured and sourced"
       ],
-      "seconds": 23
+      "seconds": 21
     },
     {
       "id": "H07",
@@ -423,12 +474,12 @@
       "testFiles": [
         "tests/backend/platform-health.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 3 passed (4)",
       "failed": [
         "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-102 an un-bootstrapped platform is FAIL, with every required check measured and sourced"
       ],
-      "seconds": 28
+      "seconds": 21
     },
     {
       "id": "H08",
@@ -445,7 +496,7 @@
       "failed": [
         "tests/backend/platform-health.test.ts > HEALTH: platform health callable > HEALTH-103 bootstrapping and a reconciler run turn those checks OK; unconfigured parts keep it from OK"
       ],
-      "seconds": 29
+      "seconds": 21
     },
     {
       "id": "B01",
@@ -457,12 +508,12 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 12 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-001 a dry run reports what it would create and writes nothing"
       ],
-      "seconds": 37
+      "seconds": 26
     },
     {
       "id": "B02",
@@ -479,7 +530,7 @@
       "failed": [
         "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-003 is idempotent and never overwrites App Owner changes (drift is reported instead)"
       ],
-      "seconds": 32
+      "seconds": 26
     },
     {
       "id": "B03",
@@ -491,12 +542,12 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 12 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-003 is idempotent and never overwrites App Owner changes (drift is reported instead)"
       ],
-      "seconds": 38
+      "seconds": 25
     },
     {
       "id": "B04",
@@ -508,13 +559,13 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  2 failed | 11 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-002 creates plans, feature catalogue, global policy and platform configuration, and nothing else",
         "tests/integration/productionOps.test.ts > BOOT: production bootstrap > BOOT-004 never creates demo customers, subscriptions, invoices, payments or pilots"
       ],
-      "seconds": 31
+      "seconds": 25
     },
     {
       "id": "G01",
@@ -526,13 +577,13 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  2 failed | 11 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-003 a preview approved before the data changed is refused (hash mismatch)",
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-006 is idempotent: a second run finds nothing to do and cannot replay the approval or the run id"
       ],
-      "seconds": 37
+      "seconds": 25
     },
     {
       "id": "G02",
@@ -544,12 +595,12 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 12 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-002 the approval must come from a verified App Owner"
       ],
-      "seconds": 33
+      "seconds": 26
     },
     {
       "id": "G03",
@@ -561,12 +612,12 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 12 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-004 demo candidates, existing subscriptions and unevidenced grants are refused"
       ],
-      "seconds": 36
+      "seconds": 25
     },
     {
       "id": "G04",
@@ -578,12 +629,12 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 12 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-004 demo candidates, existing subscriptions and unevidenced grants are refused"
       ],
-      "seconds": 34
+      "seconds": 25
     },
     {
       "id": "G05",
@@ -595,12 +646,12 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 12 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-004 demo candidates, existing subscriptions and unevidenced grants are refused"
       ],
-      "seconds": 37
+      "seconds": 26
     },
     {
       "id": "G06",
@@ -612,12 +663,12 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 12 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-006 is idempotent: a second run finds nothing to do and cannot replay the approval or the run id"
       ],
-      "seconds": 37
+      "seconds": 25
     },
     {
       "id": "G07",
@@ -635,7 +686,7 @@
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-001 discovery is read-only and classifies every customer",
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-005 executes only approved decisions, preserves content and keeps an audit trail"
       ],
-      "seconds": 33
+      "seconds": 26
     },
     {
       "id": "G08",
@@ -647,12 +698,12 @@
       "testFiles": [
         "tests/integration/productionOps.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  1 failed | 12 passed (13)",
       "failed": [
         "tests/integration/productionOps.test.ts > MIG: existing-customer migration > MIG-004 demo candidates, existing subscriptions and unevidenced grants are refused"
       ],
-      "seconds": 32
+      "seconds": 26
     },
     {
       "id": "R10",
@@ -664,7 +715,7 @@
       "testFiles": [
         "tests/rules/directive27-platform.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  5 failed | 121 passed (126)",
       "failed": [
         "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > App Owner (verified claim) cannot create platformConfig",
@@ -673,7 +724,7 @@
         "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > App Owner (verified claim) cannot fake a reconciler heartbeat",
         "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > App Owner (verified claim) cannot delete deployment config"
       ],
-      "seconds": 19
+      "seconds": 10
     },
     {
       "id": "R11",
@@ -685,7 +736,7 @@
       "testFiles": [
         "tests/rules/directive27-platform.test.ts"
       ],
-      "exitCode": 2,
+      "exitCode": 1,
       "summary": "Tests  12 failed | 114 passed (126)",
       "failed": [
         "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Company Admin A cannot read platform configuration or migration runs",
@@ -697,7 +748,7 @@
         "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Admin of suspended company cannot read platform configuration or migration runs",
         "tests/rules/directive27-platform.test.ts > D27 RULES: platform configuration and migration ledger > Owner allow-list email, verified, no claim cannot read platform configuration or migration runs"
       ],
-      "seconds": 19
+      "seconds": 9
     }
   ]
 }

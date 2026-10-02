@@ -1,0 +1,153 @@
+{
+  "schema": "dsbc.liveProbe/v1",
+  "generatedAt": "2026-10-02T19:48:22.021Z",
+  "commit": "37c5c7bd5094cfa2bd40f675fd14080fc2b07d65",
+  "target": {
+    "projectId": "v-nexus-lite",
+    "databaseId": "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5",
+    "functionsRegion": "us-west1",
+    "hostingSite": null,
+    "publicOrigin": null,
+    "storageBucket": "v-nexus-lite.firebasestorage.app"
+  },
+  "readOnly": true,
+  "targetVerified": false,
+  "liveDeployment": "NOT_COMPLETE",
+  "liveHealth": "NOT_EXECUTED",
+  "liveAcceptance": "NOT_EXECUTED",
+  "checks": [
+    {
+      "id": "TARGET_DATABASE",
+      "status": "PASS",
+      "detail": "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5 exists in v-nexus-lite (ENTERPRISE edition, us-west1)",
+      "data": {
+        "databasesInProject": [
+          "(default)",
+          "ai-studio-0d16e7c4-2d3a-4007-8e6c-d0d45fea2c9e",
+          "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5",
+          "ai-studio-9106414b-d263-45a4-8b18-6ac28d996a0b"
+        ]
+      }
+    },
+    {
+      "id": "DATABASE_RECOVERY",
+      "status": "WARN",
+      "detail": "point-in-time recovery DISABLED, delete protection DISABLED (owner decision; recommended before customer data goes live)"
+    },
+    {
+      "id": "REQUIRED_APIS",
+      "status": "BLOCKED",
+      "detail": "not enabled: cloudfunctions.googleapis.com, cloudbuild.googleapis.com, eventarc.googleapis.com, cloudscheduler.googleapis.com, secretmanager.googleapis.com (enabling them is a project change the owner must approve)",
+      "data": {
+        "missing": [
+          "cloudfunctions.googleapis.com",
+          "cloudbuild.googleapis.com",
+          "eventarc.googleapis.com",
+          "cloudscheduler.googleapis.com",
+          "secretmanager.googleapis.com"
+        ]
+      }
+    },
+    {
+      "id": "FUNCTION_SECRETS",
+      "status": "BLOCKED",
+      "detail": "Secret Manager API disabled; RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET cannot exist, so `firebase deploy --only functions` cannot succeed"
+    },
+    {
+      "id": "DEFAULT_SITE_OCCUPANT",
+      "status": "INFO",
+      "detail": "https://v-nexus-lite.web.app serves \"V-Nexus Lite | Enterprise Performance\" (HTTP 200) — not DSBC; deploying DSBC there would replace another live app",
+      "data": {
+        "sitesInProject": [
+          "v-nexus-lite",
+          "vidwan-kids"
+        ]
+      }
+    },
+    {
+      "id": "HOSTING_SITE",
+      "status": "BLOCKED",
+      "detail": "config/environments.json production.hosting.site is null; the owner must create or choose a dedicated DSBC site"
+    },
+    {
+      "id": "PUBLIC_ORIGIN",
+      "status": "BLOCKED",
+      "detail": "config/environments.json production.publicOrigin is null; share links and QR codes have no canonical origin"
+    },
+    {
+      "id": "FIRESTORE_RULES_DEPLOYED",
+      "status": "NOT_DEPLOYED",
+      "detail": "90dcc764-80f8-456f-b48b-a468eca65f6c released 2026-10-01T05:38:07.464972Z; differs from firestore.rules at this commit (legacy rules still live); live rules still grant App Owner by email allow-list"
+    },
+    {
+      "id": "FUNCTIONS_DEPLOYED",
+      "status": "NOT_DEPLOYED",
+      "detail": "Cloud Functions API is disabled on v-nexus-lite; none of the 41 DSBC functions exist",
+      "data": {
+        "expected": [
+          "adminChangeCustomerPlan",
+          "adminCreateInvoice",
+          "adminGetCustomerCommercialState",
+          "adminGetDemoReadiness",
+          "adminGetPlatformHealth",
+          "adminGrantComplimentary",
+          "adminGrantTrial",
+          "adminReconcileNow",
+          "adminRecordInvoicePayment",
+          "adminReviewDeletion",
+          "adminSetCustomerClassification",
+          "adminSetCustomerSuspension",
+          "adminSetPublishingSuspension",
+          "adminSetSubscriptionStatus",
+          "bootstrapControlPlane",
+          "cancelMySubscription",
+          "checkEntitlement",
+          "confirmPayment",
+          "consumeQuota",
+          "createCheckoutOrder",
+          "deleteOverride",
+          "deletePlan",
+          "duplicatePlan",
+          "getMyCommercialState",
+          "onCompanyWrittenMeasure",
+          "onEmployeeWrittenEnforceSeats",
+          "onOverrideWrittenEnforceSeats",
+          "onProfileWrittenMeasure",
+          "onSubscriptionWrittenEnforceSeats",
+          "razorpayWebhook",
+          "reconcileSubscriptionsDaily",
+          "resolvePublicEntity",
+          "setMyDeletionRequest",
+          "setPlanFeature",
+          "setPlanPricing",
+          "setPublishingState",
+          "submitPublicLead",
+          "updateGlobalPolicy",
+          "uploadAsset",
+          "upsertOverride",
+          "upsertPlan"
+        ]
+      }
+    },
+    {
+      "id": "CONTROL_PLANE_BOOTSTRAPPED",
+      "status": "NOT_DEPLOYED",
+      "detail": "40/40 control-plane documents missing (plans, catalogue, policy, platform config)"
+    },
+    {
+      "id": "HOSTING_DEPLOYED",
+      "status": "NOT_DEPLOYED",
+      "detail": "no public origin designated, so there is no DSBC deployment to measure"
+    },
+    {
+      "id": "LIVE_PLATFORM_HEALTH",
+      "status": "NOT_EXECUTED",
+      "detail": "no docs/overnight/evidence/live-health.json: adminGetPlatformHealth must be called by the signed-in App Owner on the deployed backend"
+    },
+    {
+      "id": "LIVE_ACCEPTANCE",
+      "status": "NOT_EXECUTED",
+      "detail": "no docs/overnight/evidence/live-acceptance.json: the three-customer journey has not been run against a live deployment"
+    }
+  ]
+}
