@@ -15,12 +15,15 @@ interface CompanyProfileDrawerModalProps {
   isOpen: boolean;
   onClose: () => void;
   profile: ResolvedCardProfile;
+  /** Published website slug; empty when the company has no public website. */
+  companySlug?: string;
 }
 
 export const CompanyProfileDrawerModal: React.FC<CompanyProfileDrawerModalProps> = ({
   isOpen,
   onClose,
   profile,
+  companySlug = '',
 }) => {
   if (!isOpen || !profile.hasCompanyAssociation) return null;
 
@@ -118,26 +121,20 @@ export const CompanyProfileDrawerModal: React.FC<CompanyProfileDrawerModalProps>
 
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2">
-          <button
-            onClick={() => {
-              onClose();
-              const isPreview = window.location.hash.includes('preview=true');
-              const cSlug =
-                profile.companyId === 'company_acme'
-                  ? 'acme-innovations'
-                  : profile.companyId === 'company_nexus'
-                  ? 'nexus-global'
-                  : profile.companyId
-                  ? profile.companyId.replace('company_', '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
-                  : 'company';
-              window.location.hash = `company/${cSlug}${isPreview ? '?preview=true' : ''}`;
-            }}
-            className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-teal-700 text-white font-semibold text-xs hover:bg-teal-800 transition flex items-center justify-center gap-1.5 shadow-sm"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>Visit Company Profile</span>
-            <ExternalLink className="w-3 h-3 ml-0.5" />
-          </button>
+          {companySlug && (
+            <button
+              onClick={() => {
+                onClose();
+                const isPreview = window.location.hash.includes('preview=true');
+                window.location.hash = `company/${companySlug}${isPreview ? '?preview=true' : ''}`;
+              }}
+              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-teal-700 text-white font-semibold text-xs hover:bg-teal-800 transition flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>Visit Company Profile</span>
+              <ExternalLink className="w-3 h-3 ml-0.5" />
+            </button>
+          )}
           <button
             onClick={onClose}
             className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-slate-200 text-slate-800 font-semibold text-xs hover:bg-slate-300 transition"

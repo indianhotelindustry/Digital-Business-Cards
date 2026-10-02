@@ -19,7 +19,7 @@ import {
   EventAnalyticsSummary,
   CampaignAnalyticsSummary,
 } from '../types';
-import { demoStore } from './demoStore';
+import { demoDataAllowed, demoStore } from './demoStore';
 
 // ==========================================
 // EVENTS MANAGEMENT
@@ -56,7 +56,7 @@ export async function getEventById(eventId: string): Promise<Event | null> {
   try {
     const dRef = doc(db, 'events', eventId);
     const snap = await getDoc(dRef);
-    if (!snap.exists()) return demoStore.getEventById(eventId);
+    if (!snap.exists()) return demoDataAllowed() ? demoStore.getEventById(eventId) : null;
     return snap.data() as Event;
   } catch (err) {
     return demoStore.getEventById(eventId);

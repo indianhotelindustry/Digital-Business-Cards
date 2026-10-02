@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Company, Department, Employee } from '../../types';
-import { getCardBySlug } from '../../services/cardService';
-import { getEmployeeById } from '../../services/employeeService';
-import { getCompanyById } from '../../services/companyService';
-import { getDepartmentById } from '../../services/departmentService';
-import { publishingService, type EntityVisibilityFlags } from '../../services/publishingService';
+import { publicResolver } from '../../services/publicResolver';
 import { PublicCardView } from '../cards/PublicCardView';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { Search, ArrowLeft, Lock, AlertTriangle, FileText } from 'lucide-react';
@@ -34,84 +30,33 @@ export const PublicCardPage: React.FC<PublicCardPageProps> = ({
       setLoading(true);
       setError(null);
       setPublishingIssue(null);
-      try {
-        const foundCard = await getCardBySlug(slug);
-        if (!foundCard) {
-          if (isMounted) {
-            setError('Card not found');
-            setLoading(false);
-          }
-          return;
-        }
-
-        // Publishing Governance Gate (Directive 20 requirement #6)
-        const pubCheck = await publishingService.canPublicView(foundCard.id, isAdminPreview, foundCard as EntityVisibilityFlags);
-        if (!pubCheck.allowed) {
-          if (isMounted) {
-            if (pubCheck.reason === 'SUSPENDED') {
-              setPublishingIssue('SUSPENDED');
-            } else if (pubCheck.reason === 'DRAFT' || pubCheck.reason === 'UNPUBLISHED') {
-              setPublishingIssue(pubCheck.reason);
-            } else {
-              setError('Card unavailable');
-            }
-            setLoading(false);
-          }
-          return;
-        }
-
-        let foundEmp: Employee | null = null;
-        let foundComp: Company | null = null;
-        let foundDept: Department | null = null;
-
-        try {
-          foundEmp = await getEmployeeById(foundCard.employeeId);
-        } catch (e) {
-          console.warn('Could not load employee for card:', e);
-        }
-
-        try {
-          foundComp = await getCompanyById(foundCard.companyId);
-        } catch (e) {
-          console.warn('Could not load company for card:', e);
-        }
-
-        // Check if company is suspended
-        if (foundComp?.status === 'suspended' && !isAdminPreview) {
-          if (isMounted) {
-            setPublishingIssue('SUSPENDED');
-            setLoading(false);
-          }
-          return;
-        }
-
-        if (foundEmp?.departmentId) {
-          try {
-            foundDept = await getDepartmentById(foundEmp.departmentId);
-          } catch (e) {
-            console.warn('Could not load department for card:', e);
-          }
-        }
-
-        if (isMounted) {
-          setCard(foundCard);
-          setEmployee(foundEmp);
-          setCompany(foundComp);
-          setDepartment(foundDept);
-          setLoading(false);
-        }
-      } catch (err: any) {
-        console.error('Error fetching public card data:', err);
-        if (isMounted) {
-          setError(err.message || 'Failed to load card');
-          setLoading(false);
-        }
+      // Directive 26: the backend resolves the slug (published, visible,
+      // same-tenant content only). There is no demo-data fallback here.
+      const r = await publicResolver.card(slug, isAdminPreview);
+      if (!isMounted) return;
+      if (r.outcome === 'OK') {
+        setCard(r.card!);
+        setEmployee(r.employee!);
+        setCompany(r.company!);
+        setDepartment(r.department ?? null);
+      } else if (r.outcome === 'NOT_PUBLISHED') {
+        setPublishingIssue('UNPUBLISHED');
+      } else if (r.outcome === 'UNAVAILABLE') {
+        setPublishingIssue('SUSPENDED');
+      } else if (r.outcome === 'ERROR') {
+        setError('This card could not be loaded right now. Please try again.');
+      } else {
+        setError('Card not found');
       }
+      setLoading(false);
     }
 
     if (slug) {
       loadPublicCard();
     }
+    return () => {
+      isMounted = false;
+    };
   }, [slug, isAdminPreview]);
 
   if (loading) {

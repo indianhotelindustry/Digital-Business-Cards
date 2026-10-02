@@ -191,13 +191,9 @@ export const PublicCardView: React.FC<PublicCardViewProps> = ({
 
   const handleViewCompanyProfile = () => {
     if (resolvedProfile.hasCompanyAssociation) {
-      if (company) {
-        const cSlug = resolveCompanySlug(company);
+      const cSlug = company ? resolveCompanySlug(company) : '';
+      if (cSlug) {
         const isPreview = window.location.hash.includes('preview=true');
-        window.location.hash = `company/${cSlug}${isPreview ? '?preview=true' : ''}`;
-      } else if (resolvedProfile.companyId) {
-        const isPreview = window.location.hash.includes('preview=true');
-        const cSlug = resolvedProfile.companyId === 'company_acme' ? 'acme-innovations' : resolvedProfile.companyId === 'company_nexus' ? 'nexus-global' : resolvedProfile.companyId;
         window.location.hash = `company/${cSlug}${isPreview ? '?preview=true' : ''}`;
       } else {
         setIsCompanyProfileOpen(true);
@@ -242,6 +238,7 @@ export const PublicCardView: React.FC<PublicCardViewProps> = ({
       {/* Company Profile Drawer Modal */}
       {resolvedProfile.hasCompanyAssociation && (
         <CompanyProfileDrawerModal
+          companySlug={company ? resolveCompanySlug(company) : ''}
           isOpen={isCompanyProfileOpen}
           onClose={() => setIsCompanyProfileOpen(false)}
           profile={resolvedProfile}

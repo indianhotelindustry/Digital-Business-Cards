@@ -11,7 +11,8 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { Card, CardStatus, CardTemplate } from '../types';
-import { demoStore } from './demoStore';
+import { demoDataAllowed, demoStore } from './demoStore';
+import { slugService } from './slugService';
 
 const CARDS_COLLECTION = 'cards';
 const TEMPLATES_COLLECTION = 'cardTemplates';
@@ -25,26 +26,23 @@ export function generateSlug(name: string): string {
     .replace(/-+/g, '-');
 }
 
+/**
+ * Suggests a slug candidate that is free in the backend slug index
+ * (slugs/{slug}). Directive 26: the old query over cards.publicSlug cannot be
+ * proven by firestore.rules; ownership is decided by the backend at publish.
+ */
 export async function findUniqueSlug(baseSlug: string, excludeCardId?: string): Promise<string> {
-  let slugCandidate = baseSlug || 'card';
-  let counter = 1;
-  let isUnique = false;
-
-  while (!isUnique) {
-    const colRef = collection(db, CARDS_COLLECTION);
-    const q = query(colRef, where('publicSlug', '==', slugCandidate), limit(1));
-    const snap = await getDocs(q);
-
-    if (snap.empty || (excludeCardId && snap.docs[0].id === excludeCardId)) {
-      isUnique = true;
-      return slugCandidate;
+  const base = slugService.sanitize(baseSlug || 'card') || 'card';
+  for (let counter = 1; counter < 50; counter++) {
+    const candidate = counter === 1 ? base : `${base}-${counter}`;
+    const res = await slugService.checkAvailability(candidate, excludeCardId);
+    if (res.isValid) return res.sanitizedSlug;
+    if (res.errorCode && res.errorCode !== 'COLLISION_DUPLICATE') {
+      // Too short / reserved: fall back to a neutral, valid base.
+      return findUniqueSlug(`${base}-card`, excludeCardId);
     }
-
-    counter++;
-    slugCandidate = `${baseSlug}-${counter}`;
   }
-
-  return slugCandidate;
+  return `${base}-${Date.now().toString(36)}`;
 }
 
 export async function getCardById(cardId: string): Promise<Card | null> {
@@ -63,7 +61,7 @@ export async function getCardBySlug(slug: string): Promise<Card | null> {
     const colRef = collection(db, CARDS_COLLECTION);
     const q = query(colRef, where('publicSlug', '==', slug), limit(1));
     const snap = await getDocs(q);
-    if (snap.empty) return demoStore.getCardBySlug(slug);
+    if (snap.empty) return demoDataAllowed() ? demoStore.getCardBySlug(slug) : null;
     const firstDoc = snap.docs[0];
     return { id: firstDoc.id, ...firstDoc.data() } as Card;
   } catch (err) {

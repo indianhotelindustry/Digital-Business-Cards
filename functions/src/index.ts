@@ -22,6 +22,7 @@ import * as quota from './usage/quota';
 import { uploadAsset as uploadAssetHandler } from './usage/uploads';
 import { RazorpayProvider } from './billing/paymentProvider';
 export { resolvePublicEntity } from './public/resolver';
+export { submitPublicLead } from './public/leads';
 
 setGlobalOptions({ region: REGION, maxInstances: 10 });
 

@@ -11,6 +11,8 @@ import {
 } from '../types';
 import { DigitalIdentityProfile } from '../types/cardProfile';
 import { DEMO_USERS } from './seedService';
+import { DEMO_FEATURES_ENABLED } from '../lib/runtimeFlags';
+import { auth } from '../lib/firebase';
 
 const now = '2026-03-15T12:00:00.000Z';
 
@@ -1029,4 +1031,33 @@ class DemoDataStore {
   }
 }
 
-export const demoStore = new DemoDataStore();
+// ============================================================================
+// Directive 26 demo-data policy
+// ============================================================================
+// Demo data exists only for DEVELOPMENT demo personas: demo features enabled
+// (vite dev) AND no Firebase session. For a signed-in customer, or in any
+// production build, every demoStore call throws, so a failed Firestore read or
+// write can never be silently replaced by sample data.
+export class DemoDataBlockedError extends Error {
+  constructor(operation: string) {
+    super(`The request could not be completed and was not saved (${operation}). Please try again; sample data is never substituted for your data.`);
+    this.name = 'DemoDataBlockedError';
+  }
+}
+
+export function demoDataAllowed(): boolean {
+  return DEMO_FEATURES_ENABLED && !auth.currentUser;
+}
+
+const demoStoreImpl = new DemoDataStore();
+
+export const demoStore: DemoDataStore = new Proxy(demoStoreImpl, {
+  get(target, prop, receiver) {
+    const value = Reflect.get(target, prop, receiver);
+    if (typeof value !== 'function') return value;
+    return (...args: unknown[]) => {
+      if (!demoDataAllowed()) throw new DemoDataBlockedError(String(prop));
+      return value.apply(target, args);
+    };
+  },
+});

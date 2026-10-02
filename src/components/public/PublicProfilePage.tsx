@@ -1,12 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Company, Department, Employee } from '../../types';
 import { ResolvedCardProfile, CardSectionType } from '../../types/cardProfile';
-import { getCardBySlug } from '../../services/cardService';
-import { getEmployeeById } from '../../services/employeeService';
-import { getCompanyById } from '../../services/companyService';
-import { getDepartmentById } from '../../services/departmentService';
-import { getDigitalIdentityProfile } from '../../services/digitalIdentityProfileService';
 import { resolveCardProfile } from '../../services/cardSectionResolver';
+import { publicResolver } from '../../services/publicResolver';
 import { resolveCompanySlug } from '../../services/companyProfileResolver';
 import { downloadVCard } from '../../services/vcardService';
 import { recordAnalyticsEvent } from '../../services/analyticsService';
@@ -77,78 +73,34 @@ export const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
     async function loadFullProfile() {
       setLoading(true);
       setError(null);
-      try {
-        const foundCard = await getCardBySlug(slug);
-        if (!foundCard) {
-          if (isMounted) {
-            setError('Profile not found');
-            setLoading(false);
-          }
-          return;
-        }
-
-        let foundEmp: Employee | null = null;
-        let foundComp: Company | null = null;
-        let foundDept: Department | null = null;
-
-        try {
-          foundEmp = await getEmployeeById(foundCard.employeeId);
-        } catch (e) {
-          console.warn('Could not load employee:', e);
-        }
-
-        try {
-          foundComp = await getCompanyById(foundCard.companyId);
-        } catch (e) {
-          console.warn('Could not load company:', e);
-        }
-
-        if (foundEmp?.departmentId) {
-          try {
-            foundDept = await getDepartmentById(foundEmp.departmentId);
-          } catch (e) {
-            console.warn('Could not load department:', e);
-          }
-        }
-
-        let digitalProfile = null;
-        if (foundEmp) {
-          try {
-            digitalProfile = await getDigitalIdentityProfile(foundEmp.id);
-          } catch (e) {
-            console.warn('Could not load digital identity profile:', e);
-          }
-        }
-
-        if (isMounted) {
-          setCard(foundCard);
-          setEmployee(foundEmp);
-          setCompany(foundComp);
-          setDepartment(foundDept);
-
-          if (foundEmp) {
-            const resolved = resolveCardProfile(foundEmp, foundComp, foundDept, digitalProfile);
-            setResolvedProfile(resolved);
-            // Record profile view analytics
-            recordAnalyticsEvent(foundEmp.companyId, foundEmp.id, foundCard.id, 'card_view', {
-              viewType: 'full_profile',
-            });
-          }
-          setLoading(false);
-        }
-      } catch (err: any) {
-        console.error('Error fetching public profile:', err);
-        if (isMounted) {
-          setError(err.message || 'Failed to load profile');
-          setLoading(false);
-        }
+      // Directive 26: resolved by the backend (published card, visible profile,
+      // PUBLIC sections only, full-profile entitlement of the tenant).
+      const r = await publicResolver.profile(slug, isAdminPreview);
+      if (!isMounted) return;
+      if (r.outcome === 'OK') {
+        setCard(r.card!);
+        setEmployee(r.employee!);
+        setCompany(r.company!);
+        setDepartment(r.department ?? null);
+        setResolvedProfile(resolveCardProfile(r.employee!, r.company!, r.department ?? null, r.profile ?? null));
+        recordAnalyticsEvent(r.employee!.companyId, r.employee!.id, r.card!.id, 'card_view', { viewType: 'full_profile' });
+      } else if (r.outcome === 'NOT_PUBLISHED' || r.outcome === 'UNAVAILABLE') {
+        setError('This profile is not publicly available.');
+      } else if (r.outcome === 'ERROR') {
+        setError('This profile could not be loaded right now. Please try again.');
+      } else {
+        setError('Profile not found');
       }
+      setLoading(false);
     }
 
     if (slug) {
       loadFullProfile();
     }
-  }, [slug]);
+    return () => {
+      isMounted = false;
+    };
+  }, [slug, isAdminPreview]);
 
   if (loading) {
     return (
@@ -332,16 +284,8 @@ export const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        if (company) {
-                          const cSlug = resolveCompanySlug(company);
-                          window.location.hash = `company/${cSlug}${isAdminPreview ? '?preview=true' : ''}`;
-                        } else if (resolvedProfile.companyId) {
-                          const cSlug =
-                            resolvedProfile.companyId === 'company_acme'
-                              ? 'acme-innovations'
-                              : resolvedProfile.companyId === 'company_nexus'
-                              ? 'nexus-global'
-                              : resolvedProfile.companyId;
+                        const cSlug = company ? resolveCompanySlug(company) : '';
+                        if (cSlug) {
                           window.location.hash = `company/${cSlug}${isAdminPreview ? '?preview=true' : ''}`;
                         } else {
                           setIsCompanyDrawerOpen(true);
@@ -1074,6 +1018,7 @@ export const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
       {/* Company Profile Drawer Modal */}
       {resolvedProfile.hasCompanyAssociation && (
         <CompanyProfileDrawerModal
+          companySlug={company ? resolveCompanySlug(company) : ''}
           isOpen={isCompanyDrawerOpen}
           onClose={() => setIsCompanyDrawerOpen(false)}
           profile={resolvedProfile}

@@ -30,6 +30,7 @@ import { publishingService } from '../../services/publishingService';
 import { notificationService } from '../../services/notificationService';
 import { conversionFunnelService } from '../../services/conversionFunnelService';
 import { getCardByEmployeeId } from '../../services/cardService';
+import { updateCompany } from '../../services/companyService';
 import { describeBackendError } from '../../lib/backend';
 
 interface OnboardingWizardModalProps {
@@ -45,7 +46,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
   initialType = 'individual',
   onPublishComplete,
 }) => {
-  const { role, userProfile, activeCompany } = useAuth();
+  const { role, userProfile, activeCompany, refreshUserData } = useAuth();
   const { plans } = useEntitlement();
   const { upgradeToPlan } = useSubscription();
 
@@ -82,6 +83,17 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
   const [publishedSlug, setPublishedSlug] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [planNotice, setPlanNotice] = useState<string | null>(null);
+
+  // Directive 26: start from the customer's real company record, not sample text.
+  useEffect(() => {
+    if (!isOpen || !activeCompany) return;
+    setCompName(activeCompany.name || '');
+    setCompLegal(activeCompany.legalName || activeCompany.name || '');
+    setCompTagline(activeCompany.tagline || '');
+    setCompIndustry(activeCompany.industry || '');
+    setCompEmail(activeCompany.email || userProfile?.email || '');
+    setCompPhone(activeCompany.phone || '');
+  }, [isOpen, activeCompany?.id]);
 
   useEffect(() => {
     if (isOpen) {
@@ -206,6 +218,18 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
       let entityId: string | null = null;
       if (customerType === 'company') {
         entityId = activeCompany?.id ?? null;
+        if (entityId) {
+          // Save what the customer entered in the wizard before publishing it.
+          await updateCompany(entityId, {
+            name: compName.trim(),
+            legalName: compLegal.trim() || compName.trim(),
+            tagline: compTagline.trim(),
+            industry: compIndustry.trim(),
+            email: compEmail.trim(),
+            phone: compPhone.trim(),
+          });
+          await refreshUserData();
+        }
       } else if (userProfile?.employeeId) {
         entityId = (await getCardByEmployeeId(userProfile.employeeId))?.id ?? null;
       }

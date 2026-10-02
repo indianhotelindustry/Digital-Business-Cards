@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { Department, DepartmentStatus } from '../types';
-import { demoStore } from './demoStore';
+import { demoDataAllowed, demoStore } from './demoStore';
 
 const DEPARTMENTS_COLLECTION = 'departments';
 
@@ -47,7 +47,7 @@ export async function getDepartmentById(deptId: string): Promise<Department | nu
   try {
     const docRef = doc(db, DEPARTMENTS_COLLECTION, deptId);
     const snap = await getDoc(docRef);
-    if (!snap.exists()) return demoStore.getDepartmentById(deptId);
+    if (!snap.exists()) return demoDataAllowed() ? demoStore.getDepartmentById(deptId) : null;
     return { id: snap.id, ...snap.data() } as Department;
   } catch (err) {
     return demoStore.getDepartmentById(deptId);

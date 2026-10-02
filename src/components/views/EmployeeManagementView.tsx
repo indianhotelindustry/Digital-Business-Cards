@@ -10,6 +10,7 @@ import {
 } from '../../services/employeeService';
 import { getDepartmentsByCompany } from '../../services/departmentService';
 import { getCardById, getCardTemplates, updateCard } from '../../services/cardService';
+import { PublishingPanel } from '../publishing/PublishingPanel';
 import {
   Users,
   Search,
@@ -58,6 +59,7 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [shareModalEmp, setShareModalEmp] = useState<{ emp: Employee; slug: string } | null>(null);
+  const [publishingEmp, setPublishingEmp] = useState<Employee | null>(null);
 
   // Form State
   const [firstName, setFirstName] = useState('');
@@ -463,15 +465,14 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
                           <QrCode className="w-3.5 h-3.5" />
                         </button>
 
-                        {onNavigateToCard && (
+                        {emp.cardId && (
                           <button
-                            onClick={() =>
-                              onNavigateToCard(emp.displayName.toLowerCase().replace(/[^a-z0-9]/g, '-'))
-                            }
-                            className="p-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition inline-flex items-center"
-                            title="Preview Public Card"
+                            onClick={() => setPublishingEmp(emp)}
+                            className="px-2 py-1 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition inline-flex items-center text-[10px] font-semibold"
+                            title="Publish Card"
+                            data-testid={`publish-card-${emp.id}`}
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <ExternalLink className="w-3.5 h-3.5 mr-1" /> Publish
                           </button>
                         )}
 
@@ -502,6 +503,28 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Directive 26: publish an employee card through the backend */}
+      {publishingEmp && publishingEmp.cardId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="text-sm font-bold text-slate-900">Publish card: {publishingEmp.displayName}</h3>
+              <button onClick={() => setPublishingEmp(null)} className="p-1.5 rounded-lg hover:bg-slate-200" aria-label="Close publishing">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4">
+              <PublishingPanel
+                entityType="card"
+                entityId={publishingEmp.cardId}
+                defaultSlug={publishingEmp.cardSlug || publishingEmp.displayName}
+                title="Employee Card"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add / Edit Employee Modal */}
       {(isAddModalOpen || editingEmployee) && (

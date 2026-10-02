@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, initializeFirestore } from 'firebase/firestore';
 import { connectStorageEmulator, getStorage } from 'firebase/storage';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
@@ -32,7 +32,9 @@ export const BACKEND_REGION = 'us-central1';
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || undefined);
+// Directive 26: optional form fields left empty are undefined; dropping them
+// (instead of throwing) keeps writes on Firestore rather than failing.
+export const db = initializeFirestore(app, { ignoreUndefinedProperties: true }, firebaseConfig.firestoreDatabaseId || undefined);
 export const storage = getStorage(app);
 export const functions = getFunctions(app, BACKEND_REGION);
 

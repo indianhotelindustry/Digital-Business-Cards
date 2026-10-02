@@ -11,7 +11,7 @@ import {
 import { auth, db } from '../lib/firebase';
 import { Employee, EmployeeStatus } from '../types';
 import { createCard, findUniqueSlug, generateSlug, updateCard } from './cardService';
-import { demoStore } from './demoStore';
+import { demoDataAllowed, demoStore } from './demoStore';
 
 const EMPLOYEES_COLLECTION = 'employees';
 
@@ -68,7 +68,7 @@ export async function getEmployeeById(employeeId: string): Promise<Employee | nu
   try {
     const docRef = doc(db, EMPLOYEES_COLLECTION, employeeId);
     const snap = await getDoc(docRef);
-    if (!snap.exists()) return demoStore.getEmployeeById(employeeId);
+    if (!snap.exists()) return demoDataAllowed() ? demoStore.getEmployeeById(employeeId) : null;
     return { id: snap.id, ...snap.data() } as Employee;
   } catch (err) {
     return demoStore.getEmployeeById(employeeId);
@@ -90,41 +90,41 @@ export async function createEmployee(
   const displayName =
     data.displayName || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Employee';
 
-  // Generate unique slug based on display name or custom slug
-  const rawSlug = options?.customSlug ? generateSlug(options.customSlug) : generateSlug(displayName);
-  const uniqueSlug = await findUniqueSlug(rawSlug);
-
-  // 1. Create the associated card
-  const card = await createCard({
-    companyId: data.companyId,
-    employeeId: employeeId,
-    templateId: options?.cardTemplateId || 'classic',
-    publicSlug: uniqueSlug,
-    status: data.status === 'inactive' ? 'inactive' : 'active',
-  });
-
   const now = new Date().toISOString();
+  const rawSlug = options?.customSlug ? generateSlug(options.customSlug) : generateSlug(displayName);
+
+  if (!auth.currentUser) {
+    // DEVELOPMENT demo persona only (demoStore throws otherwise).
+    const employee: Employee = { ...data, id: employeeId, displayName, status: data.status || 'active', createdAt: now, updatedAt: now };
+    demoStore.createEmployee(employee);
+    return { employee, cardId: '', publicSlug: rawSlug };
+  }
+
+  // Directive 26 order: the employee must exist before its card (the card rule
+  // verifies the employee belongs to the same company). The slug is only a
+  // candidate until the card is published through the backend.
+  const uniqueSlug = await findUniqueSlug(rawSlug);
+  const cardRef = doc(collection(db, 'cards'));
   const employee: Employee = {
     ...data,
     id: employeeId,
     displayName,
-    cardId: card.id,
+    cardId: cardRef.id,
     status: data.status || 'active',
     createdAt: now,
     updatedAt: now,
   };
-
-  if (!auth.currentUser) {
-    demoStore.createEmployee(employee);
-  } else {
-    try {
-      // 2. Save employee record
-      await setDoc(empDocRef, employee);
-    } catch (err) {
-      console.warn('Firestore setDoc rejected employee creation; saving to demoStore:', err);
-      demoStore.createEmployee(employee);
-    }
-  }
+  await setDoc(empDocRef, employee);
+  const card = await createCard(
+    {
+      companyId: data.companyId,
+      employeeId,
+      templateId: options?.cardTemplateId || 'classic',
+      publicSlug: uniqueSlug,
+      status: data.status === 'inactive' ? 'inactive' : 'active',
+    },
+    cardRef.id
+  );
 
   return {
     employee,

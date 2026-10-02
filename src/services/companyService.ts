@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { Company, CompanyStatus } from '../types';
-import { demoStore } from './demoStore';
+import { demoDataAllowed, demoStore } from './demoStore';
 import { callBackend } from '../lib/backend';
 
 const COMPANIES_COLLECTION = 'companies';
@@ -41,7 +41,7 @@ export async function getCompanyById(companyId: string): Promise<Company | null>
   try {
     const docRef = doc(db, COMPANIES_COLLECTION, companyId);
     const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) return demoStore.getCompanyById(companyId);
+    if (!docSnap.exists()) return demoDataAllowed() ? demoStore.getCompanyById(companyId) : null;
     return {
       id: docSnap.id,
       ...docSnap.data(),

@@ -20,7 +20,9 @@ describe('browser <-> backend contract', () => {
     const client = readFileSync('src/lib/backend.ts', 'utf8');
     const list = client.slice(client.indexOf('BACKEND_CALLABLES = ['), client.indexOf('] as const'));
     const names = [...list.matchAll(/'(\w+)'/g)].map((m) => m[1]).sort();
-    expect(names).toEqual(exported('callable'));
+    // Public callables (no sign-in) are re-exported from functions/src/public.
+    const publicCallables = [...index.matchAll(/export \{ (\w+) \} from '\.\/public\//g)].map((m) => m[1]);
+    expect(names).toEqual([...exported('callable'), ...publicCallables].sort());
   });
 
   it('the payment webhook is an HTTP endpoint, not a browser-callable function', () => {

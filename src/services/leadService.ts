@@ -22,7 +22,7 @@ import {
   LeadEventType,
   Connection,
 } from '../types';
-import { demoStore } from './demoStore';
+import { demoDataAllowed, demoStore } from './demoStore';
 
 // ==========================================
 // LEADS QUERY & RETRIEVAL
@@ -141,7 +141,7 @@ export async function getLeadById(leadId: string): Promise<Lead | null> {
   try {
     const dRef = doc(db, 'leads', leadId);
     const snap = await getDoc(dRef);
-    if (!snap.exists()) return demoStore.getLeadById(leadId);
+    if (!snap.exists()) return demoDataAllowed() ? demoStore.getLeadById(leadId) : null;
     return snap.data() as Lead;
   } catch (err) {
     return demoStore.getLeadById(leadId);

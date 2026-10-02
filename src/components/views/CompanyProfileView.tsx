@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { updateCompany } from '../../services/companyService';
-import { resolveCompanySlug } from '../../services/companyProfileResolver';
+import { PublishingPanel } from '../publishing/PublishingPanel';
+import { uploadCompanyLogo } from '../../services/storageService';
+import { describeBackendError } from '../../lib/backend';
 import {
   Palette,
   Building2,
@@ -53,6 +55,7 @@ export const CompanyProfileView: React.FC = () => {
   const [legalName, setLegalName] = useState('');
   const [tagline, setTagline] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState('');
   const [positioningStatement, setPositioningStatement] = useState('');
   const [industry, setIndustry] = useState('');
@@ -291,8 +294,6 @@ export const CompanyProfileView: React.FC = () => {
     setTestimonials(testimonials.filter((t) => t.id !== id));
   };
 
-  const companySlug = resolveCompanySlug(activeCompany);
-
   return (
     <div className="max-w-5xl space-y-6">
       {/* Top Header */}
@@ -306,20 +307,10 @@ export const CompanyProfileView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              window.location.hash = `company/${companySlug}?preview=true`;
-            }}
-            className="inline-flex items-center px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-semibold shadow-xs transition"
-          >
-            <Globe className="w-3.5 h-3.5 mr-1.5 text-teal-600" />
-            <span>Preview Mini-Website</span>
-            <ExternalLink className="w-3 h-3 ml-1 text-teal-500" />
-          </button>
-        </div>
       </div>
+
+      {/* Directive 26: real publishing through the backend */}
+      <PublishingPanel entityType="company" entityId={activeCompany.id} defaultSlug={activeCompany.name} title="Company Website" />
 
       {/* Tabs Navigation */}
       <div className="flex border-b border-slate-200 gap-2 sm:gap-6 text-xs font-semibold overflow-x-auto no-scrollbar pb-1">
@@ -408,6 +399,30 @@ export const CompanyProfileView: React.FC = () => {
                       onChange={(e) => setLogoUrl(e.target.value)}
                       className="flex-1 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-[11px]"
                     />
+                    <label className="shrink-0 inline-flex items-center px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-semibold cursor-pointer">
+                      {logoUploading ? 'Uploading…' : 'Upload logo'}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        data-testid="logo-upload"
+                        className="hidden"
+                        disabled={logoUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = '';
+                          if (!file) return;
+                          setLogoUploading(true);
+                          try {
+                            // Backend-only upload: validated, quota-checked (Directive 25).
+                            setLogoUrl(await uploadCompanyLogo(activeCompany.id, file));
+                          } catch (err) {
+                            window.alert(describeBackendError(err));
+                          } finally {
+                            setLogoUploading(false);
+                          }
+                        }}
+                      />
+                    </label>
                     {logoUrl && (
                       <img
                         src={logoUrl}
@@ -1463,7 +1478,7 @@ export const CompanyProfileView: React.FC = () => {
           <div>
             {savedSuccess ? (
               <span className="text-xs font-semibold text-emerald-600 inline-flex items-center">
-                <Check className="w-4 h-4 mr-1.5" /> Company profile saved and live on mini-website!
+                <Check className="w-4 h-4 mr-1.5" /> Company profile saved. Published websites show the update immediately.
               </span>
             ) : (
               <span className="text-xs text-slate-500">
@@ -1478,7 +1493,7 @@ export const CompanyProfileView: React.FC = () => {
             className="inline-flex items-center px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition disabled:opacity-50"
           >
             <Save className="w-4 h-4 mr-1.5" />
-            {saving ? 'Publishing changes...' : 'Save & Publish Organization Profile'}
+            {saving ? 'Saving...' : 'Save Company Profile'}
           </button>
         </div>
       </form>

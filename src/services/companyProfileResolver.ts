@@ -5,7 +5,9 @@ export function resolveCompanySlug(company: Company): string {
   if ((company as any).slug) return (company as any).slug;
   if (company.id === 'company_acme') return 'acme-innovations';
   if (company.id === 'company_nexus') return 'nexus-global';
-  return company.id.replace('company_', '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  // Directive 26: a real company has a public URL only once its website is
+  // published (the backend resolver supplies company.slug). Never guess one.
+  return '';
 }
 
 export function resolveCompanyWebsiteProfile(
@@ -15,8 +17,12 @@ export function resolveCompanyWebsiteProfile(
   cards: Card[] = []
 ): ResolvedCompanyWebsite {
   const slug = resolveCompanySlug(company);
-  const isAcme = company.id === 'company_acme' || slug.includes('acme');
-  const isNexus = company.id === 'company_nexus' || slug.includes('nexus');
+  // Directive 26: sample content belongs ONLY to the two built-in demo tenants
+  // (matched by id, never by slug or name). A real customer's website shows
+  // exactly what the customer entered — nothing invented.
+  const isAcme = company.id === 'company_acme';
+  const isNexus = company.id === 'company_nexus';
+  const isDemoTenant = isAcme || isNexus;
 
   // Map employees to team members
   const teamMembers = employees
@@ -24,7 +30,7 @@ export function resolveCompanyWebsiteProfile(
     .map((emp) => {
       const dept = departments.find((d) => d.id === emp.departmentId);
       const card = cards.find((c) => c.employeeId === emp.id && c.status === 'active');
-      const cardSlug = card ? card.publicSlug : emp.displayName.toLowerCase().replace(/\s+/g, '-');
+      const cardSlug = card ? card.publicSlug : isDemoTenant ? emp.displayName.toLowerCase().replace(/\s+/g, '-') : '';
       return {
         id: emp.id,
         employeeId: emp.id,
@@ -37,7 +43,9 @@ export function resolveCompanyWebsiteProfile(
         phone: emp.phone,
         bio: emp.bio,
       };
-    });
+    })
+    // Real customers: only members with a published card are linked publicly.
+    .filter((m) => isDemoTenant || !!m.cardSlug);
 
   // Default seed values based on profile ID if not overridden by company admin
   const defaultAcmeValues = {
@@ -262,47 +270,28 @@ export function resolveCompanyWebsiteProfile(
   };
 
   const defaults = isAcme ? defaultAcmeValues : isNexus ? defaultNexusValues : {
-    tagline: 'Excellence, Integrity, and Forward Progress',
-    logoUrl: undefined,
-    heroImageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&auto=format&fit=crop&q=80',
-    positioningStatement: company.description || 'Delivering high-value professional solutions and verified digital business operations.',
-    industry: 'Professional Services & Enterprise Solutions',
-    location: company.address || 'Global Headquarters',
-    foundedYear: '2020',
-    aboutStory: company.description || `${company.name} is dedicated to delivering excellence, transparent partnership, and innovative solutions for our enterprise clients.`,
-    mission: 'To provide world-class solutions and elevate industry standards through integrity and dedicated customer service.',
-    vision: 'To be the most trusted and forward-thinking organization in our industry.',
-    coreValues: [
-      { title: 'Quality First', description: 'Uncompromising standards of excellence across every engagement.' },
-      { title: 'Integrity & Trust', description: 'Transparent partnerships and verified accountability.' },
-      { title: 'Client Dedication', description: 'Focused on measurable outcomes and lasting client success.' },
-    ],
-    certifications: [
-      { title: 'Verified Corporate Entity', issuer: 'DSBC Platform Registry', year: '2026', badgeText: 'Verified' },
-    ],
-    services: [
-      {
-        id: 'svc_default_1',
-        title: 'Core Business Solutions',
-        description: 'Comprehensive professional services tailored to meet complex operational needs.',
-        deliverables: ['Custom Strategy', 'Dedicated Execution', 'Ongoing Support'],
-        deliveryMode: 'Turnkey Solution',
-        ctaLabel: 'Enquire for Details',
-      },
-    ],
+    tagline: '',
+    logoUrl: undefined as string | undefined,
+    heroImageUrl: undefined as string | undefined,
+    positioningStatement: company.description || '',
+    industry: '',
+    location: company.address || '',
+    foundedYear: '',
+    aboutStory: company.description || '',
+    mission: '',
+    vision: '',
+    coreValues: [] as any[],
+    certifications: [] as any[],
+    services: [] as any[],
     products: [] as any[],
-    metrics: [
-      { label: 'Active Projects', value: '50+' },
-      { label: 'Client Satisfaction', value: '99%' },
-      { label: 'Dedicated Specialists', value: `${teamMembers.length || 10}+` },
-    ],
+    metrics: [] as any[],
     caseStudies: [] as any[],
     testimonials: [] as any[],
-    operatingHours: 'Monday – Friday: 9:00 AM – 5:00 PM',
-    socialLinks: {},
+    operatingHours: '',
+    socialLinks: {} as Record<string, string>,
   };
 
-  const name = company.name || (isAcme ? 'Acme Innovations Inc.' : isNexus ? 'Nexus Global Logistics' : 'Organization Entity');
+  const name = company.name || (isAcme ? 'Acme Innovations Inc.' : isNexus ? 'Nexus Global Logistics' : '');
   const legalName = company.legalName || name;
   const tagline = company.tagline || defaults.tagline;
   const logoUrl = company.logoUrl || defaults.logoUrl;
@@ -311,7 +300,7 @@ export function resolveCompanyWebsiteProfile(
   const industry = company.industry || defaults.industry;
   const location = company.address || defaults.location;
   const foundedYear = company.foundedYear || defaults.foundedYear;
-  const employeeCount = `${teamMembers.length || 25}+ Specialists`;
+  const employeeCount = isDemoTenant ? `${teamMembers.length || 25}+ Specialists` : teamMembers.length ? `${teamMembers.length} team member${teamMembers.length === 1 ? '' : 's'}` : '';
   const primaryColor = company.branding?.primaryColor || (isAcme ? '#0f766e' : isNexus ? '#2563eb' : '#0f766e');
   const secondaryColor = company.branding?.secondaryColor || (isAcme ? '#134e4a' : isNexus ? '#1e3a8a' : '#134e4a');
   const accentColor = company.branding?.accentColor || (isAcme ? '#14b8a6' : isNexus ? '#60a5fa' : '#14b8a6');
@@ -329,30 +318,31 @@ export function resolveCompanyWebsiteProfile(
   const caseStudies = company.caseStudies && company.caseStudies.length > 0 ? company.caseStudies : defaults.caseStudies;
   const testimonials = company.testimonials && company.testimonials.length > 0 ? company.testimonials : defaults.testimonials;
 
-  const email = company.email || (isAcme ? 'contact@acme-innovations.com' : isNexus ? 'info@nexus-global.org' : 'contact@example.com');
-  const phone = company.phone || (isAcme ? '+1 (555) 234-8901' : isNexus ? '+1 (800) 555-0199' : '+1 (555) 000-0000');
+  const email = company.email || (isAcme ? 'contact@acme-innovations.com' : isNexus ? 'info@nexus-global.org' : '');
+  const phone = company.phone || (isAcme ? '+1 (555) 234-8901' : isNexus ? '+1 (800) 555-0199' : '');
   const whatsapp = company.whatsapp || (isAcme ? '+14158902341' : isNexus ? '+12125558890' : undefined);
-  const website = company.website || (isAcme ? 'https://acme-innovations.example.com' : isNexus ? 'https://nexus-global.example.com' : 'https://example.com');
-  const address = company.address || (isAcme ? '742 Evergreen Terrace, Suite 500, San Francisco, CA 94107' : isNexus ? '120 Wall Street, 28th Floor, New York, NY 10005' : 'Corporate Headquarters');
+  const website = company.website || (isAcme ? 'https://acme-innovations.example.com' : isNexus ? 'https://nexus-global.example.com' : '');
+  const address = company.address || (isAcme ? '742 Evergreen Terrace, Suite 500, San Francisco, CA 94107' : isNexus ? '120 Wall Street, 28th Floor, New York, NY 10005' : '');
   const operatingHours = company.operatingHours || defaults.operatingHours;
 
   const socialLinks = {
-    website,
+    ...(website ? { website } : {}),
     ...(defaults.socialLinks || {}),
     ...(company.socialLinks || {}),
   };
 
+  // Sections appear only when there is real content for them.
   const enabledSections: any[] = [
     'HERO',
     'OVERVIEW',
-    'ABOUT',
-    'SERVICES',
+    ...(aboutStory || mission || vision || coreValues.length > 0 ? ['ABOUT'] : []),
+    ...(services.length > 0 ? ['SERVICES'] : []),
     ...(products.length > 0 ? ['PRODUCTS'] : []),
-    'METRICS',
+    ...(metrics.length > 0 ? ['METRICS'] : []),
     ...(caseStudies.length > 0 ? ['CASE_STUDIES'] : []),
-    'TEAM',
+    ...(teamMembers.length > 0 ? ['TEAM'] : []),
     ...(testimonials.length > 0 ? ['TESTIMONIALS'] : []),
-    'CONTACT',
+    ...(email || phone || address || website ? ['CONTACT'] : []),
     'ENQUIRY',
   ];
 
@@ -369,7 +359,7 @@ export function resolveCompanyWebsiteProfile(
     location,
     foundedYear,
     employeeCount,
-    verified: true,
+    verified: isDemoTenant,
     primaryColor,
     secondaryColor,
     accentColor,

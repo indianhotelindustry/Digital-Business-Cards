@@ -15,6 +15,9 @@ import { functions } from './firebase';
 
 /** Callable names exported by functions/src/index.ts (kept in sync by tests/unit/backendContract.test.ts). */
 export const BACKEND_CALLABLES = [
+  // Public (no sign-in required)
+  'resolvePublicEntity',
+  'submitPublicLead',
   // Customer-facing
   'getMyCommercialState',
   'checkEntitlement',

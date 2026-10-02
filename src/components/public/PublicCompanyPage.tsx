@@ -1,13 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Company, Employee, Department, Card } from '../../types';
 import { ResolvedCompanyWebsite, CompanyServiceItem } from '../../types/companyProfile';
-import { getCompanyBySlug } from '../../services/companyService';
-import { getEmployeesByCompany } from '../../services/employeeService';
-import { getDepartmentsByCompany } from '../../services/departmentService';
-import { getCardsByCompany } from '../../services/cardService';
 import { resolveCompanyWebsiteProfile } from '../../services/companyProfileResolver';
-import { createLead } from '../../services/leadService';
-import { publishingService, type EntityVisibilityFlags } from '../../services/publishingService';
+import { publicResolver } from '../../services/publicResolver';
+import { callBackend } from '../../lib/backend';
 import { sanitizeUrl, sanitizePhoneHref, sanitizeMailtoHref, sanitizeWhatsAppHref } from '../../lib/securityUtils';
 import { ThemeToggle } from '../common/ThemeToggle';
 import {
@@ -92,67 +88,33 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
       setLoading(true);
       setError(null);
       setPublishingIssue(null);
-      try {
-        const foundCompany = await getCompanyBySlug(companySlug);
-        if (!foundCompany) {
-          if (isMounted) {
-            setError('Company not found');
-            setLoading(false);
-          }
-          return;
-        }
-
-        // Publishing Governance Check (Directive 20 requirement #6)
-        const pubCheck = await publishingService.canPublicView(foundCompany.id, isAdminPreview, foundCompany as EntityVisibilityFlags);
-        if (!pubCheck.allowed || (foundCompany.status === 'suspended' && !isAdminPreview)) {
-          if (isMounted) {
-            setPublishingIssue(pubCheck.reason === 'SUSPENDED' || foundCompany.status === 'suspended' ? 'SUSPENDED' : 'DRAFT');
-            setLoading(false);
-          }
-          return;
-        }
-
-        let employees: Employee[] = [];
-        let departments: Department[] = [];
-        let cards: Card[] = [];
-
-        try {
-          employees = await getEmployeesByCompany(foundCompany.id);
-        } catch (e) {
-          console.warn('Could not load company employees:', e);
-        }
-
-        try {
-          departments = await getDepartmentsByCompany(foundCompany.id);
-        } catch (e) {
-          console.warn('Could not load company departments:', e);
-        }
-
-        try {
-          cards = await getCardsByCompany(foundCompany.id);
-        } catch (e) {
-          console.warn('Could not load company cards:', e);
-        }
-
-        if (isMounted) {
-          setCompany(foundCompany);
-          const resolved = resolveCompanyWebsiteProfile(foundCompany, employees, departments, cards);
-          setResolvedWebsite(resolved);
-          setLoading(false);
-        }
-      } catch (err: any) {
-        console.error('Error fetching company profile:', err);
-        if (isMounted) {
-          setError(err.message || 'Failed to load company profile');
-          setLoading(false);
-        }
+      // Directive 26: the backend resolves the website (published, visible
+      // content of one tenant; team = employees with a published card).
+      // There is no demo-data fallback for a customer URL.
+      const r = await publicResolver.company(companySlug, isAdminPreview);
+      if (!isMounted) return;
+      if (r.outcome === 'OK') {
+        setCompany(r.company!);
+        setResolvedWebsite(resolveCompanyWebsiteProfile(r.company!, r.employees ?? [], r.departments ?? [], r.cards ?? []));
+      } else if (r.outcome === 'NOT_PUBLISHED') {
+        setPublishingIssue('DRAFT');
+      } else if (r.outcome === 'UNAVAILABLE') {
+        setPublishingIssue('SUSPENDED');
+      } else if (r.outcome === 'ERROR') {
+        setError('This website could not be loaded right now. Please try again.');
+      } else {
+        setError('Company not found');
       }
+      setLoading(false);
     }
 
     if (companySlug) {
       loadCompanyData();
     }
-  }, [companySlug]);
+    return () => {
+      isMounted = false;
+    };
+  }, [companySlug, isAdminPreview]);
 
   const scrollToSection = (sectionId: string) => {
     setActiveTab(sectionId);
@@ -205,33 +167,17 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
     setIsSubmittingEnquiry(true);
 
     try {
-      // Find default employee to assign lead
-      const defaultEmployeeId = resolvedWebsite.team[0]?.employeeId || 'emp_system';
-      const actorUserId = 'public_guest';
-      const actorName = enquiryName.trim();
-
-      await createLead(
-        {
-          companyId: company.id,
-          ownerEmployeeId: defaultEmployeeId,
-          ownerUserId: 'system_unassigned',
-          ownerName: resolvedWebsite.team[0]?.name || 'Sales Team',
-          name: enquiryName.trim(),
-          email: enquiryEmail.trim(),
-          phone: enquiryPhone.trim() || undefined,
-          companyName: enquiryCompany.trim() || undefined,
-          jobTitle: 'Inbound Prospect',
-          qualificationStatus: 'unqualified',
-          leadStatus: 'new',
-          priority: 'high',
-          sourceType: 'DIRECT_SHARE',
-          sourceReference: `Company Website (/company/${resolvedWebsite.companySlug})`,
-          qualificationNotes: enquiryService ? `Interested in: ${enquiryService}` : 'General Corporate Enquiry',
-          notesSummary: enquiryMessage.trim() || `Inbound enquiry from company mini-website.`,
-        },
-        actorUserId,
-        actorName
-      );
+      // Directive 26: the backend writes the lead into this company's CRM; the
+      // visitor never chooses the tenant (it follows from the public slug).
+      await callBackend('submitPublicLead', {
+        companySlug,
+        name: enquiryName.trim(),
+        email: enquiryEmail.trim(),
+        ...(enquiryPhone.trim() ? { phone: enquiryPhone.trim() } : {}),
+        ...(enquiryCompany.trim() ? { organization: enquiryCompany.trim() } : {}),
+        ...(enquiryService.trim() ? { interest: enquiryService.trim() } : {}),
+        message: enquiryMessage.trim() || 'Enquiry from the company website.',
+      });
 
       setEnquirySubmitted(true);
       setEnquiryName('');
