@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plan, EntitlementRule, EntitlementStatus, LimitUnit } from '../../types/entitlement';
 import { FEATURE_CATALOGUE, entitlementService } from '../../services/entitlementService';
+import { runBackendAction } from '../../lib/backend';
 import { X, Save, Plus, Shield, Check, Trash2 } from 'lucide-react';
 
 interface PlanEditorModalProps {
@@ -76,7 +77,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -95,9 +96,10 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
       updatedAt: new Date().toISOString(),
     };
 
-    entitlementService.savePlan(newPlan, actorInfo);
-    onSave();
-    onClose();
+    if (await runBackendAction(() => entitlementService.savePlan(newPlan, actorInfo))) {
+      onSave();
+      onClose();
+    }
   };
 
   const relevantFeatures = FEATURE_CATALOGUE.filter(

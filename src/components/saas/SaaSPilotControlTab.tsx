@@ -37,6 +37,7 @@ import { pilotService, PilotRecord, CustomerReadinessReport } from '../../servic
 import { useSubscription } from '../../context/SubscriptionContext';
 import { useEntitlement } from '../../context/EntitlementContext';
 import { supportService } from '../../services/supportService';
+import { runBackendAction } from '../../lib/backend';
 
 interface SaaSPilotControlTabProps {
   companies: Company[];
@@ -71,14 +72,14 @@ export const SaaSPilotControlTab: React.FC<SaaSPilotControlTabProps> = ({
     });
   }, []);
 
-  const handleDesignateNew = (customerId: string, type: 'individual' | 'company', name: string, email: string, tenantId?: string) => {
-    pilotService.designatePilotCustomer(customerId, type, name, email, tenantId, 'Designated via App Owner Pilot Hub');
+  const handleDesignateNew = async (customerId: string, type: 'individual' | 'company', name: string, email: string, tenantId?: string) => {
+    if (!(await runBackendAction(() => pilotService.designatePilotCustomer(customerId, type, name, email, tenantId, 'Designated via App Owner Pilot Hub')))) return;
     setActionSuccess(`Added "${name}" to Pilot Customer Registry.`);
     setTimeout(() => setActionSuccess(null), 3500);
   };
 
-  const handleRemovePilot = (customerId: string, type: 'individual' | 'company', name: string) => {
-    pilotService.removePilotStatus(customerId, type);
+  const handleRemovePilot = async (customerId: string, type: 'individual' | 'company', name: string) => {
+    if (!(await runBackendAction(() => pilotService.removePilotStatus(customerId, type)))) return;
     setActionSuccess(`Removed pilot designation from "${name}". Standard customer policies restored.`);
     setTimeout(() => setActionSuccess(null), 3500);
   };
@@ -88,14 +89,15 @@ export const SaaSPilotControlTab: React.FC<SaaSPilotControlTabProps> = ({
     if (!complimentaryModal) return;
 
     try {
-      await grantComplimentary(
+      const granted = await grantComplimentary(
         complimentaryModal.customerType,
         complimentaryModal.customerId,
         complimentaryPlanId,
         complimentaryDays,
         'App Owner First Customer Pilot VIP Pass'
       );
-      pilotService.updatePilotStage(complimentaryModal.customerId, complimentaryModal.customerType, 'PAID_ACTIVE');
+      if (!granted) return;
+      await runBackendAction(() => pilotService.updatePilotStage(complimentaryModal.customerId, complimentaryModal.customerType, 'PAID_ACTIVE'));
       setActionSuccess(`Complimentary access granted to ${complimentaryModal.customerName} on plan ${complimentaryPlanId}.`);
       setComplimentaryModal(null);
       setTimeout(() => setActionSuccess(null), 3500);
@@ -157,8 +159,8 @@ export const SaaSPilotControlTab: React.FC<SaaSPilotControlTabProps> = ({
     }
   };
 
-  const handleApproveDeletion = (record: PilotRecord) => {
-    pilotService.reviewAccountDeletion(record.customerId, record.customerType, 'APPROVE_RETENTION');
+  const handleApproveDeletion = async (record: PilotRecord) => {
+    if (!(await runBackendAction(() => pilotService.reviewAccountDeletion(record.customerId, record.customerType, 'APPROVE_RETENTION')))) return;
     setActionSuccess(`Account for ${record.customerName} placed into 30-Day Retention Review.`);
     setTimeout(() => setActionSuccess(null), 3500);
   };

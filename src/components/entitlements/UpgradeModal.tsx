@@ -22,6 +22,7 @@ export const UpgradeModal: React.FC = () => {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
 
   if (!isUpgradeModalOpen) return null;
 
@@ -37,8 +38,10 @@ export const UpgradeModal: React.FC = () => {
 
   const handleUpgrade = async (planId: string) => {
     setIsProcessing(true);
+    setNoticeMessage(null);
     try {
       const res = await upgradeToPlan(planId);
+      if (!res.success) setNoticeMessage(res.message || 'Your plan was not changed.');
       if (res.success) {
         refresh();
         setSuccessMessage(`Subscription plan successfully upgraded to ${plans.find(p => p.id === planId)?.name}! Data preserved.`);
@@ -118,6 +121,11 @@ export const UpgradeModal: React.FC = () => {
           </p>
         </div>
 
+        {noticeMessage && (
+          <div className="mb-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
+            {noticeMessage}
+          </div>
+        )}
         {successMessage ? (
           <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-2" />

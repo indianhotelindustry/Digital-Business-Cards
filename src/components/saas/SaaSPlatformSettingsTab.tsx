@@ -11,6 +11,7 @@ import {
   Globe,
   DollarSign,
 } from 'lucide-react';
+import { runBackendAction } from '../../lib/backend';
 
 interface SaaSPlatformSettingsTabProps {
   globalPolicy: GlobalPlatformPolicy;
@@ -28,9 +29,9 @@ export const SaaSPlatformSettingsTab: React.FC<SaaSPlatformSettingsTabProps> = (
   const [formData, setFormData] = useState<GlobalPlatformPolicy>({ ...globalPolicy });
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    entitlementService.updateGlobalPolicy(formData, actorInfo);
+    if (!(await runBackendAction(() => entitlementService.updateGlobalPolicy(formData, actorInfo)))) return;
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
     onRefresh();

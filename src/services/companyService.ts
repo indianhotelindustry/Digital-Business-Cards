@@ -14,6 +14,7 @@ import {
 import { auth, db } from '../lib/firebase';
 import { Company, CompanyStatus } from '../types';
 import { demoStore } from './demoStore';
+import { callBackend } from '../lib/backend';
 
 const COMPANIES_COLLECTION = 'companies';
 
@@ -129,6 +130,11 @@ export async function updateCompany(companyId: string, updates: Partial<Company>
 }
 
 
-export async function setCompanyStatus(companyId: string, status: CompanyStatus): Promise<void> {
-  await updateCompany(companyId, { status });
+/**
+ * Customer suspension is an App Owner control authorised by the backend
+ * (Directive 25): it also moves the subscription to SUSPENDED and writes the
+ * audit record. Content is never deleted.
+ */
+export async function setCompanyStatus(companyId: string, status: CompanyStatus, reason = `Company ${status === 'suspended' ? 'suspended' : 'reinstated'} by App Owner`): Promise<void> {
+  await callBackend('adminSetCustomerSuspension', { customerType: 'company', customerId: companyId, suspended: status === 'suspended', reason });
 }

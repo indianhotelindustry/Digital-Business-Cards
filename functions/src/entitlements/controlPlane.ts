@@ -30,6 +30,7 @@ import type {
 } from '../../../shared/domain/entitlementTypes';
 import type { CustomerType, Subscription } from '../../../shared/domain/subscriptionTypes';
 import type { CommercialSubject } from '../auth/identity';
+import { METERED_UNITS, periodKeyForUnit, usageCounterId, type UsageTarget } from '../../../shared/domain/usageKeys';
 
 export const POLICY_DOC = 'platform';
 type Getter = Pick<Transaction, 'get' | 'getAll'> | null;
@@ -114,25 +115,13 @@ export async function loadOverridesFor(subject: Pick<CommercialSubject, 'company
 // ---------------------------------------------------------------------------
 // Usage counters
 // ---------------------------------------------------------------------------
-export const METERED_UNITS: LimitUnit[] = ['REQUESTS', 'AI_USAGE'];
-
-export function periodKeyFor(unit: LimitUnit | undefined, nowMs: number): string {
-  if (unit && METERED_UNITS.includes(unit)) return new Date(nowMs).toISOString().slice(0, 7); // monthly window
-  return 'current';
-}
-
-export interface UsageTarget {
-  targetType: 'company' | 'individual';
-  targetId: string;
-}
+export { METERED_UNITS, usageCounterId };
+export type { UsageTarget };
+export const periodKeyFor = periodKeyForUnit;
 
 export function usageTargetFor(feature: FeatureDefinition | undefined, subject: Pick<CommercialSubject, 'companyId' | 'primaryUserId'>): UsageTarget {
   if (feature?.category !== 'individual' && subject.companyId) return { targetType: 'company', targetId: subject.companyId };
   return { targetType: 'individual', targetId: subject.primaryUserId };
-}
-
-export function usageCounterId(target: UsageTarget, featureId: string, periodKey: string): string {
-  return `${target.targetType}_${target.targetId}__${featureId}__${periodKey}`;
 }
 
 export async function loadUsage(

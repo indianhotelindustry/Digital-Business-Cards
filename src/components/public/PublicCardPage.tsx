@@ -4,7 +4,7 @@ import { getCardBySlug } from '../../services/cardService';
 import { getEmployeeById } from '../../services/employeeService';
 import { getCompanyById } from '../../services/companyService';
 import { getDepartmentById } from '../../services/departmentService';
-import { publishingService } from '../../services/publishingService';
+import { publishingService, type EntityVisibilityFlags } from '../../services/publishingService';
 import { PublicCardView } from '../cards/PublicCardView';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { Search, ArrowLeft, Lock, AlertTriangle, FileText } from 'lucide-react';
@@ -45,7 +45,7 @@ export const PublicCardPage: React.FC<PublicCardPageProps> = ({
         }
 
         // Publishing Governance Gate (Directive 20 requirement #6)
-        const pubCheck = publishingService.canPublicView(foundCard.id, isAdminPreview);
+        const pubCheck = await publishingService.canPublicView(foundCard.id, isAdminPreview, foundCard as EntityVisibilityFlags);
         if (!pubCheck.allowed) {
           if (isMounted) {
             if (pubCheck.reason === 'SUSPENDED') {

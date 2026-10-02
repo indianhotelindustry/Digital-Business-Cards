@@ -37,6 +37,7 @@ export const CustomerPlanView: React.FC = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   const isCompanyContext = role === 'company_admin';
   const currentPlan = plans.find((p) => p.id === currentSubscription?.planId);
@@ -49,6 +50,7 @@ export const CustomerPlanView: React.FC = () => {
   const handleCancel = async () => {
     if (confirm('Are you sure you want to schedule cancellation at the end of the current billing period? Your data will remain preserved.')) {
       const ok = await cancelSubscription(true);
+      if (!ok) setActionNotice('Cancellation was not accepted by the server.');
       if (ok) {
         setActionSuccess('Subscription will cancel at the end of your billing cycle. Content remains preserved.');
         setTimeout(() => setActionSuccess(null), 4000);
@@ -57,7 +59,9 @@ export const CustomerPlanView: React.FC = () => {
   };
 
   const handleDirectUpgrade = async (planId: string) => {
+    setActionNotice(null);
     const res = await upgradeToPlan(planId);
+    if (!res.success) setActionNotice(res.message || 'Your plan was not changed.');
     if (res.success) {
       setActionSuccess('Successfully upgraded plan! Your new features and higher quotas are available now.');
       setIsManageModalOpen(false);
@@ -97,6 +101,11 @@ export const CustomerPlanView: React.FC = () => {
         </div>
       </div>
 
+      {actionNotice && (
+        <div className="mb-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
+          {actionNotice}
+        </div>
+      )}
       {actionSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center space-x-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />

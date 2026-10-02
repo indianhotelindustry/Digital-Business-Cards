@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { OverrideModal } from './OverrideModal';
 import { EntitlementBadge } from '../entitlements/EntitlementBadge';
+import { runBackendAction } from '../../lib/backend';
 
 interface SaaSTrialsTabProps {
   overrides: EntitlementOverride[];
@@ -45,10 +46,9 @@ export const SaaSTrialsTab: React.FC<SaaSTrialsTabProps> = ({
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Revoke this temporary trial/complimentary pass immediately?')) {
-      entitlementService.deleteOverride(id, actorInfo);
-      onRefresh();
+      if (await runBackendAction(() => entitlementService.deleteOverride(id, actorInfo))) onRefresh();
     }
   };
 

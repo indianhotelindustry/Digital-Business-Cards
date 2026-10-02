@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { conversionFunnelService } from '../../services/conversionFunnelService';
 import { supportService, SupportStatus } from '../../services/supportService';
+import { runBackendAction } from '../../lib/backend';
 
 interface SaaSProductionControlTabProps {
   companies: Company[];
@@ -169,8 +170,8 @@ export const SaaSProductionControlTab: React.FC<SaaSProductionControlTabProps> =
     },
   ];
 
-  const handleApplySafetyPolicy = () => {
-    entitlementService.updateGlobalPolicy(
+  const handleApplySafetyPolicy = async () => {
+    const saved = await runBackendAction(() => entitlementService.updateGlobalPolicy(
       {
         maintenanceMode,
         allowSelfRegistration: registrationEnabled,
@@ -178,8 +179,10 @@ export const SaaSProductionControlTab: React.FC<SaaSProductionControlTabProps> =
         defaultCompanyPlanId: defaultCompPlan,
         defaultTrialDays,
       },
-      { id: 'app_owner_prod', name: 'App Owner', role: 'app_owner' }
-    );
+      { id: 'app_owner_prod', name: 'App Owner', role: 'app_owner' },
+      'Production safety controls changed from the Production Control tab'
+    ));
+    if (!saved) return;
     refresh();
     setSafetySuccess('Production safety controls updated and recorded in audit ledger.');
     setConfirmSafetyAction(null);

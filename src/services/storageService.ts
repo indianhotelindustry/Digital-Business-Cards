@@ -1,5 +1,8 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../lib/firebase';
+// Directive 25 Phase 10: storage.rules deny every client write. Files go
+// through the uploadAsset callable, which authorises the caller from server
+// records, re-validates the bytes and reserves storage quota atomically.
+// The browser-side checks below only give early feedback.
+import { callBackend } from '../lib/backend';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -66,57 +69,36 @@ export async function validateImageBytes(file: File): Promise<{ valid: boolean; 
   }
 }
 
-/**
- * Uploads a validated company branding logo to Firebase Storage
- */
-export async function uploadCompanyLogo(companyId: string, file: File): Promise<string> {
+async function fileToBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
+async function upload(kind: 'company_logo' | 'employee_photo' | 'individual_photo', file: File, employeeId?: string): Promise<string> {
   const validation = await validateImageBytes(file);
   if (!validation.valid) {
     throw new Error(validation.reason || 'Invalid file');
   }
-
-  const cleanFileName = file.name.toLowerCase().replace(/[^a-z0-9.]/g, '_');
-  const timestamp = Date.now();
-  const storagePath = `companies/${companyId}/branding/${timestamp}_${cleanFileName}`;
-
-  const storageRef = ref(storage, storagePath);
-  const snapshot = await uploadBytes(storageRef, file, {
-    contentType: file.type,
-    customMetadata: {
-      companyId,
-      uploadedAt: new Date().toISOString(),
-    },
+  const res = await callBackend<{ downloadUrl: string }>('uploadAsset', {
+    kind,
+    ...(employeeId ? { employeeId } : {}),
+    dataBase64: await fileToBase64(file),
+    fileName: file.name,
   });
-
-  return getDownloadURL(snapshot.ref);
+  return res.downloadUrl;
 }
 
 /**
- * Uploads a validated employee profile photo to Firebase Storage
+ * Uploads a company branding logo. The backend derives the company from the
+ * caller's profile (companyId is kept in the signature for existing callers).
  */
-export async function uploadEmployeePhoto(
-  companyId: string,
-  employeeId: string,
-  file: File
-): Promise<string> {
-  const validation = await validateImageBytes(file);
-  if (!validation.valid) {
-    throw new Error(validation.reason || 'Invalid file');
-  }
+export async function uploadCompanyLogo(_companyId: string, file: File): Promise<string> {
+  return upload('company_logo', file);
+}
 
-  const cleanFileName = file.name.toLowerCase().replace(/[^a-z0-9.]/g, '_');
-  const timestamp = Date.now();
-  const storagePath = `companies/${companyId}/employees/${employeeId}/${timestamp}_${cleanFileName}`;
-
-  const storageRef = ref(storage, storagePath);
-  const snapshot = await uploadBytes(storageRef, file, {
-    contentType: file.type,
-    customMetadata: {
-      companyId,
-      employeeId,
-      uploadedAt: new Date().toISOString(),
-    },
-  });
-
-  return getDownloadURL(snapshot.ref);
+/** Uploads an employee profile photo (company admin, or the employee themself). */
+export async function uploadEmployeePhoto(_companyId: string, employeeId: string, file: File): Promise<string> {
+  return upload('employee_photo', file, employeeId);
 }

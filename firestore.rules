@@ -21,7 +21,8 @@ rules_version = '2';
 //     of the commercial control plane, usage counters, payment orders,
 //     webhook ledger, publishing records, slugs and audit ledgers. Fields the
 //     backend mirrors onto tenant content (seatState, seatLockedAt,
-//     platformSuspended) are immutable for clients and hide content publicly.
+//     platformSuspended, publicationHidden) are immutable for clients and hide
+//     content publicly.
 // Tests: tests/rules/*.test.ts (npm run test:rules, Firebase Emulator only).
 // ============================================================================
 
@@ -124,11 +125,16 @@ service cloud.firestore {
 
     // Directive 25: backend-owned enforcement fields on tenant content.
     function noBackendFieldsOnCreate() {
-      return !request.resource.data.keys().hasAny(['seatState', 'seatLockedAt', 'platformSuspended']);
+      return !request.resource.data.keys().hasAny(['seatState', 'seatLockedAt', 'platformSuspended', 'publicationHidden']);
     }
 
     function notPlatformSuspended(data) {
       return data.get('platformSuspended', false) != true;
+    }
+
+    // DRAFT / UNPUBLISHED, mirrored by the backend's setPublishingState.
+    function notPublicationHidden(data) {
+      return data.get('publicationHidden', false) != true;
     }
 
     function seatNotLocked(data) {
@@ -245,7 +251,7 @@ service cloud.firestore {
     // ========================================================================
     match /companies/{companyId} {
       // Active companies are public (company mini-website / card branding).
-      allow read: if (resource != null && resource.data.status == 'active' && notPlatformSuspended(resource.data))
+      allow read: if (resource != null && resource.data.status == 'active' && notPlatformSuspended(resource.data) && notPublicationHidden(resource.data))
         || isAppOwner()
         || isMemberOf(companyId);
 
@@ -259,7 +265,7 @@ service cloud.firestore {
       // plan, kind or ownership.
       allow update: if isAppOwner() || (
         isCompanyAdmin(companyId)
-        && unchanged(['id', 'status', 'planId', 'kind', 'ownerUid', 'platformSuspended'])
+        && unchanged(['id', 'status', 'planId', 'kind', 'ownerUid', 'platformSuspended', 'publicationHidden'])
       );
 
       allow delete: if isAppOwner();
@@ -319,7 +325,7 @@ service cloud.firestore {
     // ========================================================================
     match /cards/{cardId} {
       allow read: if (resource != null && resource.data.status == 'active'
-          && notPlatformSuspended(resource.data)
+          && notPlatformSuspended(resource.data) && notPublicationHidden(resource.data)
           && isCompanyActive(resource.data.companyId))
         || isAppOwner()
         || isMemberOf(resource.data.companyId);
@@ -332,7 +338,7 @@ service cloud.firestore {
 
       allow update: if isAppOwner() || (
         isCompanyAdmin(resource.data.companyId)
-        && unchanged(['companyId', 'platformSuspended'])
+        && unchanged(['companyId', 'platformSuspended', 'publicationHidden'])
         && employeeBelongsTo(request.resource.data.employeeId, resource.data.companyId)
       );
 
@@ -563,7 +569,7 @@ service cloud.firestore {
     // Digital identity profiles (keyed by employeeId)
     // ========================================================================
     match /digitalIdentityProfiles/{employeeId} {
-      allow read: if (resource != null && notPlatformSuspended(resource.data) && isCompanyActive(resource.data.companyId))
+      allow read: if (resource != null && notPlatformSuspended(resource.data) && notPublicationHidden(resource.data) && isCompanyActive(resource.data.companyId))
         || isAppOwner()
         || isMemberOf(resource.data.companyId);
       allow create: if isAppOwner()
@@ -575,11 +581,11 @@ service cloud.firestore {
         );
       allow update: if isAppOwner() || (
         isCompanyAdmin(resource.data.companyId)
-        && unchanged(['companyId', 'employeeId', 'platformSuspended'])
+        && unchanged(['companyId', 'employeeId', 'platformSuspended', 'publicationHidden'])
       ) || (
         isSelfEmployee(employeeId)
         && isActiveMemberOf(resource.data.companyId)
-        && unchanged(['companyId', 'employeeId', 'platformSuspended'])
+        && unchanged(['companyId', 'employeeId', 'platformSuspended', 'publicationHidden'])
       );
       allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
     }

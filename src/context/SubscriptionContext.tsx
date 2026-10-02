@@ -1,13 +1,13 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import {
-  Subscription,
-  Invoice,
-  CommercialMetrics,
-  CustomerType,
-} from '../types/subscription';
-import { subscriptionService } from '../services/subscriptionService';
-import { updateCompany } from '../services/companyService';
+import { Subscription, Invoice, CommercialMetrics, CustomerType } from '../types/subscription';
+import { subscriptionService, type PlanChangeResult } from '../services/subscriptionService';
+import { commercialStore } from '../services/commercialStore';
+import { runBackendAction } from '../lib/backend';
+
+// Directive 25: the subscription shown here is the backend's (time-adjusted)
+// record. Customers can request a checkout or a cancellation; nothing in the
+// browser changes a plan, a status or a payment state.
 
 interface SubscriptionContextType {
   currentSubscription: Subscription | null;
@@ -15,7 +15,7 @@ interface SubscriptionContextType {
   commercialMetrics: CommercialMetrics;
   allSubscriptions: Subscription[];
   allInvoices: Invoice[];
-  upgradeToPlan: (targetPlanId: string) => Promise<{ success: boolean; invoice?: Invoice }>;
+  upgradeToPlan: (targetPlanId: string) => Promise<PlanChangeResult & { invoice?: Invoice }>;
   downgradeToPlan: (targetPlanId: string) => Promise<boolean>;
   cancelSubscription: (atPeriodEnd?: boolean) => Promise<boolean>;
   grantComplimentary: (
@@ -26,155 +26,80 @@ interface SubscriptionContextType {
     reason?: string
   ) => Promise<boolean>;
   refreshSubscriptions: () => void;
+  /** Last message from the backend for a request that did not go through. */
+  lastMessage: string | null;
   isLoading: boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
 
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userProfile, activeCompany, role } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const [version, setVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastMessage, setLastMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Check and reconcile expiring trials / grace periods upon mounting
-    subscriptionService.checkAndReconcileSubscriptions();
-
-    const unsubscribe = subscriptionService.subscribe(() => {
-      setVersion((v) => v + 1);
-    });
-    return unsubscribe;
-  }, []);
+  useEffect(() => subscriptionService.subscribe(() => setVersion((v) => v + 1)), []);
 
   const refreshSubscriptions = useCallback(() => {
+    void commercialStore.refreshSnapshot();
     setVersion((v) => v + 1);
   }, []);
 
-  // Determine current active customer context (Company or Individual)
-  const customerContext = useMemo(() => {
-    if (role === 'company_admin' && activeCompany?.id) {
-      return {
-        type: 'company' as CustomerType,
-        id: activeCompany.id,
-        name: activeCompany.name,
-      };
+  const currentSubscription = useMemo(() => subscriptionService.getCurrentSubscription(), [version]);
+  const customerInvoices = useMemo(() => subscriptionService.getInvoices(), [version]);
+  const commercialMetrics = useMemo(() => subscriptionService.getCommercialMetrics(), [version]);
+  const allSubscriptions = useMemo(() => subscriptionService.getAllSubscriptions(), [version]);
+  const allInvoices = useMemo(() => subscriptionService.getInvoices(), [version]);
+
+  const ownCustomer = () => commercialStore.snapshot?.subject ?? null;
+
+  const upgradeToPlan = async (targetPlanId: string): Promise<PlanChangeResult & { invoice?: Invoice }> => {
+    const customer = ownCustomer();
+    if (!customer) {
+      const message = 'Your plan could not be loaded from the server. Please sign in again.';
+      setLastMessage(message);
+      return { success: false, message };
     }
-    const empId = userProfile?.employeeId || userProfile?.id || 'anon_user';
-    return {
-      type: 'individual' as CustomerType,
-      id: empId,
-      name: userProfile?.displayName || 'Personal Professional',
-    };
-  }, [role, activeCompany, userProfile]);
-
-  // Current customer subscription
-  const currentSubscription = useMemo(() => {
-    return subscriptionService.getOrCreateCustomerSubscription(
-      customerContext.type,
-      customerContext.id,
-      customerContext.name
-    );
-  }, [customerContext, version]);
-
-  // Current customer invoices
-  const customerInvoices = useMemo(() => {
-    return subscriptionService.getInvoices(customerContext.id);
-  }, [customerContext.id, version]);
-
-  // Global metrics for App Owner
-  const commercialMetrics = useMemo(() => {
-    return subscriptionService.getCommercialMetrics();
-  }, [version]);
-
-  const allSubscriptions = useMemo(() => {
-    return subscriptionService.getAllSubscriptions();
-  }, [version]);
-
-  const allInvoices = useMemo(() => {
-    return subscriptionService.getInvoices();
-  }, [version]);
-
-  // Upgrade Plan handler
-  const upgradeToPlan = async (
-    targetPlanId: string
-  ): Promise<{ success: boolean; invoice?: Invoice }> => {
     setIsLoading(true);
     try {
-      const res = await subscriptionService.upgradeSubscription(
-        customerContext.type,
-        customerContext.id,
-        targetPlanId,
-        {
-          id: userProfile?.id || customerContext.id,
-          role: role || 'customer',
-          name: userProfile?.displayName || customerContext.name,
-        }
-      );
-
-      // If company context, synchronize company.planId
-      if (customerContext.type === 'company' && activeCompany?.id) {
-        await updateCompany(activeCompany.id, { planId: targetPlanId });
-      }
-
-      refreshSubscriptions();
-      return { success: true, invoice: res.invoice };
-    } catch (err) {
-      console.error('Failed to upgrade subscription:', err);
-      return { success: false };
+      const res = await subscriptionService.upgradeSubscription(customer.customerType, customer.customerId, targetPlanId, {
+        name: userProfile?.displayName,
+        email: currentUser?.email || undefined,
+      });
+      setLastMessage(res.success ? null : res.message ?? null);
+      const invoiceId = res.checkout?.invoiceId;
+      return { ...res, invoice: invoiceId ? subscriptionService.getInvoiceById(invoiceId) : undefined };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Downgrade Plan handler
   const downgradeToPlan = async (targetPlanId: string): Promise<boolean> => {
+    const customer = ownCustomer();
+    if (!customer) return false;
     setIsLoading(true);
     try {
-      subscriptionService.downgradeSubscription(
-        customerContext.type,
-        customerContext.id,
-        targetPlanId,
-        {
-          id: userProfile?.id || customerContext.id,
-          role: role || 'customer',
-          name: userProfile?.displayName || customerContext.name,
-        }
-      );
-
-      if (customerContext.type === 'company' && activeCompany?.id) {
-        await updateCompany(activeCompany.id, { planId: targetPlanId });
-      }
-
-      refreshSubscriptions();
-      return true;
-    } catch (err) {
-      console.error('Failed to downgrade subscription:', err);
-      return false;
+      const res = await subscriptionService.downgradeSubscription(customer.customerType, customer.customerId, targetPlanId);
+      setLastMessage(res.message ?? null);
+      return res.success;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Cancel Subscription handler
   const cancelSubscription = async (atPeriodEnd = true): Promise<boolean> => {
     if (!currentSubscription) return false;
     setIsLoading(true);
     try {
-      subscriptionService.cancelSubscription(currentSubscription.subscriptionId, atPeriodEnd, {
-        id: userProfile?.id || customerContext.id,
-        role: role || 'customer',
-      });
-      refreshSubscriptions();
-      return true;
-    } catch (err) {
-      console.error('Failed to cancel subscription:', err);
-      return false;
+      const res = await subscriptionService.cancelSubscription(currentSubscription.subscriptionId, atPeriodEnd);
+      setLastMessage(res.success ? null : res.message ?? null);
+      return res.success;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Grant Complimentary (App Owner)
   const grantComplimentary = async (
     customerType: CustomerType,
     customerId: string,
@@ -182,21 +107,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     durationDays = 365,
     reason = 'VIP Access'
   ): Promise<boolean> => {
-    try {
-      subscriptionService.grantComplimentaryAccess(
-        customerType,
-        customerId,
-        planId,
-        durationDays,
-        reason,
-        { id: userProfile?.id || 'app_owner', role: role || 'app_owner' }
-      );
-      refreshSubscriptions();
-      return true;
-    } catch (err) {
-      console.error('Failed to grant complimentary access:', err);
-      return false;
-    }
+    const ok = await runBackendAction(() => subscriptionService.grantComplimentaryAccess(customerType, customerId, planId, durationDays, reason));
+    setLastMessage(null);
+    return ok;
   };
 
   return (
@@ -212,6 +125,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         cancelSubscription,
         grantComplimentary,
         refreshSubscriptions,
+        lastMessage,
         isLoading,
       }}
     >

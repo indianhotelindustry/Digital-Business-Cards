@@ -17,7 +17,8 @@ import { subscriptionFromDoc } from '../entitlements/controlPlane';
 import { subscriptionRef, writeSubscription } from '../subscriptions/service';
 import type { CustomerType, SubscriptionStatus } from '../../../shared/domain/subscriptionTypes';
 
-const PILOT_STAGES = ['REGISTERED', 'ONBOARDING', 'ACTIVE_PILOT', 'PAID_ACTIVE', 'DOWNGRADED', 'GRADUATED'] as const;
+// Same stages as the App Owner Pilot Hub (src/services/pilotService.ts PilotStage).
+const PILOT_STAGES = ['REGISTERED', 'ONBOARDING', 'LIVE_CARD', 'LIVE_WEBSITE', 'TRIAL_PRO', 'PAID_ACTIVE', 'DOWNGRADED', 'GRADUATED'] as const;
 
 function customerArgs(p: Record<string, unknown>) {
   return {

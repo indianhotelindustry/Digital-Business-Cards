@@ -7,7 +7,7 @@ import { getDepartmentsByCompany } from '../../services/departmentService';
 import { getCardsByCompany } from '../../services/cardService';
 import { resolveCompanyWebsiteProfile } from '../../services/companyProfileResolver';
 import { createLead } from '../../services/leadService';
-import { publishingService } from '../../services/publishingService';
+import { publishingService, type EntityVisibilityFlags } from '../../services/publishingService';
 import { sanitizeUrl, sanitizePhoneHref, sanitizeMailtoHref, sanitizeWhatsAppHref } from '../../lib/securityUtils';
 import { ThemeToggle } from '../common/ThemeToggle';
 import {
@@ -103,7 +103,7 @@ export const PublicCompanyPage: React.FC<PublicCompanyPageProps> = ({
         }
 
         // Publishing Governance Check (Directive 20 requirement #6)
-        const pubCheck = publishingService.canPublicView(foundCompany.id, isAdminPreview);
+        const pubCheck = await publishingService.canPublicView(foundCompany.id, isAdminPreview, foundCompany as EntityVisibilityFlags);
         if (!pubCheck.allowed || (foundCompany.status === 'suspended' && !isAdminPreview)) {
           if (isMounted) {
             setPublishingIssue(pubCheck.reason === 'SUSPENDED' || foundCompany.status === 'suspended' ? 'SUSPENDED' : 'DRAFT');

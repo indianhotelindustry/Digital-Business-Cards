@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { OverrideModal } from './OverrideModal';
 import { EntitlementBadge } from '../entitlements/EntitlementBadge';
+import { runBackendAction } from '../../lib/backend';
 
 interface SaaSIndividualEntitlementsTabProps {
   employees: Employee[];
@@ -85,10 +86,9 @@ export const SaaSIndividualEntitlementsTab: React.FC<SaaSIndividualEntitlementsT
     setIsOverrideModalOpen(true);
   };
 
-  const handleDeleteOverride = (id: string) => {
+  const handleDeleteOverride = async (id: string) => {
     if (window.confirm('Remove this individual exception and restore base policy?')) {
-      entitlementService.deleteOverride(id, actorInfo);
-      onRefresh();
+      if (await runBackendAction(() => entitlementService.deleteOverride(id, actorInfo))) onRefresh();
     }
   };
 

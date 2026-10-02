@@ -6,6 +6,7 @@ import {
   OverrideGrantType,
 } from '../../types/entitlement';
 import { FEATURE_CATALOGUE, FEATURE_MAP, entitlementService } from '../../services/entitlementService';
+import { runBackendAction } from '../../lib/backend';
 import { X, Save, Sparkles, Shield, Clock } from 'lucide-react';
 
 interface OverrideModalProps {
@@ -60,7 +61,7 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
 
   const targetFeature = FEATURE_MAP.get(featureId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetId.trim() || !featureId) return;
 
@@ -73,7 +74,7 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
       finalExpiresAt = d.toISOString();
     }
 
-    entitlementService.saveOverride(
+    const saved = await runBackendAction(() => entitlementService.saveOverride(
       {
         id: override?.id,
         targetType,
@@ -92,7 +93,8 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
         createdBy: actorInfo?.id || 'app_owner',
       },
       actorInfo
-    );
+    ));
+    if (!saved) return;
 
     onSave();
     onClose();

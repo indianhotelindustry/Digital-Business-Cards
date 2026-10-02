@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { OverrideModal } from './OverrideModal';
 import { EntitlementBadge } from '../entitlements/EntitlementBadge';
+import { runBackendAction } from '../../lib/backend';
 
 interface SaaSCompanyEntitlementsTabProps {
   companies: Company[];
@@ -86,10 +87,9 @@ export const SaaSCompanyEntitlementsTab: React.FC<SaaSCompanyEntitlementsTabProp
     setIsOverrideModalOpen(true);
   };
 
-  const handleDeleteOverride = (id: string) => {
+  const handleDeleteOverride = async (id: string) => {
     if (window.confirm('Revert this override and restore standard plan policy?')) {
-      entitlementService.deleteOverride(id, actorInfo);
-      onRefresh();
+      if (await runBackendAction(() => entitlementService.deleteOverride(id, actorInfo))) onRefresh();
     }
   };
 

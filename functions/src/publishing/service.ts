@@ -8,7 +8,8 @@
 // Owners publish/unpublish their own entities when their entitlement allows;
 // only the App Owner can SUSPEND or lift a suspension. A suspension is also
 // mirrored onto the entity as platformSuspended=true, which firestore.rules
-// use to hide it from the public and which no customer can clear.
+// use to hide it from the public and which no customer can clear. Likewise
+// DRAFT / UNPUBLISHED is mirrored as publicationHidden=true.
 
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { db } from '../shared/firebase';
@@ -18,11 +19,17 @@ import { ID_PATTERN, obj, oneOf, reason, str } from '../shared/validate';
 import { actorOf, requireActiveProfile, requireAppOwner, resolveCommercialSubject, type Caller } from '../auth/identity';
 import { appendAudit } from '../audit/ledger';
 import { buildResolutionContext } from '../entitlements/resolution';
+import { validateSlugFormat } from '../../../shared/domain/slugRules';
 
 type EntityType = 'card' | 'company' | 'profile';
 const ENTITY_COLLECTION: Record<EntityType, string> = { card: 'cards', company: 'companies', profile: 'digitalIdentityProfiles' };
 const REQUIRED_FEATURE: Record<EntityType, string> = { card: 'individual.business_card', company: 'company.mini_website', profile: 'individual.full_profile' };
-export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,62})$/;
+/** Format + reserved routes (shared with the browser); null when acceptable. */
+export function slugProblem(slug: string): string | null {
+  const res = validateSlugFormat(slug);
+  if (!res.isValid) return res.errorMessage || 'Invalid slug.';
+  return res.sanitizedSlug === slug ? null : 'slug must already be in canonical form (lowercase letters, digits, single hyphens).';
+}
 
 interface EntityInfo {
   ref: FirebaseFirestore.DocumentReference;
@@ -45,7 +52,10 @@ export async function setPublishingState(caller: Caller, data: unknown) {
   const entityId = str(p, 'entityId', { pattern: ID_PATTERN });
   const state = oneOf(p, 'state', ['DRAFT', 'PUBLISHED', 'UNPUBLISHED'] as const);
   const slug = str(p, 'slug', { optional: true, max: 63 }).toLowerCase();
-  if (slug && !SLUG_PATTERN.test(slug)) invalid('slug must be 2-63 lowercase letters, digits or hyphens.');
+  if (slug) {
+    const problem = slugProblem(slug);
+    if (problem) invalid(problem);
+  }
   const profile = requireActiveProfile(caller);
 
   const entity = await loadEntity(entityType, entityId);
@@ -73,7 +83,7 @@ export async function setPublishingState(caller: Caller, data: unknown) {
     const finalSlug = slug || (record.get('slug') as string) || (ent.get('publicSlug') as string) || (ent.get('slug') as string) || '';
     let slugSnap: FirebaseFirestore.DocumentSnapshot | null = null;
     if (state === 'PUBLISHED') {
-      if (!finalSlug || !SLUG_PATTERN.test(finalSlug)) invalid('A valid slug is required to publish.');
+      if (!finalSlug || slugProblem(finalSlug)) invalid('A valid slug is required to publish.');
       const eff = (await buildResolutionContext(subject, nowMs(), tx)).resolve(REQUIRED_FEATURE[entityType]);
       if (!eff.isGranted) fail('permission-denied', `ENTITLEMENT_REQUIRED: ${REQUIRED_FEATURE[entityType]}`);
       slugSnap = await tx.get(db().collection('slugs').doc(finalSlug));
@@ -96,6 +106,9 @@ export async function setPublishingState(caller: Caller, data: unknown) {
       suspendedAt: null, suspensionReason: null, updatedAt: serverNow(), updatedBy: caller.uid,
       createdAt: record.get('createdAt') ?? serverNow(),
     });
+    // Mirror onto the entity so firestore.rules hide DRAFT/UNPUBLISHED content
+    // from the public (clients cannot write this field).
+    tx.update(entity.ref, { publicationHidden: state === 'PUBLISHED' ? FieldValue.delete() : true });
     appendAudit(tx, 'platformAuditLogs', {
       action: `PUBLISHING_${state}`, actor: actorOf(caller), targetType: entityType, targetId: entityId, tenantId: entity.companyId,
       previousValue: record.get('publishingState') ?? 'NONE', newValue: { state, slug: finalSlug }, reason: 'Owner publishing action', source: 'Publishing',

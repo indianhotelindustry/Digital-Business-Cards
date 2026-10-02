@@ -1,16 +1,19 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { entitlementService, FEATURE_CATALOGUE, FEATURE_MAP } from '../services/entitlementService';
-import { subscriptionService } from '../services/subscriptionService';
+import { entitlementService } from '../services/entitlementService';
+import { commercialStore, purgeLegacyAuthorityKeys, type CommercialSession } from '../services/commercialStore';
 import {
   EffectiveEntitlement,
-  EntitlementStatus,
   LimitUnit,
   Plan,
   EntitlementOverride,
   GlobalPlatformPolicy,
   EntitlementAuditLog,
 } from '../types/entitlement';
+
+// Directive 25: entitlements shown here come from the backend
+// (getMyCommercialState). The provider only tells the commercial store who is
+// signed in; it never decides a plan, role or entitlement itself.
 
 interface EntitlementContextType {
   can: (featureId: string) => boolean;
@@ -24,6 +27,9 @@ interface EntitlementContextType {
   overrides: EntitlementOverride[];
   globalPolicy: GlobalPlatformPolicy;
   auditLogs: EntitlementAuditLog[];
+  /** True once the server snapshot for the signed-in user has loaded. */
+  entitlementsLoaded: boolean;
+  entitlementsError: string | null;
   refresh: () => void;
   openUpgradeModal: (featureId?: string) => void;
   closeUpgradeModal: () => void;
@@ -34,107 +40,76 @@ interface EntitlementContextType {
 const EntitlementContext = createContext<EntitlementContextType | null>(null);
 
 export const EntitlementProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userProfile, activeCompany, role } = useAuth();
+  const { currentUser, userProfile, activeCompany, isAppOwner } = useAuth();
   const [version, setVersion] = useState(0);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [upgradeModalFeatureId, setUpgradeModalFeatureId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    const unsubEnt = entitlementService.subscribe(() => {
-      setVersion((v) => v + 1);
-    });
-    const unsubSub = subscriptionService.subscribe(() => {
-      setVersion((v) => v + 1);
-    });
-    return () => {
-      unsubEnt();
-      unsubSub();
-    };
+    purgeLegacyAuthorityKeys();
+    return entitlementService.subscribe(() => setVersion((v) => v + 1));
   }, []);
 
-  const refresh = () => setVersion((v) => v + 1);
-
-  const subject = useMemo(() => {
-    const userId = userProfile?.employeeId || userProfile?.id || null;
-    const companyId = activeCompany?.id || userProfile?.companyId || null;
-
-    let resolvedPlanId = activeCompany?.planId || 'company_free';
-    if (role === 'company_admin' && companyId) {
-      const sub = subscriptionService.getSubscriptionForCustomer('company', companyId);
-      resolvedPlanId = sub?.planId || activeCompany?.planId || 'company_free';
-    } else if (role === 'employee' && userId) {
-      const sub = subscriptionService.getSubscriptionForCustomer('individual', userId);
-      resolvedPlanId = sub?.planId || activeCompany?.planId || 'individual_free';
-    }
-
+  // Only a real Firebase session has a server identity. Demo personas (DEV
+  // only) get no commercial session, so every gated feature shows as locked.
+  const session = useMemo<CommercialSession | null>(() => {
+    if (!currentUser) return null;
     return {
-      userId,
-      companyId,
-      role: role,
-      planId: resolvedPlanId,
+      uid: currentUser.uid,
+      isAppOwner: isAppOwner,
+      userIds: [userProfile?.employeeId, currentUser.uid].filter((v): v is string => !!v),
+      companyId: userProfile?.companyId || activeCompany?.id || null,
     };
-  }, [userProfile, activeCompany, role, version]);
+  }, [currentUser, isAppOwner, userProfile?.employeeId, userProfile?.companyId, activeCompany?.id]);
 
-  const can = (featureId: string): boolean => {
-    return entitlementService.can(subject, featureId);
+  useEffect(() => {
+    commercialStore.setSession(session);
+  }, [session]);
+
+  const refresh = () => {
+    void commercialStore.refreshSnapshot();
+    setVersion((v) => v + 1);
   };
 
-  const getEntitlement = (featureId: string): EffectiveEntitlement => {
-    return entitlementService.getEntitlement(subject, featureId);
-  };
+  const subject = useMemo(
+    () => ({
+      userId: userProfile?.employeeId || userProfile?.id || null,
+      companyId: activeCompany?.id || userProfile?.companyId || null,
+    }),
+    [userProfile, activeCompany]
+  );
 
-  const getLimit = (featureId: string) => {
-    return entitlementService.getLimit(subject, featureId);
-  };
-
-  const getUsage = (featureId: string) => {
-    return entitlementService.getUsage(subject, featureId);
-  };
-
-  const checkLimit = (featureId: string, requestedAmount = 1) => {
-    return entitlementService.checkLimit(subject, featureId, requestedAmount);
-  };
-
-  const isLocked = (featureId: string) => {
-    return entitlementService.isFeatureLocked(subject, featureId);
-  };
-
-  const effectiveEntitlements = useMemo(() => {
-    return entitlementService.getAllEffectiveEntitlements(subject);
-  }, [subject, version]);
-
+  const effectiveEntitlements = useMemo(() => entitlementService.getAllEffectiveEntitlements(subject), [subject, version]);
   const plans = useMemo(() => entitlementService.getPlans(), [version]);
   const overrides = useMemo(() => entitlementService.getOverrides(), [version]);
   const globalPolicy = useMemo(() => entitlementService.getGlobalPolicy(), [version]);
   const auditLogs = useMemo(() => entitlementService.getAuditLogs(100), [version]);
 
-  const openUpgradeModal = (featureId?: string) => {
-    setUpgradeModalFeatureId(featureId);
-    setIsUpgradeModalOpen(true);
-  };
-
-  const closeUpgradeModal = () => {
-    setIsUpgradeModalOpen(false);
-    setUpgradeModalFeatureId(undefined);
-  };
-
   return (
     <EntitlementContext.Provider
       value={{
-        can,
-        getEntitlement,
-        getLimit,
-        getUsage,
-        checkLimit,
-        isLocked,
+        can: (featureId) => entitlementService.can(subject, featureId),
+        getEntitlement: (featureId) => entitlementService.getEntitlement(subject, featureId),
+        getLimit: (featureId) => entitlementService.getLimit(subject, featureId),
+        getUsage: (featureId) => entitlementService.getUsage(subject, featureId),
+        checkLimit: (featureId, requestedAmount = 1) => entitlementService.checkLimit(subject, featureId, requestedAmount),
+        isLocked: (featureId) => entitlementService.isFeatureLocked(subject, featureId),
         effectiveEntitlements,
         plans,
         overrides,
         globalPolicy,
         auditLogs,
+        entitlementsLoaded: !!commercialStore.snapshot,
+        entitlementsError: commercialStore.snapshotError,
         refresh,
-        openUpgradeModal,
-        closeUpgradeModal,
+        openUpgradeModal: (featureId?: string) => {
+          setUpgradeModalFeatureId(featureId);
+          setIsUpgradeModalOpen(true);
+        },
+        closeUpgradeModal: () => {
+          setIsUpgradeModalOpen(false);
+          setUpgradeModalFeatureId(undefined);
+        },
         isUpgradeModalOpen,
         upgradeModalFeatureId,
       }}

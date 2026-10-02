@@ -1,124 +1,89 @@
 // ============================================================================
-// PAYMENT PROVIDER ABSTRACTION & RAZORPAY ADAPTER (Directive 19)
+// DSBC CHECKOUT CLIENT (Directive 25 Phase 12)
 // ============================================================================
+// Replaces the Directive 19 browser "Razorpay adapter", which accepted any
+// signature of 16+ characters and shipped its webhook secret in the bundle.
+//
+// The browser now only:
+//   1. asks the backend for an order (the backend prices it from plans/{id});
+//   2. opens Razorpay Checkout with the backend's order id and PUBLIC key id;
+//   3. forwards Razorpay's callback fields to confirmPayment.
+// The backend verifies the HMAC with its secret, re-reads the captured payment
+// from Razorpay, checks the amount against the server-priced order, and only
+// then activates the subscription. Webhooks go straight to the backend.
+// The browser never verifies a signature and holds no secret.
 
-import {
-  PaymentCheckoutRequest,
-  PaymentCheckoutResponse,
-  PaymentStatus,
-  WebhookEventPayload,
-} from '../types/subscription';
+import { callBackend } from '../lib/backend';
 
-export interface PaymentProvider {
-  name: string;
-  createCustomer(email: string, name: string): Promise<string>;
-  createCheckout(req: PaymentCheckoutRequest): Promise<PaymentCheckoutResponse>;
-  verifyPayment(paymentId: string, orderId: string, signature: string): Promise<boolean>;
-  getPaymentStatus(paymentId: string): Promise<PaymentStatus>;
-  handleWebhook(payload: WebhookEventPayload): Promise<{ success: boolean; handled: boolean; error?: string }>;
+export interface CheckoutOrder {
+  orderId: string;
+  providerOrderId: string;
+  amountMinor: number;
+  currency: string;
+  keyId: string;
+}
+
+export interface CheckoutResult {
+  outcome: 'ACTIVATED' | 'ALREADY_APPLIED';
+  orderId?: string;
+  invoiceId?: string;
+}
+
+interface RazorpayHandlerResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open(): void; on(event: string, cb: (e: unknown) => void): void };
+  }
+}
+
+const CHECKOUT_SCRIPT = 'https://checkout.razorpay.com/v1/checkout.js';
+
+function loadCheckoutScript(): Promise<void> {
+  if (window.Razorpay) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = CHECKOUT_SCRIPT;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Could not load Razorpay Checkout.'));
+    document.head.appendChild(s);
+  });
+}
+
+function openCheckout(order: CheckoutOrder, prefill: { name?: string; email?: string }): Promise<RazorpayHandlerResponse> {
+  return new Promise((resolve, reject) => {
+    const rzp = new window.Razorpay!({
+      key: order.keyId,
+      order_id: order.providerOrderId,
+      amount: order.amountMinor,
+      currency: order.currency,
+      name: 'DSBC',
+      prefill,
+      handler: (response: RazorpayHandlerResponse) => resolve(response),
+      modal: { ondismiss: () => reject(new Error('Checkout was closed before payment completed.')) },
+    });
+    rzp.on('payment.failed', () => reject(new Error('Payment failed. No charge was applied to your plan.')));
+    rzp.open();
+  });
 }
 
 /**
- * India-focused Razorpay Adapter with robust security:
- * - HMAC signature verification
- * - Webhook replay protection (<= 5 minute window)
- * - Event deduplication idempotency
+ * Purchase a plan. Rejects with BackendError (PAYMENTS_NOT_ENABLED) while
+ * online payments are switched off on the backend — no state changes then.
  */
-export class RazorpayPaymentAdapter implements PaymentProvider {
-  public name = 'razorpay';
-  private processedWebhookEvents = new Set<string>();
-  private readonly WEBHOOK_SECRET = 'rzp_sec_dsbc_production_webhook_secret_2026';
-  private readonly REPLAY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
-
-  public async createCustomer(email: string, name: string): Promise<string> {
-    // Generate deterministic provider customer ID
-    return `cust_rzp_${Math.random().toString(36).substring(2, 9)}`;
-  }
-
-  public async createCheckout(req: PaymentCheckoutRequest): Promise<PaymentCheckoutResponse> {
-    const orderId = `order_rzp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    return {
-      checkoutUrl: `https://checkout.razorpay.com/v1/checkout.js?order_id=${orderId}`,
-      orderId,
-      provider: 'razorpay',
-      currency: req.currency || 'INR',
-      amount: req.amount,
-    };
-  }
-
-  /**
-   * Simple crypto-safe signature check simulation for client environment
-   */
-  public async verifyPayment(paymentId: string, orderId: string, signature: string): Promise<boolean> {
-    if (!paymentId || !orderId || !signature) return false;
-    // Expected signature format check
-    return signature.startsWith('sig_rzp_') || signature.length >= 16;
-  }
-
-  public async getPaymentStatus(paymentId: string): Promise<PaymentStatus> {
-    if (paymentId.includes('fail')) return 'FAILED';
-    if (paymentId.includes('refund')) return 'REFUNDED';
-    return 'PAID';
-  }
-
-  /**
-   * Webhook security processor:
-   * 1. Signature verification
-   * 2. Timestamp replay check
-   * 3. Idempotency deduplication
-   */
-  public async handleWebhook(payload: WebhookEventPayload): Promise<{ success: boolean; handled: boolean; error?: string }> {
-    if (!payload || !payload.eventId) {
-      return { success: false, handled: false, error: 'INVALID_PAYLOAD: Missing eventId' };
-    }
-
-    // 1. Replay attack verification (5-minute drift window)
-    const now = Date.now();
-    const eventTime = payload.timestamp > 1e11 ? payload.timestamp : payload.timestamp * 1000;
-    if (Math.abs(now - eventTime) > this.REPLAY_WINDOW_MS) {
-      return { success: false, handled: false, error: 'WEBHOOK_REPLAY_DETECTED: Timestamp expired outside allowable 5-minute window' };
-    }
-
-    // 2. Idempotency & deduplication verification
-    if (this.processedWebhookEvents.has(payload.eventId)) {
-      return { success: true, handled: false, error: 'DUPLICATE_EVENT: Event has already been processed' };
-    }
-
-    // 3. Signature validation
-    const expectedSigPrefix = 'rzp_sig_';
-    const isMockValid = payload.signature && (payload.signature.startsWith(expectedSigPrefix) || payload.signature.length >= 32);
-    if (!isMockValid) {
-      return { success: false, handled: false, error: 'INVALID_SIGNATURE: Webhook signature verification failed' };
-    }
-
-    // Record as processed
-    this.processedWebhookEvents.add(payload.eventId);
-    return { success: true, handled: true };
-  }
-
-  public verifyWebhookSignature(rawPayload: string, signature: string, secret?: string): boolean {
-    if (!rawPayload || !signature) return false;
-    const isSecretMatched = !secret || secret === this.WEBHOOK_SECRET || secret.startsWith('rzp_sec_');
-    const isSigFormatValid = signature.startsWith('rzp_sig_') || signature.length >= 32;
-    return isSecretMatched && isSigFormatValid;
-  }
-
-  /**
-   * Helper to generate a valid signed mock webhook for testing
-   */
-  public isConfigured(): boolean {
-    return true;
-  }
-
-  public generateSignedWebhook(eventId: string, eventType: string, data: any): WebhookEventPayload {
-    return {
-      eventId,
-      eventType,
-      timestamp: Date.now(),
-      signature: `rzp_sig_${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`,
-      data,
-    };
-  }
+export async function purchasePlan(planId: string, prefill: { name?: string; email?: string } = {}): Promise<CheckoutResult> {
+  const order = await callBackend<CheckoutOrder>('createCheckoutOrder', { planId });
+  await loadCheckoutScript();
+  const response = await openCheckout(order, prefill);
+  return callBackend<CheckoutResult>('confirmPayment', {
+    orderId: order.orderId,
+    razorpayOrderId: response.razorpay_order_id,
+    razorpayPaymentId: response.razorpay_payment_id,
+    razorpaySignature: response.razorpay_signature,
+  });
 }
-
-export const paymentProvider = new RazorpayPaymentAdapter();

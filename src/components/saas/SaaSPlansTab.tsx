@@ -13,6 +13,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { PlanEditorModal } from './PlanEditorModal';
+import { runBackendAction } from '../../lib/backend';
 
 interface SaaSPlansTabProps {
   plans: Plan[];
@@ -40,15 +41,14 @@ export const SaaSPlansTab: React.FC<SaaSPlansTabProps> = ({ plans, onRefresh, ac
     setIsEditorOpen(true);
   };
 
-  const handleDuplicate = (plan: Plan) => {
-    entitlementService.duplicatePlan(plan.id, actorInfo);
-    onRefresh();
+  const handleDuplicate = async (plan: Plan) => {
+    if (await runBackendAction(() => entitlementService.duplicatePlan(plan.id, actorInfo))) onRefresh();
   };
 
-  const handleDelete = (plan: Plan) => {
-    if (window.confirm(`Are you sure you want to deactivate and remove plan "${plan.name}"?`)) {
-      entitlementService.deletePlan(plan.id, actorInfo);
-      onRefresh();
+  const handleDelete = async (plan: Plan) => {
+    // Plans are archived, never hard-deleted: existing subscribers keep their policy.
+    if (window.confirm(`Archive plan "${plan.name}"? Existing subscribers keep their current policy.`)) {
+      if (await runBackendAction(() => entitlementService.deletePlan(plan.id, actorInfo))) onRefresh();
     }
   };
 

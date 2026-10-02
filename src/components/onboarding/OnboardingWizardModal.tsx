@@ -29,6 +29,8 @@ import { slugService } from '../../services/slugService';
 import { publishingService } from '../../services/publishingService';
 import { notificationService } from '../../services/notificationService';
 import { conversionFunnelService } from '../../services/conversionFunnelService';
+import { getCardByEmployeeId } from '../../services/cardService';
+import { describeBackendError } from '../../lib/backend';
 
 interface OnboardingWizardModalProps {
   isOpen: boolean;
@@ -79,6 +81,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [publishedSlug, setPublishedSlug] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [planNotice, setPlanNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -189,25 +192,33 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
         return;
       }
 
-      // Upgrade if Pro plan selected
+      // Pro selected: request a checkout. The plan changes only after the
+      // backend verifies a payment; otherwise publishing continues on Free.
       const selectedPlanId = customerType === 'individual' ? indPlan : compPlan;
+      setPlanNotice(null);
       if (selectedPlanId.includes('pro')) {
-        await upgradeToPlan(selectedPlanId);
+        const upgrade = await upgradeToPlan(selectedPlanId);
+        if (!upgrade.success) setPlanNotice(upgrade.message || 'Your plan was not changed.');
       }
 
-      // Record published entity
-      const entityId =
-        customerType === 'individual'
-          ? `card_${Date.now()}_${slug}`
-          : `comp_${Date.now()}_${slug}`;
-
-      publishingService.publishEntity(
-        entityId,
-        slug,
-        customerType === 'individual' ? 'card' : 'company',
-        userProfile?.employeeId || userProfile?.id || 'cust_onboarding',
-        activeCompany?.id
-      );
+      // Publish the customer's real entity through the backend (ownership,
+      // entitlement, seat lock and slug availability are checked server-side).
+      let entityId: string | null = null;
+      if (customerType === 'company') {
+        entityId = activeCompany?.id ?? null;
+      } else if (userProfile?.employeeId) {
+        entityId = (await getCardByEmployeeId(userProfile.employeeId))?.id ?? null;
+      }
+      if (!entityId) {
+        setSlugError(customerType === 'company' ? 'No company workspace found for this account.' : 'Create your digital card first, then publish it.');
+        return;
+      }
+      try {
+        await publishingService.publishEntity(entityId, slug, customerType === 'individual' ? 'card' : 'company');
+      } catch (err) {
+        setSlugError(describeBackendError(err));
+        return;
+      }
 
       // Dispatch welcome & publish notification
       await notificationService.dispatchNotification(
@@ -629,6 +640,11 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                       Congratulations! Your digital presence has been provisioned and is now publicly accessible worldwide.
                     </p>
+                    {planNotice && (
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mt-2 max-w-md mx-auto">
+                        {planNotice}
+                      </p>
+                    )}
                   </div>
 
                   {/* Prominent Public URL Box */}

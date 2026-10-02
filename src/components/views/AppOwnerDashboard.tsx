@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Company, Employee } from '../../types';
-import { getAllCompanies, createCompany, setCompanyStatus } from '../../services/companyService';
+import { getAllCompanies, createCompany } from '../../services/companyService';
+import { subscriptionService } from '../../services/subscriptionService';
+import { runBackendAction } from '../../lib/backend';
 import { getAllEmployees } from '../../services/employeeService';
 import { useEntitlement } from '../../context/EntitlementContext';
 import { useAuth } from '../../context/AuthContext';
@@ -127,6 +129,12 @@ export const AppOwnerDashboard: React.FC<AppOwnerDashboardProps> = ({ onNavigate
         status: 'active',
         planId: newPlanId,
       });
+
+      // companies.planId is only a display mirror: the plan is a backend
+      // subscription assignment (audited), never a client-written field.
+      if (newPlanId) {
+        await runBackendAction(() => subscriptionService.adminChangePlan('company', created.id, newPlanId, 'Initial plan assigned at App Owner onboarding'));
+      }
 
       setCompanies((prev) => [created, ...prev]);
       setIsOnboardModalOpen(false);

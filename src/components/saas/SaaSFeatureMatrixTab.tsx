@@ -11,6 +11,7 @@ import {
   Sliders,
   Filter,
 } from 'lucide-react';
+import { runBackendAction } from '../../lib/backend';
 
 interface SaaSFeatureMatrixTabProps {
   plans: Plan[];
@@ -38,7 +39,7 @@ export const SaaSFeatureMatrixTab: React.FC<SaaSFeatureMatrixTabProps> = ({
     return f.scope === activeScope || f.scope === 'both';
   });
 
-  const handleCellChange = (
+  const handleCellChange = async (
     plan: Plan,
     featureId: string,
     newStatus: EntitlementStatus,
@@ -54,19 +55,16 @@ export const SaaSFeatureMatrixTab: React.FC<SaaSFeatureMatrixTabProps> = ({
       limitUnit: newStatus === 'LIMITED' ? cur.limitUnit ?? featDef?.limitUnit ?? 'COUNT' : undefined,
     };
 
-    const updatedPlan: Plan = {
-      ...plan,
-      features: updatedFeatures,
-      updatedAt: new Date().toISOString(),
-    };
-
-    entitlementService.savePlan(updatedPlan, actorInfo);
+    const saved = await runBackendAction(() =>
+      entitlementService.setPlanFeature(plan.id, featureId, updatedFeatures[featureId], `Feature matrix: ${featureId} set to ${newStatus} on ${plan.name}`)
+    );
+    if (!saved) return;
     setSaveSuccess(`Updated ${featDef?.name || featureId} on ${plan.name}`);
     setTimeout(() => setSaveSuccess(null), 2000);
     onRefresh();
   };
 
-  const handleLimitChange = (
+  const handleLimitChange = async (
     plan: Plan,
     featureId: string,
     limitValue: number
@@ -82,14 +80,10 @@ export const SaaSFeatureMatrixTab: React.FC<SaaSFeatureMatrixTabProps> = ({
       limitUnit: cur.limitUnit || featDef?.limitUnit || 'COUNT',
     };
 
-    const updatedPlan: Plan = {
-      ...plan,
-      features: updatedFeatures,
-      updatedAt: new Date().toISOString(),
-    };
-
-    entitlementService.savePlan(updatedPlan, actorInfo);
-    onRefresh();
+    const saved = await runBackendAction(() =>
+      entitlementService.setPlanFeature(plan.id, featureId, updatedFeatures[featureId], `Feature matrix: ${featureId} limit set to ${limitValue} on ${plan.name}`)
+    );
+    if (saved) onRefresh();
   };
 
   return (

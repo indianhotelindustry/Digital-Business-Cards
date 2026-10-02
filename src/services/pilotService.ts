@@ -1,14 +1,18 @@
 // ============================================================================
-// DSBC FIRST CUSTOMER PILOT & REVENUE VALIDATION SERVICE (Directive 23)
+// DSBC FIRST CUSTOMER PILOT & REVENUE VALIDATION (Directive 23 UX, Directive 25 authority)
 // ============================================================================
+// The pilot registry and the account-deletion lifecycle used to live in
+// localStorage (dsbc_pilot_registry_v1). They are now customerClassifications
+// documents written only by the backend:
+//   adminSetCustomerClassification   App Owner: pilot flag, stage, notes
+//   setMyDeletionRequest             customer: request / withdraw deletion
+//   adminReviewDeletion              App Owner: retention review, purge approval
+// Readiness scoring and data export below are pure presentation helpers.
 
 import { CustomerType, Subscription } from '../types/subscription';
 import { Employee, Company } from '../types';
-import { entitlementService } from './entitlementService';
-import { subscriptionService } from './subscriptionService';
-import { publishingService } from './publishingService';
-import { slugService } from './slugService';
-import { supportService } from './supportService';
+import { callBackend } from '../lib/backend';
+import { commercialStore, toIso } from './commercialStore';
 
 export type PilotStage =
   | 'REGISTERED'
@@ -24,6 +28,7 @@ export type AccountLifecycleStatus =
   | 'ACTIVE'
   | 'DELETION_REQUESTED'
   | 'RETENTION_REVIEW'
+  | 'PURGE_APPROVED'
   | 'DELETED';
 
 export interface PilotRecord {
@@ -69,140 +74,81 @@ export interface CustomerReadinessReport {
   items: CustomerChecklistItem[];
 }
 
-const STORAGE_KEY_PILOT_REGISTRY = 'dsbc_pilot_registry_v1';
-const STORAGE_KEY_PILOT_METRICS = 'dsbc_pilot_operational_metrics_v1';
+
+const ZERO_METRICS: PilotRecord['metrics'] = { publicViews: 0, qrScans: 0, vcardDownloads: 0, leadsCaptured: 0, contactsExchanged: 0 };
+
+function recordFromDoc(d: Record<string, unknown>): PilotRecord {
+  return {
+    customerId: String(d.customerId ?? ''),
+    customerType: (d.customerType === 'company' ? 'company' : 'individual') as CustomerType,
+    customerName: String(d.customerName ?? d.customerId ?? ''),
+    email: String(d.email ?? ''),
+    tenantId: (d.tenantId as string) || undefined,
+    isPilot: d.isPilot === true,
+    stage: (d.stage as PilotStage) || 'REGISTERED',
+    accountStatus: (d.accountStatus as AccountLifecycleStatus) || 'ACTIVE',
+    deletionRequestedAt: toIso(d.deletionRequestedAt) || undefined,
+    deletionReason: (d.deletionReason as string) || undefined,
+    retentionExpiresAt: toIso(d.retentionExpiresAt) || undefined,
+    designatedAt: toIso(d.designatedAt) || '',
+    designatedBy: String(d.designatedBy ?? ''),
+    notes: (d.notes as string) || undefined,
+    metrics: { ...ZERO_METRICS },
+  };
+}
 
 class PilotService {
-  private pilotRegistry: Map<string, PilotRecord> = new Map();
-  private listeners = new Set<() => void>();
-
-  constructor() {
-    this.loadState();
-  }
-
-  private loadState(): void {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_PILOT_REGISTRY);
-      if (stored) {
-        const parsed: PilotRecord[] = JSON.parse(stored);
-        parsed.forEach((p) => this.pilotRegistry.set(`${p.customerType}_${p.customerId}`, p));
-      } else {
-        // Seed default pilot records for verification
-        this.designatePilotCustomer('emp_acme_rahul', 'individual', 'Rahul Sharma', 'rahul.sharma@acme-innovations.com', 'company_acme', 'Pilot Individual Cardholder');
-        this.designatePilotCustomer('company_acme', 'company', 'Acme Innovations Inc.', 'admin@acme-innovations.com', 'company_acme', 'Pilot Corporate Tenant');
-      }
-    } catch (e) {
-      console.error('Error loading pilot registry:', e);
-    }
-  }
-
-  private saveState(): void {
-    try {
-      const array = Array.from(this.pilotRegistry.values());
-      localStorage.setItem(STORAGE_KEY_PILOT_REGISTRY, JSON.stringify(array));
-    } catch (e) {
-      console.error('Error saving pilot registry:', e);
-    }
-  }
-
   public subscribe(fn: () => void): () => void {
-    this.listeners.add(fn);
-    return () => this.listeners.delete(fn);
+    return commercialStore.subscribe(fn);
   }
 
-  private notify(): void {
-    this.listeners.forEach((fn) => {
-      try {
-        fn();
-      } catch (e) {
-        console.error('Pilot listener error:', e);
-      }
+  // ============================================================================
+  // 1. PILOT CUSTOMER REGISTRY & CLASSIFICATION (App Owner, backend-authorised)
+  // ============================================================================
+
+  public async designatePilotCustomer(
+    customerId: string,
+    customerType: CustomerType,
+    _customerName: string,
+    _email: string,
+    _tenantId?: string,
+    notes?: string
+  ): Promise<void> {
+    await callBackend('adminSetCustomerClassification', {
+      customerType,
+      customerId,
+      isPilot: true,
+      ...(notes ? { notes } : {}),
+      reason: notes || 'Designated as pilot customer',
     });
   }
 
-  // ============================================================================
-  // 1. PILOT CUSTOMER REGISTRY & CLASSIFICATION
-  // ============================================================================
-
-  public designatePilotCustomer(
-    customerId: string,
-    customerType: CustomerType,
-    customerName: string,
-    email: string,
-    tenantId?: string,
-    notes?: string,
-    actor = { id: 'app_owner', role: 'app_owner' }
-  ): PilotRecord {
-    const key = `${customerType}_${customerId}`;
-    const existing = this.pilotRegistry.get(key);
-
-    const record: PilotRecord = {
-      customerId,
-      customerType,
-      customerName,
-      email,
-      tenantId: tenantId || (customerType === 'company' ? customerId : undefined),
-      isPilot: true,
-      stage: existing?.stage || 'REGISTERED',
-      accountStatus: existing?.accountStatus || 'ACTIVE',
-      designatedAt: existing?.designatedAt || new Date().toISOString(),
-      designatedBy: actor.id,
-      notes: notes || existing?.notes || 'Customer designated as active pilot partner',
-      metrics: existing?.metrics || {
-        publicViews: 0,
-        qrScans: 0,
-        vcardDownloads: 0,
-        leadsCaptured: 0,
-        contactsExchanged: 0,
-      },
-    };
-
-    this.pilotRegistry.set(key, record);
-    this.saveState();
-    this.notify();
-    return record;
+  public async removePilotStatus(customerId: string, customerType: CustomerType): Promise<void> {
+    await callBackend('adminSetCustomerClassification', { customerType, customerId, isPilot: false, reason: 'Pilot status removed' });
   }
 
-  public removePilotStatus(
-    customerId: string,
-    customerType: CustomerType
-  ): boolean {
-    const key = `${customerType}_${customerId}`;
-    const record = this.pilotRegistry.get(key);
-    if (record) {
-      record.isPilot = false;
-      this.pilotRegistry.set(key, record);
-      this.saveState();
-      this.notify();
-      return true;
-    }
-    return false;
+  public async updatePilotStage(customerId: string, customerType: CustomerType, stage: PilotStage): Promise<void> {
+    const current = this.getPilotRecord(customerId, customerType);
+    await callBackend('adminSetCustomerClassification', {
+      customerType,
+      customerId,
+      isPilot: current?.isPilot ?? true,
+      stage,
+      reason: `Pilot stage set to ${stage}`,
+    });
   }
 
   public getPilotRecord(customerId: string, customerType: CustomerType): PilotRecord | undefined {
-    return this.pilotRegistry.get(`${customerType}_${customerId}`);
+    const d = commercialStore.classifications.find((c) => c.id === `${customerType}_${customerId}`);
+    return d ? recordFromDoc(d) : undefined;
   }
 
   public isCustomerInPilot(customerId: string, customerType: CustomerType): boolean {
-    const rec = this.pilotRegistry.get(`${customerType}_${customerId}`);
-    return rec?.isPilot === true;
+    return this.getPilotRecord(customerId, customerType)?.isPilot === true;
   }
 
   public getAllPilotRecords(): PilotRecord[] {
-    return Array.from(this.pilotRegistry.values());
-  }
-
-  public updatePilotStage(
-    customerId: string,
-    customerType: CustomerType,
-    stage: PilotStage
-  ): void {
-    const rec = this.getPilotRecord(customerId, customerType);
-    if (rec) {
-      rec.stage = stage;
-      this.saveState();
-      this.notify();
-    }
+    return commercialStore.classifications.map(recordFromDoc);
   }
 
   // ============================================================================
@@ -538,93 +484,28 @@ class PilotService {
   // ============================================================================
   // 4. CONTROLLED ACCOUNT DELETION LIFECYCLE (Directive 23 Section 13)
   // ============================================================================
+  // Content is never deleted from the browser. A request opens a 30-day
+  // retention review; CONFIRM_PURGE only marks the record for a separate,
+  // manual, audited purge.
 
-  public requestAccountDeletion(
-    customerId: string,
-    customerType: CustomerType,
-    reason = 'Customer requested account closure',
-    actor = { id: 'customer', role: 'customer' }
-  ): PilotRecord {
-    let record = this.getPilotRecord(customerId, customerType);
-    if (!record) {
-      record = this.designatePilotCustomer(customerId, customerType, customerId, 'customer@example.com');
-    }
-
-    const now = new Date();
-    const retentionExpiry = new Date(now.getTime() + 30 * 86400000); // 30-day review & recovery window
-
-    record.accountStatus = 'DELETION_REQUESTED';
-    record.deletionRequestedAt = now.toISOString();
-    record.deletionReason = reason;
-    record.retentionExpiresAt = retentionExpiry.toISOString();
-
-    this.saveState();
-    this.notify();
-    return record;
+  /** Customer: request closure of their own account. */
+  public async requestAccountDeletion(reason = 'Customer requested account closure'): Promise<void> {
+    await callBackend('setMyDeletionRequest', { requested: true, reason });
   }
 
-  public cancelAccountDeletion(
-    customerId: string,
-    customerType: CustomerType
-  ): PilotRecord {
-    const record = this.getPilotRecord(customerId, customerType);
-    if (!record) throw new Error('Customer record not found');
-
-    record.accountStatus = 'ACTIVE';
-    record.deletionRequestedAt = undefined;
-    record.deletionReason = undefined;
-    record.retentionExpiresAt = undefined;
-
-    this.saveState();
-    this.notify();
-    return record;
+  /** Customer: withdraw their own pending request. */
+  public async cancelAccountDeletion(): Promise<void> {
+    await callBackend('setMyDeletionRequest', { requested: false });
   }
 
-  public reviewAccountDeletion(
+  /** App Owner. */
+  public async reviewAccountDeletion(
     customerId: string,
     customerType: CustomerType,
     action: 'APPROVE_RETENTION' | 'CONFIRM_PURGE' | 'REJECT_RESTORE',
-    actor = { id: 'app_owner', role: 'app_owner' }
-  ): PilotRecord {
-    if (actor.role !== 'app_owner') {
-      throw new Error('ACCESS_DENIED: Only App Owner can review account deletion requests');
-    }
-
-    const record = this.getPilotRecord(customerId, customerType);
-    if (!record) throw new Error('Customer record not found');
-
-    if (action === 'APPROVE_RETENTION') {
-      record.accountStatus = 'RETENTION_REVIEW';
-    } else if (action === 'CONFIRM_PURGE') {
-      record.accountStatus = 'DELETED';
-      record.isPilot = false;
-    } else if (action === 'REJECT_RESTORE') {
-      record.accountStatus = 'ACTIVE';
-      record.deletionRequestedAt = undefined;
-      record.deletionReason = undefined;
-    }
-
-    this.saveState();
-    this.notify();
-    return record;
-  }
-
-  // ============================================================================
-  // 5. PILOT OPERATIONAL METRICS (Directive 23 Section 14)
-  // ============================================================================
-
-  public recordPilotInteraction(
-    customerId: string,
-    customerType: CustomerType,
-    metric: 'publicViews' | 'qrScans' | 'vcardDownloads' | 'leadsCaptured' | 'contactsExchanged',
-    increment = 1
-  ): void {
-    const rec = this.getPilotRecord(customerId, customerType);
-    if (rec) {
-      rec.metrics[metric] = (rec.metrics[metric] || 0) + increment;
-      this.saveState();
-      this.notify();
-    }
+    reason = 'Reviewed in Pilot Control'
+  ): Promise<void> {
+    await callBackend('adminReviewDeletion', { customerType, customerId, action, reason });
   }
 }
 

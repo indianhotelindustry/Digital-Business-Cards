@@ -12,7 +12,8 @@ import {
   CreditCard,
   Zap,
 } from 'lucide-react';
-import { entitlementService, FEATURE_CATALOGUE } from '../../services/entitlementService';
+import { FEATURE_CATALOGUE } from '../../services/entitlementService';
+import { useEntitlement } from '../../context/EntitlementContext';
 import { Plan, FeatureDefinition } from '../../types/entitlement';
 
 interface PublicPricingPageProps {
@@ -27,7 +28,7 @@ export const PublicPricingPage: React.FC<PublicPricingPageProps> = ({
   const [targetType, setTargetType] = useState<'individual' | 'company'>('individual');
   const [billingCycle, setBillingCycle] = useState<'yearly' | 'monthly'>('yearly');
 
-  const plans = entitlementService.getPlans().filter((p) => p.isActive);
+  const plans = useEntitlement().plans.filter((p) => p.isActive && !p.archived);
   const relevantPlans = plans.filter((p) => p.targetType === targetType);
 
   // Group features by category/scope
