@@ -1,0 +1,302 @@
+{
+  "schema": "dsbc.directive26.certification/v1",
+  "directive": 26,
+  "generatedAt": "2026-10-02T15:13:55.300Z",
+  "branch": "security-foundation/directive-26",
+  "commit": "0448a480e7cf0b8c08f1429e4faa75af749bb4e1",
+  "environment": "Firebase Emulator Suite (demo-dsbc) + real Chrome against the production build. No live Firebase project was contacted; nothing was deployed.",
+  "finalStatus": "PASS — FIRST 3-CUSTOMER DEMO READY — PRODUCTION DEPLOYMENT PENDING",
+  "productionReady": false,
+  "productionReadyReason": "Production infrastructure has not been deployed or verified (Directive 25 deployment blockers remain).",
+  "summary": {
+    "baselineTests": "PASS",
+    "newTests": "PASS",
+    "mutationTests": "PASS",
+    "typescript": "PASS",
+    "build": "PASS",
+    "publicResolution": "PASS",
+    "crossBrowser": "PASS",
+    "threeTenantIsolation": "PASS",
+    "companyJourney": "PASS",
+    "employeeJourney": "PASS",
+    "publishing": "PASS",
+    "demoReadiness": "PASS"
+  },
+  "totals": {
+    "unit": "46/46",
+    "rulesDirective24": "433/433",
+    "integration": "6/6",
+    "backend": "130/130",
+    "browser": "9/9",
+    "mutation": "36/36"
+  },
+  "lines": [
+    {
+      "key": "baselineTests",
+      "title": "Baseline tests (inherited 570)",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "Directive 24 rules",
+          "ok": true,
+          "detail": "433/433"
+        },
+        {
+          "check": "integration",
+          "ok": true,
+          "detail": "6/6"
+        },
+        {
+          "check": "unit (incl. updated contract test)",
+          "ok": true,
+          "detail": "46/46"
+        },
+        {
+          "check": "Directive 25 backend authority (AUTH-001..025)",
+          "ok": true,
+          "detail": "85/85"
+        },
+        {
+          "check": "inherited baseline recorded before any change",
+          "ok": true,
+          "detail": "570/570 @ 50a495f"
+        }
+      ]
+    },
+    {
+      "key": "newTests",
+      "title": "New Directive 26 tests",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "public resolution suite (emulator)",
+          "ok": true,
+          "detail": "20/20"
+        },
+        {
+          "check": "three-customer suite (emulator)",
+          "ok": true,
+          "detail": "25/25"
+        },
+        {
+          "check": "browser suite (real Chrome, production build)",
+          "ok": true,
+          "detail": "9/9"
+        }
+      ]
+    },
+    {
+      "key": "mutationTests",
+      "title": "Mutation tests",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "every authorization mutant killed (Directive 25 + 26)",
+          "ok": true,
+          "detail": "36/36"
+        },
+        {
+          "check": "unmutated baseline passed before mutating",
+          "ok": true,
+          "detail": "Tests  130 passed (130)"
+        }
+      ]
+    },
+    {
+      "key": "typescript",
+      "title": "TypeScript",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "frontend + functions typecheck",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "build",
+      "title": "Build",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "production frontend + functions bundle",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "publicResolution",
+      "title": "Public resolution",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "PUBLIC-001",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-002",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-003",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-004",
+          "ok": true,
+          "detail": "2/2"
+        },
+        {
+          "check": "PUBLIC-005",
+          "ok": true,
+          "detail": "2/2"
+        },
+        {
+          "check": "PUBLIC-006",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-007",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-008",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-009",
+          "ok": true,
+          "detail": "2/2"
+        },
+        {
+          "check": "PUBLIC-010",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-011",
+          "ok": true,
+          "detail": "3/3"
+        },
+        {
+          "check": "PUBLIC-012",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-013",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-014",
+          "ok": true,
+          "detail": "1/1"
+        },
+        {
+          "check": "PUBLIC-015",
+          "ok": true,
+          "detail": "1/1"
+        }
+      ]
+    },
+    {
+      "key": "crossBrowser",
+      "title": "Cross-browser (A admin / B anonymous / C, E customers / D App Owner)",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "all browser scenarios pass",
+          "ok": true,
+          "detail": "9/9"
+        },
+        {
+          "check": "anonymous visitor sees the real company website and card",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "threeTenantIsolation",
+      "title": "3-tenant isolation",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "emulator 3x3 private-data matrix + public isolation",
+          "ok": true,
+          "detail": "10/10"
+        },
+        {
+          "check": "browser: three customers never see each other",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "companyJourney",
+      "title": "Company journey",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "emulator: setup → branding → services → products → publish → public URL (x3)",
+          "ok": true
+        },
+        {
+          "check": "browser: registration through publication from a clean browser",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "employeeJourney",
+      "title": "Employee journey",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "emulator: employee → profile → card → publish; cross-tenant attempts denied",
+          "ok": true
+        },
+        {
+          "check": "browser: admin adds and publishes an employee card; anonymous visitor opens it",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "publishing",
+      "title": "Publishing",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "server-authoritative publishing (AUTH-024, PUBLIC-014, PUBLIC-015)",
+          "ok": true
+        },
+        {
+          "check": "browser: unpublished / preview / unknown / demo URLs show nothing",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "key": "demoReadiness",
+      "title": "Demo readiness",
+      "status": "PASS",
+      "checks": [
+        {
+          "check": "emulator: readiness checks, App Owner only, diagnosis without mutation",
+          "ok": true
+        },
+        {
+          "check": "browser: App Owner sees all three pilots DEMO READY",
+          "ok": true
+        }
+      ]
+    }
+  ]
+}
