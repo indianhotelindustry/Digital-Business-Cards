@@ -166,6 +166,8 @@ function auditFromDoc(collectionName: AuditLedgerRecord['collection'], id: strin
 }
 
 const SNAPSHOT_REFRESH_MS = 5 * 60 * 1000;
+/** Back-off for a failed snapshot fetch (e.g. the profile is still being created at registration). */
+const SNAPSHOT_RETRY_DELAYS_MS = [1000, 2000, 4000, 8000, 15000];
 
 class CommercialStore {
   // ---- public control plane --------------------------------------------------
@@ -350,7 +352,7 @@ class CommercialStore {
   }
 
   /** Re-fetch the server-resolved commercial snapshot for the signed-in user. */
-  async refreshSnapshot(): Promise<void> {
+  async refreshSnapshot(attempt = 0): Promise<void> {
     if (!this.session) return;
     const seq = ++this.snapshotSeq;
     const session = this.session;
@@ -365,6 +367,15 @@ class CommercialStore {
       // Fail closed: without a server snapshot every gated feature shows as locked.
       this.snapshot = null;
       this.snapshotError = err instanceof Error ? err.message : String(err);
+      // Directive 26: right after registration the Firebase session can exist
+      // before the profile documents are committed, so the first request fails.
+      // Retry promptly instead of leaving a new customer locked until the
+      // periodic refresh.
+      if (attempt < SNAPSHOT_RETRY_DELAYS_MS.length) {
+        setTimeout(() => {
+          if (session === this.session && seq === this.snapshotSeq) void this.refreshSnapshot(attempt + 1);
+        }, SNAPSHOT_RETRY_DELAYS_MS[attempt]);
+      }
     }
     this.notify();
   }
