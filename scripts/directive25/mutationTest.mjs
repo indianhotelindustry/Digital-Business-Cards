@@ -17,7 +17,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const OUT = join(root, 'docs/directive-25/evidence/mutation-testing.json');
+// DSBC_MUTATION_OUT lets a later directive record its own evidence without touching earlier records.
+const OUT = join(root, process.env.DSBC_MUTATION_OUT || 'docs/directive-25/evidence/mutation-testing.json');
 const BACKUP_DIR = join(root, 'docs/directive-25/evidence/.mutation-backup');
 
 const F = {
@@ -25,6 +26,9 @@ const F = {
   commercial: 'tests/backend/authority-commercial-forgery.test.ts',
   tenancy: 'tests/backend/authority-tenancy-lifecycle.test.ts',
   client: 'tests/backend/authority-client-webhooks-publishing.test.ts',
+  // Directive 26
+  publicRes: 'tests/backend/public-resolution.test.ts',
+  pilots: 'tests/backend/three-customer-demo.test.ts',
 };
 
 /** find must occur exactly once (after CRLF -> LF normalisation). */
@@ -82,6 +86,23 @@ const MUTANTS = [
     find: "tx.update(entity.ref, { publicationHidden: state === 'PUBLISHED' ? FieldValue.delete() : true });", replace: '/* mutant: no visibility mirror */', tests: [F.client] },
   { id: 'M23', area: 'publishing', file: 'functions/src/publishing/service.ts', desc: 'released slugs free for takeover immediately (no quarantine)',
     find: "if (slugSnap.exists && slugSnap.get('entityId') !== entityId && !quarantineEnded)", replace: "if (slugSnap.exists && slugSnap.get('entityId') !== entityId && !slugSnap.get('releasedAt'))", tests: [F.client] },
+  // ---- Directive 26: public resolution, leads, readiness ------------------------------
+  { id: 'M24', area: 'public', file: 'functions/src/public/resolver.ts', desc: 'drafts / unpublished entities resolve publicly',
+    find: "const published = record.exists && record.get('publishingState') === 'PUBLISHED' && entity.get('publicationHidden') !== true;", replace: 'const published = true;', tests: [F.publicRes] },
+  { id: 'M25', area: 'public', file: 'functions/src/public/resolver.ts', desc: 'card employee not required to belong to the card tenant',
+    find: "if (!employee.exists || employee.get('companyId') !== companyId) return none(route, slug, 'NOT_FOUND');", replace: "if (!employee.exists) return none(route, slug, 'NOT_FOUND');", tests: [F.publicRes] },
+  { id: 'M26', area: 'public', file: 'functions/src/public/resolver.ts', desc: '?preview=true honoured for anyone',
+    find: 'const mayPreview = (viewer: Viewer, tenantId: string) => viewer.isAppOwner || (!!viewer.companyId && viewer.companyId === tenantId);', replace: 'const mayPreview = (_viewer: Viewer, _tenantId: string) => true;', tests: [F.publicRes] },
+  { id: 'M27', area: 'public', file: 'functions/src/public/resolver.ts', desc: 'public company projection leaks planId',
+    find: "  'website', 'email', 'phone', 'whatsapp', 'address',", replace: "  'planId', 'website', 'email', 'phone', 'whatsapp', 'address',", tests: [F.publicRes] },
+  { id: 'M28', area: 'public', file: 'functions/src/public/resolver.ts', desc: 'suspended tenant keeps public visibility of its cards',
+    find: "const tenantVisible = (company: Snap) => company.exists && company.get('status') === 'active' && company.get('platformSuspended') !== true;", replace: 'const tenantVisible = (company: Snap) => company.exists;', tests: [F.publicRes] },
+  { id: 'M29', area: 'public', file: 'functions/src/public/resolver.ts', desc: 'company directory lists unpublished cards',
+    find: '      cardSlug = await publishedCardSlug(c);', replace: "      cardSlug = (c.get('publicSlug') as string) || null;", tests: [F.publicRes] },
+  { id: 'M30', area: 'public', file: 'functions/src/public/leads.ts', desc: 'enquiries accepted without a publicly resolvable website',
+    find: "  if (site.outcome !== 'OK') fail('not-found', 'This company website is not available.');", replace: '  /* mutant: no website check */', tests: [F.pilots] },
+  { id: 'M31', area: 'public', file: 'functions/src/customers/readiness.ts', desc: 'demo readiness readable by non-owners',
+    find: "export async function adminGetDemoReadiness(caller: Caller, data: unknown) {\n  requireAppOwner(caller);", replace: 'export async function adminGetDemoReadiness(caller: Caller, data: unknown) {', tests: [F.pilots] },
   // ---- firestore.rules ----------------------------------------------------------------
   { id: 'R01', area: 'rules', file: 'firestore.rules', desc: 'customers may write their subscription',
     find: '      allow read: if isAppOwner() || isSubscriptionCustomer(resource.data.customerType, resource.data.customerId);\n      allow write: if false;\n    }\n\n    match /invoices/{invoiceId} {',
@@ -96,6 +117,9 @@ const MUTANTS = [
   { id: 'R04', area: 'rules', file: 'firestore.rules', desc: 'unpublished cards remain publicly readable',
     find: '          && notPlatformSuspended(resource.data) && notPublicationHidden(resource.data)\n          && isCompanyActive(resource.data.companyId))',
     replace: '          && notPlatformSuspended(resource.data)\n          && isCompanyActive(resource.data.companyId))', tests: [F.client] },
+  { id: 'R05', area: 'rules', file: 'firestore.rules', desc: 'publishing records readable by anyone once PUBLISHED (Directive 25 behaviour)',
+    find: '    match /publishingRecords/{entityId} {\n      allow read: if isAppOwner()\n        || isMemberOf(resource.data.tenantId);',
+    replace: "    match /publishingRecords/{entityId} {\n      allow read: if (resource != null && resource.data.publishingState == 'PUBLISHED') || isAppOwner()\n        || isMemberOf(resource.data.tenantId);", tests: [F.publicRes] },
 ];
 
 function read(rel) {
@@ -168,7 +192,7 @@ spawnSync('npm', ['--prefix', 'functions', 'run', 'build'], { cwd: root, shell: 
 
 const report = {
   schema: 'dsbc.mutationTesting/v1',
-  directive: 25,
+  directive: process.env.DSBC_MUTATION_OUT?.includes('directive-26') ? 26 : 25,
   generatedAt: new Date().toISOString(),
   environment: 'Firebase Emulator Suite (demo-dsbc): auth, firestore, functions, storage',
   baseline: { summary: baseline.summary, seconds: baseline.seconds },
