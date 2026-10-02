@@ -26,6 +26,41 @@
     },
     "ui": {
       "enabled": false
+    },
+    "functions": {
+      "host": "127.0.0.1",
+      "port": 5481
+    },
+    "storage": {
+      "host": "127.0.0.1",
+      "port": 9479
+    },
+    "eventarc": {
+      "host": "127.0.0.1",
+      "port": 9480
+    },
+    "pubsub": {
+      "host": "127.0.0.1",
+      "port": 8581
+    },
+    "tasks": {
+      "host": "127.0.0.1",
+      "port": 9481
     }
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ],
+      "ignore": [
+        "node_modules",
+        "src",
+        ".secret.local",
+        "*.log"
+      ]
+    }
+  ]
 }

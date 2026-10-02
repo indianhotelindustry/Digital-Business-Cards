@@ -1,0 +1,17 @@
+{
+  "name": "dsbc-functions",
+  "private": true,
+  "description": "DSBC authoritative backend (Directive 25): entitlements, subscriptions, billing, quota, publishing, audit.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "node ../node_modules/typescript/bin/tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  }
+}
