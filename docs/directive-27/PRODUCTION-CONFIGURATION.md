@@ -64,10 +64,12 @@ After any change: `npx vite build && npx tsx scripts/directive27/preflight.ts`.
 - Backend: `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` live only in
   Secret Manager. They must **exist** before `firebase deploy` (the payment
   functions declare them), even while `PAYMENTS_ENABLED=false`.
-- Git history contains three placeholder strings from the original export
-  (`rzp_live_DSBCprod2026`, `rzp_test_DSBCdev2026`). They are not real
-  credentials and were removed from the source in this directive. They are
-  reported as INVESTIGATE, not FAIL.
+- Git history contains placeholder Razorpay key ids from the original export
+  (a fake live and a fake test key id; see `secrets-audit.json` →
+  `gitHistory`). They are not real credentials and were removed from the
+  source in this directive. They are reported as INVESTIGATE, not FAIL.
+  Documentation never quotes key-shaped strings: the source scan treats every
+  tracked file, docs included, as source.
 
 ## Indexes
 

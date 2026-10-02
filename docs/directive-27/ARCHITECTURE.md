@@ -37,7 +37,7 @@ What was removed: hostname-based detection (`localhost` → DEVELOPMENT,
 anything else → PRODUCTION), the localStorage override
 (`dsbc_env_override_v2`), the in-app environment switch, the hard-coded live
 config in `firebase.ts`, and the invented production values (`dsbc-production`,
-`rzp_live_DSBCprod2026`, `support@dsbc.example.com`).
+a fake Razorpay live key id, `support@dsbc.example.com`).
 
 ## Health: measured, not displayed
 
