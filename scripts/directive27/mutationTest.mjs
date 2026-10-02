@@ -67,6 +67,14 @@ const MUTANTS = [
     find: "      if (t.payments === 'disabled' && env.PAYMENTS_ENABLED === 'true') problems.push(", replace: '      if (false) problems.push(', tests: [T.env] },
   { id: 'E12', area: 'environment', runner: 'unit', file: 'functions/src/index.ts', desc: 'backend loads without asserting its target',
     find: 'const BACKEND_ENV = assertBackendEnvironment();', replace: 'const BACKEND_ENV = evaluateBackendEnvironment();', tests: [T.env] },
+  // ---- Overnight Phase 6: build artifact identity ------------------------------------------------
+  { id: 'E13', area: 'environment', runner: 'unit', file: 'scripts/directive27/preflight.ts', desc: 'a bundle built for another project/database/region passes the preflight',
+    find: '      if (wrongTarget) {', replace: '      if (false) {', tests: [T.env] },
+  { id: 'E14', area: 'environment', runner: 'unit', file: 'scripts/directive27/preflight.ts', desc: 'a bundle built at another commit may be deployed',
+    find: '      } else if (info.commit !== head) {', replace: '      } else if (false) {', tests: [T.env] },
+  { id: 'E15', area: 'environment', runner: 'unit', file: 'scripts/directive27/preflight.ts', desc: 'a bundle without build identity passes the preflight',
+    find: "      add('BUILD_IDENTITY', false, `${dist}/build-info.json is missing; rebuild with \"npx vite build\".`, 'FAIL');",
+    replace: "      add('BUILD_IDENTITY', true, 'mutant: identity not required');", tests: [T.env] },
   // ---- Phase 5: public routing -------------------------------------------------------------------
   { id: 'P01', area: 'routing', runner: 'unit', file: 'src/lib/routes.ts', desc: 'any text accepted as a slug (traversal, separators)',
     find: 'const SLUG = /^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/;', replace: 'const SLUG = /^.+$/;', tests: [T.routes] },

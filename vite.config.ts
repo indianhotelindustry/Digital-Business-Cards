@@ -1,9 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import {copyFileSync} from 'fs';
+import {spawnSync} from 'child_process';
+import {copyFileSync, writeFileSync} from 'fs';
 import path from 'path';
 import {defineConfig, loadEnv, type Plugin} from 'vite';
-import {resolveEnvironment} from './src/lib/environmentResolver';
+import {resolveEnvironment, type ResolvedEnvironment} from './src/lib/environmentResolver';
 
 export default defineConfig(({command, mode}) => {
   // Directive 27: a bundle is built for exactly one designated environment,
@@ -16,7 +17,7 @@ export default defineConfig(({command, mode}) => {
     console.log(`[dsbc] building for ${target.environment}: ${target.firebase.projectId} / ${target.firestoreDatabaseId || '(default)'}${target.useEmulators ? ' [emulators]' : ''}`);
   }
   return {
-    plugins: [react(), tailwindcss(), notFoundPage()],
+    plugins: [react(), tailwindcss(), notFoundPage(), buildInfo(target)],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -52,6 +53,42 @@ function notFoundPage(): Plugin {
     },
     closeBundle() {
       copyFileSync(path.join(outDir, 'index.html'), path.join(outDir, '404.html'));
+    },
+  };
+}
+
+/**
+ * Build artifact identity: dist/build-info.json names the commit and the
+ * target this bundle was built for. The preflight checks it before a deploy;
+ * scripts/directive27/liveProbe.mjs reads it back from the public origin to
+ * prove which revision is live. Nothing in it is secret.
+ */
+function buildInfo(target: ResolvedEnvironment): Plugin {
+  let outDir = 'dist';
+  const git = (...args: string[]) => {
+    const r = spawnSync('git', args, {encoding: 'utf8'});
+    return r.status === 0 ? r.stdout.trim() : null;
+  };
+  return {
+    name: 'dsbc-build-info',
+    apply: 'build',
+    configResolved(c) {
+      outDir = path.resolve(c.root, c.build.outDir);
+    },
+    closeBundle() {
+      const status = git('status', '--porcelain', '--untracked-files=no');
+      const info = {
+        schema: 'dsbc.buildInfo/v1',
+        commit: git('rev-parse', 'HEAD'),
+        treeClean: status === null ? null : status === '',
+        envKey: target.key,
+        environment: target.environment,
+        projectId: target.firebase.projectId,
+        firestoreDatabaseId: target.firestoreDatabaseId || '(default)',
+        functionsRegion: target.functionsRegion,
+        builtAt: new Date().toISOString(),
+      };
+      writeFileSync(path.join(outDir, 'build-info.json'), JSON.stringify(info, null, 2) + '\n');
     },
   };
 }

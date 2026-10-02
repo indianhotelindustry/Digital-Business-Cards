@@ -12,6 +12,7 @@
 // designate or verify). It never deploys and never contacts a project.
 // Exit 0 = no FAIL (blockers may remain); exit 1 = a FAIL.
 
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -134,6 +135,22 @@ export function runPreflight(opts: { target?: EnvironmentKey; dist?: string } = 
       if (/localStorage\.getItem\(["']dsbc_env_override/.test(text)) throw new Error('bundle still reads an environment override from localStorage.');
       return `${dist}: built for ${key}, 404.html present, no browser environment override.`;
     });
+    // Build artifact identity (overnight directive Phase 6): the deployed revision must be provable.
+    const infoFile = join(distDir, 'build-info.json');
+    if (!existsSync(infoFile)) {
+      add('BUILD_IDENTITY', false, `${dist}/build-info.json is missing; rebuild with "npx vite build".`, 'FAIL');
+    } else {
+      const info = JSON.parse(readFileSync(infoFile, 'utf8'));
+      const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim();
+      const wrongTarget = info.envKey !== key || info.projectId !== t.firebase.projectId || info.firestoreDatabaseId !== (t.firestoreDatabaseId || '(default)') || info.functionsRegion !== t.functionsRegion;
+      if (wrongTarget) {
+        add('BUILD_IDENTITY', false, `${dist}/build-info.json describes ${info.envKey}: ${info.projectId} / ${info.firestoreDatabaseId} / ${info.functionsRegion}, not this target.`, 'FAIL');
+      } else if (info.commit !== head) {
+        add('BUILD_IDENTITY', false, `${dist} was built at ${String(info.commit).slice(0, 7)}, HEAD is ${head.slice(0, 7)}; rebuild before deploying.`, 'BLOCKED');
+      } else {
+        add('BUILD_IDENTITY', true, `${dist} = commit ${head.slice(0, 7)} for ${info.projectId} / ${info.firestoreDatabaseId}${info.treeClean ? '' : ' (built from a dirty working tree: not a release build)'}.`);
+      }
+    }
   }
 
   // ---- What only the App Owner can designate / verify ------------------------------

@@ -1,7 +1,8 @@
 // Directive 27 Phase 1: environment authority. The deployment target is
 // chosen only at build time (VITE_DSBC_ENV from the committed .env.<mode>),
 // fails closed, and the backend refuses to load for a mismatched target.
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ENVIRONMENT_REGISTRY, EnvironmentConfigurationError, resolveEnvironment, type EnvironmentRegistry } from '../../src/lib/environmentResolver';
@@ -161,7 +162,7 @@ describe('ENV: deployment preflight', () => {
     const report = runPreflight({ target: 'production' });
     expect(report.checks.filter((c) => c.status === 'FAIL')).toEqual([]);
     const blocked = report.checks.filter((c) => c.status === 'BLOCKED').map((c) => c.id);
-    for (const id of blocked) expect(['HOSTING_SITE_DESIGNATED', 'PUBLIC_ORIGIN_DESIGNATED', 'STAGING_DESIGNATED', 'BUNDLE']).toContain(id);
+    for (const id of blocked) expect(['HOSTING_SITE_DESIGNATED', 'PUBLIC_ORIGIN_DESIGNATED', 'STAGING_DESIGNATED', 'BUNDLE', 'BUILD_IDENTITY']).toContain(id);
   });
 
   it('ENV-016 a bare "firebase deploy" targets the emulator project, never production', () => {
@@ -169,5 +170,43 @@ describe('ENV: deployment preflight', () => {
     expect(rc.projects.default).toMatch(/^demo-/);
     const fb = JSON.parse(readFileSync('firebase.json', 'utf8'));
     expect(fb.hosting).toBeUndefined(); // the emulator config cannot deploy hosting
+  });
+});
+
+describe('ENV: build artifact identity (overnight Phase 6)', () => {
+  // A throwaway production-shaped bundle; node_modules/ is git-ignored.
+  const FIXTURE = 'node_modules/.cache/dsbc-preflight-fixture';
+  const HEAD = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
+  const identity = {
+    schema: 'dsbc.buildInfo/v1', commit: HEAD, treeClean: true, envKey: 'production', environment: 'PRODUCTION',
+    projectId: PROD.firebase!.projectId, firestoreDatabaseId: PROD.firestoreDatabaseId!, functionsRegion: PROD.functionsRegion!, builtAt: '2026-10-03T00:00:00.000Z',
+  };
+  function bundle(info: object | null) {
+    rmSync(FIXTURE, { recursive: true, force: true });
+    mkdirSync(join(FIXTURE, 'assets'), { recursive: true });
+    writeFileSync(join(FIXTURE, 'index.html'), '<!doctype html>');
+    writeFileSync(join(FIXTURE, '404.html'), '<!doctype html>');
+    writeFileSync(join(FIXTURE, 'assets', 'app.js'), 'const env="production";');
+    if (info) writeFileSync(join(FIXTURE, 'build-info.json'), JSON.stringify(info));
+    return runPreflight({ target: 'production', dist: FIXTURE }).checks.find((c) => c.id === 'BUILD_IDENTITY');
+  }
+
+  it('ENV-017 a bundle without build-info.json fails the preflight', () => {
+    expect(bundle(null)?.status).toBe('FAIL');
+  });
+
+  it('ENV-018 a bundle built for another project, database or region fails the preflight', () => {
+    expect(bundle(identity)?.status).toBe('PASS');
+    expect(bundle({ ...identity, projectId: 'demo-dsbc' })?.status).toBe('FAIL');
+    expect(bundle({ ...identity, firestoreDatabaseId: '(default)' })?.status).toBe('FAIL');
+    expect(bundle({ ...identity, functionsRegion: 'us-central1' })?.status).toBe('FAIL');
+    expect(bundle({ ...identity, envKey: 'development' })?.status).toBe('FAIL');
+  });
+
+  it('ENV-019 a bundle built at another commit cannot be deployed', () => {
+    const stale = bundle({ ...identity, commit: '0'.repeat(40) });
+    expect(stale?.status).toBe('BLOCKED');
+    expect(stale?.detail).toMatch(/rebuild/);
+    rmSync(FIXTURE, { recursive: true, force: true });
   });
 });
