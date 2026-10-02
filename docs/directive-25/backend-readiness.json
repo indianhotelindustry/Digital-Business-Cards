@@ -1,155 +1,201 @@
 {
   "schema": "dsbc.backendReadiness/v1",
   "directive": 25,
-  "generatedAt": "2026-10-02T11:49:29.307Z",
+  "generatedAt": "2026-10-02T12:55:49.049Z",
   "branch": "security-foundation/directive-25",
-  "commit": "3116cb6a7b8cd548c7d1c015fb9ce338b73fbc28",
+  "commit": "61adc2a4ca4b0551f7da01d242688e9382801cfa",
   "workingTreeClean": false,
   "environment": "Firebase Emulator Suite only (project demo-dsbc). No live Firebase project was contacted.",
-  "finalStatus": "BLOCKED — BACKEND AUTHORITY INCOMPLETE",
+  "finalStatus": "PASS — BACKEND AUTHORITY CERTIFIED",
   "productionCertified": false,
   "productionCertifiedReason": "Backend authority certification is not production certification; see deploymentBlockers.",
   "summary": {
-    "backendConfigured": "BLOCKED",
-    "emulatorTested": "BLOCKED",
-    "clientAuthorityRemoved": "BLOCKED",
-    "commercialStatePersistent": "BLOCKED",
-    "entitlementAuthorityServerSide": "BLOCKED",
-    "subscriptionAuthorityServerSide": "BLOCKED",
-    "quotaAuthorityServerSide": "BLOCKED",
-    "paymentSecretsBackendOnly": "BLOCKED",
-    "webhookCryptographicVerification": "BLOCKED",
-    "auditImmutability": "BLOCKED",
-    "tenantIsolationVerified": "BLOCKED",
-    "directive24RegressionPassing": "BLOCKED"
+    "backendConfigured": "PASS",
+    "emulatorTested": "PASS",
+    "clientAuthorityRemoved": "PASS",
+    "commercialStatePersistent": "PASS",
+    "entitlementAuthorityServerSide": "PASS",
+    "subscriptionAuthorityServerSide": "PASS",
+    "quotaAuthorityServerSide": "PASS",
+    "paymentSecretsBackendOnly": "PASS",
+    "webhookCryptographicVerification": "PASS",
+    "auditImmutability": "PASS",
+    "tenantIsolationVerified": "PASS",
+    "directive24RegressionPassing": "PASS"
   },
   "tests": {
     "unit": {
-      "passed": 0,
-      "total": 0
+      "passed": 46,
+      "total": 46
     },
     "rulesDirective24": {
-      "passed": 0,
-      "total": 0
+      "passed": 433,
+      "total": 433
     },
     "integration": {
-      "passed": 0,
-      "total": 0
+      "passed": 6,
+      "total": 6
     },
     "backendAuthority": {
-      "passed": 0,
-      "total": 0
+      "passed": 85,
+      "total": 85
     },
     "authCases": {
       "AUTH-001": {
-        "tests": 0,
-        "passed": false
+        "tests": 4,
+        "passed": true
       },
       "AUTH-002": {
-        "tests": 0,
-        "passed": false
+        "tests": 4,
+        "passed": true
       },
       "AUTH-003": {
-        "tests": 0,
-        "passed": false
+        "tests": 5,
+        "passed": true
       },
       "AUTH-004": {
-        "tests": 0,
-        "passed": false
+        "tests": 2,
+        "passed": true
       },
       "AUTH-005": {
-        "tests": 0,
-        "passed": false
+        "tests": 5,
+        "passed": true
       },
       "AUTH-006": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-007": {
-        "tests": 0,
-        "passed": false
+        "tests": 2,
+        "passed": true
       },
       "AUTH-008": {
-        "tests": 0,
-        "passed": false
+        "tests": 2,
+        "passed": true
       },
       "AUTH-009": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-010": {
-        "tests": 0,
-        "passed": false
+        "tests": 5,
+        "passed": true
       },
       "AUTH-011": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-012": {
-        "tests": 0,
-        "passed": false
+        "tests": 4,
+        "passed": true
       },
       "AUTH-013": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-014": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-015": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-016": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-017": {
-        "tests": 0,
-        "passed": false
+        "tests": 2,
+        "passed": true
       },
       "AUTH-018": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-019": {
-        "tests": 0,
-        "passed": false
+        "tests": 4,
+        "passed": true
       },
       "AUTH-020": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-021": {
-        "tests": 0,
-        "passed": false
+        "tests": 3,
+        "passed": true
       },
       "AUTH-022": {
-        "tests": 0,
-        "passed": false
+        "tests": 2,
+        "passed": true
       },
       "AUTH-023": {
-        "tests": 0,
-        "passed": false
+        "tests": 4,
+        "passed": true
       },
       "AUTH-024": {
-        "tests": 0,
-        "passed": false
+        "tests": 6,
+        "passed": true
       },
       "AUTH-025": {
-        "tests": 0,
-        "passed": false
+        "tests": 4,
+        "passed": true
       }
     },
-    "mutation": null
+    "mutation": {
+      "killed": 27,
+      "total": 27,
+      "survived": [],
+      "generatedAt": "2026-10-02T12:50:48.770Z"
+    }
   },
-  "steps": {},
+  "steps": {
+    "typecheck-frontend": {
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "exitCode": 0,
+      "seconds": 6
+    },
+    "typecheck-functions": {
+      "command": "npm --prefix functions run typecheck",
+      "exitCode": 0,
+      "seconds": 2
+    },
+    "build-functions": {
+      "command": "npm --prefix functions run build",
+      "exitCode": 0,
+      "seconds": 1
+    },
+    "build-frontend": {
+      "command": "npx vite build",
+      "exitCode": 0,
+      "seconds": 12
+    },
+    "tests-unit": {
+      "command": "npx vitest run --reporter=dot --reporter=json --outputFile.json=docs/directive-25/evidence/tests-unit.json",
+      "exitCode": 0,
+      "seconds": 3
+    },
+    "tests-rules-directive24": {
+      "command": "firebase emulators:exec --only firestore --project demo-dsbc \"vitest run --config vitest.rules.config.ts --reporter=dot --reporter=json --outputFile.json=docs/directive-25/evidence/tests-rules-directive24.json\"",
+      "exitCode": 0,
+      "seconds": 49
+    },
+    "tests-integration": {
+      "command": "firebase emulators:exec --only auth,firestore --project demo-dsbc \"vitest run --config vitest.integration.config.ts --reporter=dot --reporter=json --outputFile.json=docs/directive-25/evidence/tests-integration.json\"",
+      "exitCode": 0,
+      "seconds": 14
+    },
+    "tests-backend-authority": {
+      "command": "node scripts/directive25/runBackendTests.mjs --reporter=dot --reporter=json --outputFile.json=docs/directive-25/evidence/tests-backend-authority.json",
+      "exitCode": 0,
+      "seconds": 175
+    }
+  },
   "items": [
     {
       "key": "backendConfigured",
       "title": "Backend configured (Cloud Functions, Node 22, params/secrets)",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "functions/src/index.ts exports the control plane",
@@ -169,66 +215,40 @@
         },
         {
           "check": "functions typecheck",
-          "ok": false
+          "ok": true
         },
         {
           "check": "functions build",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "emulatorTested",
       "title": "Backend authority tested on the Firebase Emulator (AUTH-001..025)",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "backend suite executed against auth/firestore/functions/storage emulators",
-          "ok": false,
-          "detail": "0/0"
+          "ok": true,
+          "detail": "85/85"
         },
         {
           "check": "every AUTH-001..025 has passing tests",
-          "ok": false,
-          "detail": [
-            "AUTH-001",
-            "AUTH-002",
-            "AUTH-003",
-            "AUTH-004",
-            "AUTH-005",
-            "AUTH-006",
-            "AUTH-007",
-            "AUTH-008",
-            "AUTH-009",
-            "AUTH-010",
-            "AUTH-011",
-            "AUTH-012",
-            "AUTH-013",
-            "AUTH-014",
-            "AUTH-015",
-            "AUTH-016",
-            "AUTH-017",
-            "AUTH-018",
-            "AUTH-019",
-            "AUTH-020",
-            "AUTH-021",
-            "AUTH-022",
-            "AUTH-023",
-            "AUTH-024",
-            "AUTH-025"
-          ]
+          "ok": true,
+          "detail": []
         },
         {
           "check": "mutation testing: every authorization mutant killed",
-          "ok": false,
-          "detail": "not run"
+          "ok": true,
+          "detail": "27/27"
         }
       ]
     },
     {
       "key": "clientAuthorityRemoved",
       "title": "Client authority removed",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "no source reads a legacy authority localStorage key",
@@ -248,14 +268,14 @@
         },
         {
           "check": "AUTH-019/020 (forged localStorage has no effect) pass",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "commercialStatePersistent",
       "title": "Commercial state persistent in Firestore (server-written)",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "rules: plans is server-written only",
@@ -311,14 +331,14 @@
         },
         {
           "check": "AUTH-016 App Owner plan change persisted with server timestamps",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "entitlementAuthorityServerSide",
       "title": "Entitlement authority server-side",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "server resolver exported (getEffectiveEntitlement / can / getLimit / getUsage / checkLimit / isFeatureLocked)",
@@ -330,14 +350,14 @@
         },
         {
           "check": "AUTH-006 / AUTH-013 pass",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "subscriptionAuthorityServerSide",
       "title": "Subscription authority server-side",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "customer callables limited to checkout / confirm / cancel",
@@ -345,14 +365,14 @@
         },
         {
           "check": "AUTH-003 / 004 / 005 / 009 / 014 / 015 pass",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "quotaAuthorityServerSide",
       "title": "Quota authority server-side",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "usage counters and ledger server-written only",
@@ -364,18 +384,18 @@
         },
         {
           "check": "AUTH-010 / AUTH-011 pass (incl. concurrent overspend)",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "paymentSecretsBackendOnly",
       "title": "Payment secrets backend-only",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "production bundle built",
-          "ok": false
+          "ok": true
         },
         {
           "check": "bundle contains no secret material",
@@ -394,7 +414,7 @@
     {
       "key": "webhookCryptographicVerification",
       "title": "Webhook cryptographic verification present",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "HMAC-SHA256 with constant-time compare in the backend provider",
@@ -406,18 +426,18 @@
         },
         {
           "check": "unit tests of signature verification pass",
-          "ok": false
+          "ok": true
         },
         {
           "check": "AUTH-021 / 022 / 023 pass",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "auditImmutability",
       "title": "Audit immutability present",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "rules: entitlementAuditLogs not writable by any client",
@@ -437,48 +457,48 @@
         },
         {
           "check": "AUTH-017 / AUTH-018 pass",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "tenantIsolationVerified",
       "title": "Tenant isolation verified",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "AUTH-012 passes",
-          "ok": false
+          "ok": true
         },
         {
           "check": "Directive 24 tenant-isolation rules suite passes",
-          "ok": false
+          "ok": true
         }
       ]
     },
     {
       "key": "directive24RegressionPassing",
       "title": "Directive 24 regression suite passing",
-      "status": "BLOCKED",
+      "status": "PASS",
       "checks": [
         {
           "check": "rules suite 433/433",
-          "ok": false,
-          "detail": "0/0"
+          "ok": true,
+          "detail": "433/433"
         },
         {
           "check": "integration suite",
-          "ok": false,
-          "detail": "0/0"
+          "ok": true,
+          "detail": "6/6"
         },
         {
           "check": "unit suite",
-          "ok": false,
-          "detail": "0/0"
+          "ok": true,
+          "detail": "46/46"
         },
         {
           "check": "frontend typecheck",
-          "ok": false
+          "ok": true
         }
       ]
     }

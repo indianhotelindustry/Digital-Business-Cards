@@ -1,0 +1,42 @@
+{
+  "typecheck-frontend": {
+    "command": "node node_modules/typescript/bin/tsc --noEmit",
+    "exitCode": 0,
+    "seconds": 6
+  },
+  "typecheck-functions": {
+    "command": "npm --prefix functions run typecheck",
+    "exitCode": 0,
+    "seconds": 2
+  },
+  "build-functions": {
+    "command": "npm --prefix functions run build",
+    "exitCode": 0,
+    "seconds": 1
+  },
+  "build-frontend": {
+    "command": "npx vite build",
+    "exitCode": 0,
+    "seconds": 12
+  },
+  "tests-unit": {
+    "command": "npx vitest run --reporter=dot --reporter=json --outputFile.json=docs/directive-25/evidence/tests-unit.json",
+    "exitCode": 0,
+    "seconds": 3
+  },
+  "tests-rules-directive24": {
+    "command": "firebase emulators:exec --only firestore --project demo-dsbc \"vitest run --config vitest.rules.config.ts --reporter=dot --reporter=json --outputFile.json=docs/directive-25/evidence/tests-rules-directive24.json\"",
+    "exitCode": 0,
+    "seconds": 49
+  },
+  "tests-integration": {
+    "command": "firebase emulators:exec --only auth,firestore --project demo-dsbc \"vitest run --config vitest.integration.config.ts --reporter=dot --reporter=json --outputFile.json=docs/directive-25/evidence/tests-integration.json\"",
+    "exitCode": 0,
+    "seconds": 14
+  },
+  "tests-backend-authority": {
+    "command": "node scripts/directive25/runBackendTests.mjs --reporter=dot --reporter=json --outputFile.json=docs/directive-25/evidence/tests-backend-authority.json",
+    "exitCode": 0,
+    "seconds": 175
+  }
+}

@@ -75,7 +75,8 @@ const backend = suite('tests-backend-authority');
 const AUTH_IDS = Array.from({ length: 25 }, (_, i) => `AUTH-${String(i + 1).padStart(3, '0')}`);
 const authStatus = Object.fromEntries(
   AUTH_IDS.map((id) => {
-    const ts = backend.tests.filter((t) => t.name.startsWith(id));
+    // The id is a describe title token (some cases are nested in a parent describe).
+    const ts = backend.tests.filter((t) => new RegExp(`(^| )${id} `).test(t.name));
     return [id, { tests: ts.length, passed: ts.length > 0 && ts.every((t) => t.status === 'passed') }];
   })
 );
