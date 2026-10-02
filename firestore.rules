@@ -691,16 +691,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Publishing authority: the public sees PUBLISHED records only.
+    // Publishing authority. Directive 26: the public resolves content through
+    // the resolvePublicEntity callable; records are tenant/App Owner only.
     match /publishingRecords/{entityId} {
-      allow read: if (resource != null && resource.data.publishingState == 'PUBLISHED')
-        || isAppOwner()
+      allow read: if isAppOwner()
         || isMemberOf(resource.data.tenantId);
       allow write: if false;
     }
 
     match /slugs/{slug} {
-      allow read: if true; // slug availability
+      allow read: if isSignedIn(); // slug availability for owners (Directive 26: not public)
       allow write: if false;
     }
 
