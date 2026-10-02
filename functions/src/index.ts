@@ -18,6 +18,7 @@ import * as subs from './subscriptions/service';
 import * as pay from './billing/payments';
 import * as pub from './publishing/service';
 import * as cust from './customers/service';
+import { adminGetDemoReadiness as demoReadiness } from './customers/readiness';
 import * as quota from './usage/quota';
 import { uploadAsset as uploadAssetHandler } from './usage/uploads';
 import { RazorpayProvider } from './billing/paymentProvider';
@@ -78,6 +79,7 @@ export const adminSetPublishingSuspension = callable(pub.adminSetPublishingSuspe
 export const adminSetCustomerSuspension = callable(cust.adminSetCustomerSuspension);
 export const adminSetCustomerClassification = callable(cust.adminSetCustomerClassification);
 export const adminReviewDeletion = callable(cust.adminReviewDeletion);
+export const adminGetDemoReadiness = callable(demoReadiness);
 
 // ---- Payment provider webhook (HMAC over the raw body) ----------------------
 export const razorpayWebhook = onRequest({ secrets: [RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET] }, async (req, res) => {

@@ -43,9 +43,10 @@ import { SaaSAuditTrailTab } from '../saas/SaaSAuditTrailTab';
 import { SaaSProductionControlTab } from '../saas/SaaSProductionControlTab';
 import { SaaSProductionReadinessCenter } from '../saas/SaaSProductionReadinessCenter';
 import { SaaSPilotControlTab } from '../saas/SaaSPilotControlTab';
+import { SaaSDemoReadinessTab } from '../saas/SaaSDemoReadinessTab';
 import { SaaSConversionFunnelTab } from '../saas/SaaSConversionFunnelTab';
 import { SaaSSupportTab } from '../saas/SaaSSupportTab';
-import { TrendingUp, MessageSquare, Rocket } from 'lucide-react';
+import { TrendingUp, MessageSquare, Rocket, CheckCircle2 } from 'lucide-react';
 
 interface AppOwnerDashboardProps {
   onNavigateToCard?: (slug: string) => void;
@@ -171,6 +172,7 @@ export const AppOwnerDashboard: React.FC<AppOwnerDashboardProps> = ({ onNavigate
     { id: 'funnel', label: 'Conversion Funnel', icon: TrendingUp },
     { id: 'support', label: 'Support Inquiries', icon: MessageSquare },
     { id: 'pilot', label: 'First Customer Pilot', icon: Rocket },
+    { id: 'demo-readiness', label: 'Demo Readiness', icon: CheckCircle2 },
     { id: 'production', label: 'Production Launch Gate', icon: Server },
     { id: 'audit', label: 'Entitlement Audit', icon: History },
   ];
@@ -342,6 +344,8 @@ export const AppOwnerDashboard: React.FC<AppOwnerDashboardProps> = ({ onNavigate
       {activeTab === 'funnel' && <SaaSConversionFunnelTab />}
 
       {activeTab === 'support' && <SaaSSupportTab />}
+
+      {activeTab === 'demo-readiness' && <SaaSDemoReadinessTab />}
 
       {activeTab === 'pilot' && (
         <SaaSPilotControlTab
