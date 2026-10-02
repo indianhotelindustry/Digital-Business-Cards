@@ -49,6 +49,13 @@ const firebase = (...a) => run('firebase', [...a, '--project', PROJECT, '--json'
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
 const git = (...a) => spawnSync('git', a, { cwd: root, encoding: 'utf8' }).stdout.trim();
 const commit = git('rev-parse', 'HEAD');
+/** True when `other` is HEAD or differs from it only in docs/ (evidence commits deploy nothing). */
+const sameCode = (other) => {
+  if (!other) return false;
+  if (other === commit) return true;
+  const r = spawnSync('git', ['diff', '--name-only', other, commit], { cwd: root, encoding: 'utf8' });
+  return r.status === 0 && r.stdout.split(/\r?\n/).filter(Boolean).every((f) => f.startsWith('docs/'));
+};
 
 const checks = [];
 const add = (id, status, detail, data) => checks.push({ id, status, detail, ...(data ? { data } : {}) });
@@ -172,16 +179,16 @@ else {
   const info = parse((await http(`${ORIGIN}/build-info.json`)).body);
   const pricing = await http(`${ORIGIN}/pricing`);
   const unknown = await http(`${ORIGIN}/no-such-page-${Date.now()}`);
-  const ok = info?.commit === commit && pricing.status === 200 && unknown.status === 404;
+  const ok = sameCode(info?.commit) && pricing.status === 200 && unknown.status === 404;
   add('HOSTING_DEPLOYED', ok ? 'PASS' : 'NOT_DEPLOYED', `build-info commit ${info?.commit?.slice(0, 7) ?? 'none'} (HEAD ${commit.slice(0, 7)}), /pricing ${pricing.status}, unknown path ${unknown.status}`);
 }
 
 // ---- 9. evidence that needs a deployed backend / signed-in App Owner -------------------------
 const health = existsSync(join(root, HEALTH)) ? JSON.parse(readFileSync(join(root, HEALTH), 'utf8')) : null;
-add('LIVE_PLATFORM_HEALTH', !health ? 'NOT_EXECUTED' : health.commit === commit && ['OK', 'DEGRADED'].includes(health.overall) ? (health.overall === 'OK' ? 'PASS' : 'FAIL') : 'FAIL',
+add('LIVE_PLATFORM_HEALTH', !health ? 'NOT_EXECUTED' : sameCode(health.commit) && ['OK', 'DEGRADED'].includes(health.overall) ? (health.overall === 'OK' ? 'PASS' : 'FAIL') : 'FAIL',
   health ? `overall ${health.overall} at ${health.commit?.slice(0, 7)}` : `no ${HEALTH}: adminGetPlatformHealth must be called by the signed-in App Owner on the deployed backend`);
 const acceptance = existsSync(join(root, ACCEPTANCE)) ? JSON.parse(readFileSync(join(root, ACCEPTANCE), 'utf8')) : null;
-const acceptanceOk = !!acceptance && acceptance.commit === commit && acceptance.origin === ORIGIN && acceptance.customers?.length === 3 && acceptance.customers.every((c) => c.passed) && acceptance.isolation?.passed === true;
+const acceptanceOk = !!acceptance && sameCode(acceptance.commit) && acceptance.origin === ORIGIN && acceptance.customers?.length === 3 && acceptance.customers.every((c) => c.passed) && acceptance.isolation?.passed === true;
 add('LIVE_ACCEPTANCE', !acceptance ? 'NOT_EXECUTED' : acceptanceOk ? 'PASS' : 'FAIL',
   acceptance ? `${acceptance.customers?.filter((c) => c.passed).length ?? 0}/3 customers, isolation ${acceptance.isolation?.passed ? 'PASS' : 'FAIL'} at ${acceptance.commit?.slice(0, 7)}` : `no ${ACCEPTANCE}: the three-customer journey has not been run against a live deployment`);
 

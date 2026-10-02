@@ -4,13 +4,20 @@
 //   node scripts/directive27/certify.mjs           runs everything, then evaluates
 //   node scripts/directive27/certify.mjs --no-run  re-evaluates the last evidence
 // Writes docs/directive-27/certification.json. Every line is PASS or FAIL and
-// is derived from named tests in the evidence. Readiness is reported on three
-// separate levels:
-//   Demo Ready          PASS | NOT READY   (emulator + real Chrome evidence)
-//   Deployment Ready    PASS | BLOCKED | NOT READY  (needs owner designations and
-//                       live-target verifications this environment cannot make)
-//   Production Certified  NOT READY until a verified live deployment exists
-// Nothing here deploys or contacts a real Firebase project.
+// is derived from named tests in the evidence. Readiness is reported on five
+// separate levels (overnight directive Phase 13), never collapsed into one:
+//   1 Demo Ready               PASS | FAIL   emulator + real Chrome evidence
+//   2 Deployment Ready         PASS | BLOCKED | FAIL   owner designations and
+//                              live-target prerequisites (measured by liveProbe.mjs)
+//   3 Live Deployment Complete PASS | NOT COMPLETE | NOT VERIFIED   rules,
+//                              functions, hosting, control plane live at HEAD
+//   4 Live Acceptance Passed   PASS | FAIL | NOT EXECUTED | NOT VERIFIED   three
+//                              customers on the real public URLs + live Platform Health
+//   5 Production Certified     PASS only if 1-4 pass and no blocker remains
+// Live levels come only from docs/overnight/evidence/live-probe.json, written by
+// scripts/directive27/liveProbe.mjs (read-only) at THIS commit; older or missing
+// evidence is NOT VERIFIED. This script deploys nothing and contacts no real
+// Firebase project.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -23,6 +30,7 @@ const MUTATION = 'docs/directive-27/evidence/mutation-testing.json';
 const BASELINE = 'docs/directive-27/evidence/baseline/baseline-report.json';
 const PREFLIGHT = 'docs/directive-27/evidence/preflight.json';
 const SECRETS = 'docs/directive-27/evidence/secrets-audit.json';
+const LIVE_PROBE = 'docs/overnight/evidence/live-probe.json';
 const OUT = 'docs/directive-27/certification.json';
 const RUN = !process.argv.includes('--no-run');
 
@@ -119,7 +127,7 @@ line('rehearsal', 'Phase 6 — three-customer production-like rehearsal', [
   { check: 'all rehearsal scenarios', ok: pass(reh) && reh.length >= 11, detail: count(reh) },
 ]);
 line('mutation', 'Phase 7 — mutation testing', [
-  { check: 'every D27 mutant killed', ok: !!mutation && mutation.summary.total >= 38 && mutation.summary.survived.length === 0, detail: mutation ? `${mutation.summary.killed}/${mutation.summary.total}` : 'not run' },
+  { check: 'every D27 mutant killed', ok: !!mutation && mutation.summary.total >= 41 && mutation.summary.survived.length === 0, detail: mutation ? `${mutation.summary.killed}/${mutation.summary.total}` : 'not run' },
   { check: 'unmutated baselines passed first', ok: !!mutation && Object.values(mutation.baseline).every((b) => b.exitCode === 0) },
 ]);
 line('typescript', 'TypeScript', [{ check: 'frontend + functions typecheck', ok: final?.typescript === 'PASS' }]);
@@ -130,22 +138,39 @@ const allPass = lines.every((l) => l.status === 'PASS');
 // ---------------------------------------------------------------------------
 // Readiness levels
 // ---------------------------------------------------------------------------
+const head = git('rev-parse', 'HEAD');
+const probe = json(LIVE_PROBE);
+// Evidence measured at another commit says nothing about this one, unless
+// everything committed since then is documentation/evidence (docs/ only).
+const changedSinceProbe = probe ? spawnSync('git', ['diff', '--name-only', probe.commit, head], { cwd: root, encoding: 'utf8' }) : null;
+const probeCurrent = !!probe && changedSinceProbe.status === 0 &&
+  changedSinceProbe.stdout.split(/\r?\n/).filter(Boolean).every((f) => f.startsWith('docs/'));
+const NOT_PREREQUISITE = ['FIRESTORE_RULES_DEPLOYED', 'FUNCTIONS_DEPLOYED', 'HOSTING_DEPLOYED', 'CONTROL_PLANE_BOOTSTRAPPED', 'LIVE_PLATFORM_HEALTH', 'LIVE_ACCEPTANCE'];
+const liveBlocked = probeCurrent ? probe.checks.filter((c) => ['BLOCKED', 'FAIL'].includes(c.status) && !NOT_PREREQUISITE.includes(c.id)) : [];
 const deploymentBlockers = [
   ...(preflight?.checks ?? []).filter((c) => c.status === 'BLOCKED').map((c) => `${c.id}: ${c.detail}`),
-  'APP_OWNER_ON_LIVE: the real App Owner claim has not been granted/verified on v-nexus-lite (scripts/admin/setAppOwner.ts --verify); needs the owner and Admin credentials.',
-  'BOOTSTRAP_ON_LIVE: the production bootstrap has not been run (dry run or real) against the live database.',
-  'MIGRATION_ON_LIVE: existing live customers have not been discovered; no App Owner approval exists (CUSTOMER-MIGRATION-PLAN.md).',
-  'LEGACY_PUBLISHING: content published before Directive 26 has no publishing records and shows Not Found until republished (owner decision).',
+  ...(probeCurrent
+    ? liveBlocked.map((c) => `LIVE_${c.id}: ${c.detail}`)
+    : [`LIVE_PROBE_NOT_VERIFIED: ${probe ? `${LIVE_PROBE} was measured at ${probe.commit.slice(0, 7)}, and code changed before HEAD ${head.slice(0, 7)}` : `${LIVE_PROBE} is missing`}; run node scripts/directive27/liveProbe.mjs (read-only).`]),
+  'APP_OWNER_ON_LIVE: no App Owner claim has been granted/verified on v-nexus-lite; the owner must designate the identity (runbook: grant right after the rules deploy, then setAppOwner.ts --verify).',
+  'MIGRATION_DECISION: live discovery found only legacy demo-candidate companies (docs/overnight/evidence/migration-discovery-summary.json); the App Owner records SKIP for each (nothing migrated, nothing deleted).',
   'STORAGE_BUCKET_OWNERSHIP: deploying storage.rules replaces the rules of v-nexus-lite.firebasestorage.app for every app using it; confirm ownership or provision a dedicated bucket.',
   'ENTERPRISE_EDITION: the DSBC database is Firestore Enterprise edition; the emulator runs Standard edition, so rules and Firestore triggers must be verified on a real Enterprise database first.',
-  'SECRETS_EXIST: RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET must exist in Secret Manager before functions can deploy (placeholders while payments are off).',
   'NOTIFICATIONS: no email provider; Platform Health can never be OK until one is integrated or the owner accepts NOT_CONFIGURED.',
-  'NOT_DEPLOYED: rules, indexes, functions, storage rules and hosting have not been deployed; no live Platform Health has been measured.',
 ];
+const liveDeployment = !probeCurrent ? 'NOT VERIFIED' : probe.liveDeployment === 'COMPLETE' ? 'PASS' : 'NOT COMPLETE';
+const liveHealth = probeCurrent ? probe.liveHealth : 'NOT VERIFIED';
+const liveAcceptance = !probeCurrent
+  ? 'NOT VERIFIED'
+  : probe.liveAcceptance === 'PASS' && liveHealth === 'PASS'
+    ? 'PASS'
+    : probe.liveAcceptance === 'NOT_EXECUTED' ? 'NOT EXECUTED' : 'FAIL';
 const readiness = {
-  demoReady: allPass ? 'PASS' : 'NOT READY',
-  deploymentReady: !allPass ? 'NOT READY' : deploymentBlockers.length ? 'BLOCKED' : 'PASS',
-  productionCertified: 'NOT READY',
+  demoReady: allPass ? 'PASS' : 'FAIL',
+  deploymentReady: !allPass ? 'FAIL' : deploymentBlockers.length ? 'BLOCKED' : 'PASS',
+  liveDeploymentComplete: liveDeployment,
+  liveAcceptancePassed: liveAcceptance,
+  productionCertified: allPass && deploymentBlockers.length === 0 && liveDeployment === 'PASS' && liveAcceptance === 'PASS' ? 'PASS' : 'FAIL',
 };
 
 const report = {
@@ -153,19 +178,24 @@ const report = {
   directive: 27,
   generatedAt: new Date().toISOString(),
   branch: git('rev-parse', '--abbrev-ref', 'HEAD'),
-  commit: git('rev-parse', 'HEAD'),
-  environment: 'Firebase Emulator Suite (demo-dsbc) + real Chrome against a production-mode bundle. No live Firebase project was contacted; nothing was deployed.',
+  commit: head,
+  environment: 'Tests: Firebase Emulator Suite (demo-dsbc) + real Chrome against a production-mode bundle. Live levels: read-only measurements of the production target by scripts/directive27/liveProbe.mjs. This script deploys nothing.',
   gate: readiness.deploymentReady === 'PASS' ? 'PASS' : readiness.deploymentReady,
   readiness,
-  finalStatus: allPass
-    ? 'PASS WITH DEPLOYMENT BLOCKERS — DEMO READY · DEPLOYMENT BLOCKED · PRODUCTION NOT CERTIFIED'
-    : 'FAIL — DIRECTIVE 27 INCOMPLETE',
+  liveProbe: probe
+    ? { commit: probe.commit, generatedAt: probe.generatedAt, current: probeCurrent, target: probe.target, liveDeployment: probe.liveDeployment, liveHealth: probe.liveHealth, liveAcceptance: probe.liveAcceptance }
+    : null,
+  finalStatus: readiness.productionCertified === 'PASS'
+    ? 'PASS — PRODUCTION CERTIFIED'
+    : allPass
+      ? `DEMO READY · DEPLOYMENT ${readiness.deploymentReady} · LIVE DEPLOYMENT ${readiness.liveDeploymentComplete} · LIVE ACCEPTANCE ${readiness.liveAcceptancePassed} · PRODUCTION NOT CERTIFIED`
+      : 'FAIL — DIRECTIVE 27 INCOMPLETE',
   deploymentBlockers,
   productionCertificationRequires: [
     'Every deployment blocker resolved and the runbook (docs/directive-27/RUNBOOK.md) executed under App Owner control.',
     'Live Platform Health overall OK (or only intentionally DISABLED checks).',
     'The three-customer scenario repeated on the real public URLs from clean devices, App Owner Demo Readiness 3 of 3.',
-    'Existing-customer migration executed and its audit trail reviewed; rollback path rehearsed.',
+    'Existing-customer migration decisions recorded by the App Owner against a fresh preview hash (overnight discovery: only legacy demo candidates, so SKIP) and the audit trail reviewed; rollback path rehearsed.',
   ],
   summary: Object.fromEntries(lines.map((l) => [l.key, l.status])),
   totals: {
@@ -180,6 +210,10 @@ const report = {
 };
 writeFileSync(join(root, OUT), JSON.stringify(report, null, 2) + '\n');
 console.log(report.finalStatus);
-console.log(`  Demo Ready: ${readiness.demoReady} · Deployment Ready: ${readiness.deploymentReady} · Production Certified: ${readiness.productionCertified}`);
+console.log(`  1 Demo Ready:               ${readiness.demoReady}`);
+console.log(`  2 Deployment Ready:         ${readiness.deploymentReady}`);
+console.log(`  3 Live Deployment Complete: ${readiness.liveDeploymentComplete}`);
+console.log(`  4 Live Acceptance Passed:   ${readiness.liveAcceptancePassed}`);
+console.log(`  5 Production Certified:     ${readiness.productionCertified}`);
 for (const l of lines) console.log(`  ${l.status.padEnd(4)} ${l.title}`);
 process.exit(allPass ? 0 : 1);
