@@ -1,28 +1,28 @@
 rules_version = '2';
+// ============================================================================
+// DSBC Storage rules: Directive 25 Phase 10
+// ----------------------------------------------------------------------------
+// Uploads are backend-only: the uploadAsset Cloud Function authorises the
+// caller from server records, validates the image bytes and reserves storage
+// quota atomically before writing with the Admin SDK. No client may write,
+// so neither tenant boundaries nor storage limits can be bypassed from the
+// browser. Branding and profile images remain publicly readable.
+// ============================================================================
 service firebase.storage {
   match /b/{bucket}/o {
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isImage() {
-      return request.resource.contentType.matches('image/(jpeg|png|webp)');
-    }
-
-    function isUnder5MB() {
-      return request.resource.size <= 5 * 1024 * 1024;
-    }
-
-    // Public business card assets (company logos, headers)
     match /companies/{companyId}/branding/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuthenticated() && isImage() && isUnder5MB();
+      allow write: if false;
     }
 
-    // Employee profile photos
     match /companies/{companyId}/employees/{employeeId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuthenticated() && isImage() && isUnder5MB();
+      allow write: if false;
+    }
+
+    match /individuals/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }
