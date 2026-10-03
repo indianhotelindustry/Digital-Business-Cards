@@ -1,0 +1,274 @@
+{
+  "schema": "dsbc.directive27.bootstrapReport/v1",
+  "generatedAt": "2026-10-03T02:37:49.271Z",
+  "commit": "e47a4874d0fd48d58b8ca477e2ae151e89a53e09",
+  "operator": "SIPL Server@bootstrap-script",
+  "target": {
+    "projectId": "demo-dsbc",
+    "databaseId": "dsbc-production",
+    "emulator": true,
+    "environment": "development"
+  },
+  "reason": "d28-fresh-db-rehearsal",
+  "bootstrapVersion": 1,
+  "dryRun": false,
+  "items": [
+    {
+      "path": "plans/individual_free",
+      "state": "CREATED"
+    },
+    {
+      "path": "plans/individual_pro",
+      "state": "CREATED"
+    },
+    {
+      "path": "plans/company_free",
+      "state": "CREATED"
+    },
+    {
+      "path": "plans/company_pro",
+      "state": "CREATED"
+    },
+    {
+      "path": "plans/custom",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.business_card",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.full_profile",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.custom_slug",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.custom_template",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.theme",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.social_links",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.services",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.portfolio",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.career",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.certifications",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.testimonials",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.analytics",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.ai_capture",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.ai_assistance",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.contact_exchange",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.vcard",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/individual.qr_code",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.mini_website",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.custom_slug",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.services",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.products",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.case_studies",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.testimonials",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.team_directory",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.team_members",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.lead_capture",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.analytics",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.company_vcard",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.custom_branding",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.custom_domain",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.remove_branding",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.storage",
+      "state": "CREATED"
+    },
+    {
+      "path": "featureCatalogue/company.ai_assistance",
+      "state": "CREATED"
+    },
+    {
+      "path": "globalPolicies/platform",
+      "state": "CREATED"
+    },
+    {
+      "path": "platformConfig/deployment",
+      "state": "CREATED"
+    }
+  ],
+  "created": [
+    "plans/individual_free",
+    "plans/individual_pro",
+    "plans/company_free",
+    "plans/company_pro",
+    "plans/custom",
+    "featureCatalogue/individual.business_card",
+    "featureCatalogue/individual.full_profile",
+    "featureCatalogue/individual.custom_slug",
+    "featureCatalogue/individual.custom_template",
+    "featureCatalogue/individual.theme",
+    "featureCatalogue/individual.social_links",
+    "featureCatalogue/individual.services",
+    "featureCatalogue/individual.portfolio",
+    "featureCatalogue/individual.career",
+    "featureCatalogue/individual.certifications",
+    "featureCatalogue/individual.testimonials",
+    "featureCatalogue/individual.analytics",
+    "featureCatalogue/individual.ai_capture",
+    "featureCatalogue/individual.ai_assistance",
+    "featureCatalogue/individual.contact_exchange",
+    "featureCatalogue/individual.vcard",
+    "featureCatalogue/individual.qr_code",
+    "featureCatalogue/company.mini_website",
+    "featureCatalogue/company.custom_slug",
+    "featureCatalogue/company.services",
+    "featureCatalogue/company.products",
+    "featureCatalogue/company.case_studies",
+    "featureCatalogue/company.testimonials",
+    "featureCatalogue/company.team_directory",
+    "featureCatalogue/company.team_members",
+    "featureCatalogue/company.lead_capture",
+    "featureCatalogue/company.analytics",
+    "featureCatalogue/company.company_vcard",
+    "featureCatalogue/company.custom_branding",
+    "featureCatalogue/company.custom_domain",
+    "featureCatalogue/company.remove_branding",
+    "featureCatalogue/company.storage",
+    "featureCatalogue/company.ai_assistance",
+    "globalPolicies/platform",
+    "platformConfig/deployment"
+  ],
+  "existing": [],
+  "drift": [],
+  "inventory": {
+    "before": {
+      "plans": 0,
+      "featureCatalogue": 0,
+      "globalPolicies": 0,
+      "platformConfig": 0,
+      "entitlementAuditLogs": 0,
+      "platformAuditLogs": 0,
+      "users": 0,
+      "companies": 0,
+      "employees": 0,
+      "departments": 0,
+      "digitalIdentityProfiles": 0,
+      "cards": 0,
+      "subscriptions": 0,
+      "invoices": 0,
+      "paymentOrders": 0,
+      "paymentEvents": 0,
+      "entitlementOverrides": 0,
+      "usageCounters": 0,
+      "publishingRecords": 0,
+      "slugs": 0,
+      "leads": 0,
+      "pilots": 0
+    },
+    "after": {
+      "plans": 5,
+      "featureCatalogue": 33,
+      "globalPolicies": 1,
+      "platformConfig": 1,
+      "entitlementAuditLogs": 1,
+      "platformAuditLogs": 1,
+      "users": 0,
+      "companies": 0,
+      "employees": 0,
+      "departments": 0,
+      "digitalIdentityProfiles": 0,
+      "cards": 0,
+      "subscriptions": 0,
+      "invoices": 0,
+      "paymentOrders": 0,
+      "paymentEvents": 0,
+      "entitlementOverrides": 0,
+      "usageCounters": 0,
+      "publishingRecords": 0,
+      "slugs": 0,
+      "leads": 0,
+      "pilots": 0
+    }
+  },
+  "customerCollectionsUnchanged": true,
+  "customerCollectionsChanged": [],
+  "status": "PASS"
+}

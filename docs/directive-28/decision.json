@@ -1,0 +1,67 @@
+{
+  "schema": "dsbc.directive28.decision/v1",
+  "decidedAt": "2026-10-03",
+  "productionBoundary": "A dedicated Firebase / Google Cloud project used by DSBC alone (own Auth pool, Firestore database dsbc-production in Standard edition, default Storage bucket, Hosting site, Cloud Functions identity, Secret Manager, IAM, quotas and logs).",
+  "recommendedOption": "A_DEDICATED_DSBC_PROJECT",
+  "rejectedOptions": [
+    {
+      "option": "B_ISOLATED_RESOURCES_IN_V_NEXUS_LITE",
+      "verdict": "UNSAFE",
+      "reasons": [
+        "AUTH: one project-wide Firebase Auth pool (FIREBASE_AUTH, no multi-tenancy); only Google sign-in enabled while DSBC needs email/password; enabling it changes sign-up for every app in the project",
+        "IAM: the default compute service account holds roles/editor on the project and is Vidwan Kids' Cloud Run identity; Cloud Functions gen 2 use it by default",
+        "STORAGE: the registry bucket v-nexus-lite.firebasestorage.app does not exist (404), the Cloud Storage for Firebase API is disabled, and the DSBC backend writes to the project's default bucket",
+        "WEB_APP: DSBC's web configuration is the generic ai-studio-applet-webapp shared with AI Studio applets",
+        "CO_TENANTS: V-Nexus Lite (default site, (default) database), Vidwan Kids (site, Cloud Run, bucket) and two other AI Studio applet databases share the project"
+      ]
+    },
+    {
+      "option": "EXISTING_PROJECT_command-centre-640ac",
+      "verdict": "NOT_SUITABLE",
+      "reasons": ["already hosts another application (\"My Google AI Studio App\") with its own (default) database"]
+    },
+    {
+      "option": "EXISTING_PROJECT_dsbc-e8ok3g3sf",
+      "verdict": "UNKNOWN",
+      "reasons": ["the operator account has no permission to inspect it; its purpose must be stated by the owner before it can be considered"]
+    }
+  ],
+  "proposedConfiguration": "docs/directive-28/environments.production.proposed.json",
+  "proposedRegion": "asia-south1 (owner to confirm; Firestore location is permanent)",
+  "deploymentAllowed": false,
+  "liveDeploymentExecuted": false,
+  "liveEnvironmentModified": false,
+  "customerMigrationExecuted": false,
+  "customerDataDeleted": false,
+  "paymentsEnabled": false,
+  "productionCertified": false,
+  "realCustomersInCurrentProject": 0,
+  "legacyDemoCompaniesInCurrentProject": 2,
+  "enforcement": "config/environments.json production.boundary.dedicatedProject=false -> preflight PRODUCTION_BOUNDARY = BLOCKED (ENV-020, mutant E16); unfilled <PLACEHOLDER> values refused by the resolver (ENV-022, mutant E17)",
+  "criticalBlockers": [
+    "C1 v-nexus-lite cannot isolate DSBC (Auth, IAM/runtime identity, Storage)",
+    "C2 no dedicated DSBC project exists that the operator can use",
+    "C3 no App Owner identity designated",
+    "C4 DSBC has no email-verification flow; the App Owner claim requires a verified email",
+    "C5 no public domain chosen for canonical / QR URLs",
+    "C6 RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET must exist before functions can deploy"
+  ],
+  "humanActionsRequired": [
+    "H1 create the dedicated DSBC Firebase project and link Blaze billing (or state that dsbc-e8ok3g3sf is intended and grant access)",
+    "H2 approve the API list and the region (asia-south1 proposed)",
+    "H3 choose the public domain and add DNS records",
+    "H4 name the App Owner email",
+    "H5 set the two Razorpay secrets (placeholders while payments are disabled)",
+    "H6 enable Email/Password and initialize Storage in the Console",
+    "H7 decide on a notifications provider or accept NOT_CONFIGURED",
+    "H8 approve each live deployment step",
+    "H9 recruit the three pilot customers"
+  ],
+  "evidence": [
+    "docs/directive-28/ENVIRONMENT-AUDIT.md",
+    "docs/directive-28/evidence/live-probe-d28.json",
+    "docs/directive-28/evidence/bootstrap-fresh-named-db-run1.json",
+    "docs/directive-28/evidence/bootstrap-fresh-named-db-run2.json",
+    "docs/overnight/evidence/migration-discovery-summary.json"
+  ]
+}
