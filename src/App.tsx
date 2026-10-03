@@ -30,10 +30,12 @@ import { DEMO_FEATURES_ENABLED } from './lib/runtimeFlags';
 import { canonicalizeLegacyHash, navigate, onRouteChange, routeFromLocation } from './lib/routes';
 import { NotFoundPage } from './components/public/NotFoundPage';
 import { EmailVerificationBanner } from './components/auth/EmailVerificationBanner';
+import { AwaitingApprovalBanner } from './components/auth/AwaitingApprovalBanner';
+import { shouldShowAwaitingApproval } from './lib/accountGate';
 import { Shield, Sparkles, Building2, ExternalLink, Lock } from 'lucide-react';
 
 function AppContent() {
-  const { role, activeCompany, userProfile, loading: isLoading, switchDemoPersona } = useAuth();
+  const { role, activeCompany, userProfile, loading: isLoading, switchDemoPersona, accountStatus, emailVerified } = useAuth();
 
   // Route / View state
   const [activeView, setActiveView] = useState<string>('dashboard');
@@ -188,6 +190,16 @@ function AppContent() {
         <p className="mt-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Initializing Digital Business Card Platform...
         </p>
+      </div>
+    );
+  }
+
+  // Directive 30: a customer pending App Owner approval sees only the waiting
+  // screen. No workspace, feature route or onboarding wizard is mounted.
+  if (shouldShowAwaitingApproval(accountStatus, emailVerified)) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4 font-sans text-slate-900">
+        <AwaitingApprovalBanner status={accountStatus} emailVerified={emailVerified} />
       </div>
     );
   }

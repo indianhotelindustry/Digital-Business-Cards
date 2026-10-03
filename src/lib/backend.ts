@@ -28,7 +28,10 @@ export const BACKEND_CALLABLES = [
   'setMyDeletionRequest',
   'createCheckoutOrder',
   'confirmPayment',
+  'getMyAccountState',
   // App Owner
+  'approveCustomer',
+  'adminListPendingCustomers',
   'bootstrapControlPlane',
   'upsertPlan',
   'setPlanPricing',

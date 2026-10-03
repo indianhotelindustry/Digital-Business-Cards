@@ -7,6 +7,7 @@ import { getCompanyById } from '../services/companyService';
 import { DEMO_USERS } from '../services/seedService';
 import { DEMO_FEATURES_ENABLED } from '../lib/runtimeFlags';
 import { deriveEffectiveRole, hasVerifiedOwnerClaim } from '../lib/authority';
+import { getMyAccountState } from '../services/accountService';
 import {
   describeVerificationError,
   refreshVerificationState,
@@ -32,6 +33,10 @@ interface AuthContextType {
   emailVerified: boolean;
   /** Reload the account and force a new ID token; recomputes verified state and claims. Grants nothing. */
   refreshEmailVerification: () => Promise<VerificationRefreshResult>;
+  /** Activation status from the backend (`pending_approval`, `active`, ...); null when signed out or unknown. */
+  accountStatus: string | null;
+  /** Ask the backend for the current activation status (e.g. after the App Owner approves). */
+  refreshAccountStatus: () => Promise<void>;
   /** Send the verification email again (no-op if the address is already verified). */
   resendVerificationEmail: () => Promise<VerificationResendResult>;
   refreshUserData: () => Promise<void>;
@@ -50,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Server-set custom claim (scripts/admin/setAppOwner.ts) on a verified email.
   const [ownerClaimVerified, setOwnerClaimVerified] = useState<boolean>(false);
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
+  const [accountStatus, setAccountStatus] = useState<string | null>(null);
 
   // Load profile & tenant company
   const loadProfileAndCompany = async (profile: UserProfile | null) => {
@@ -78,6 +84,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Directive 30: activation status comes from the backend, never from browser
+  // storage. A failed lookup leaves it unknown (null); the backend and Firestore
+  // rules still refuse a non-active account, so this only drives what is shown.
+  const refreshAccountStatus = async (): Promise<void> => {
+    const user = auth.currentUser;
+    if (!user) {
+      setAccountStatus(null);
+      return;
+    }
+    try {
+      const state = await getMyAccountState();
+      if (auth.currentUser?.uid === user.uid) setAccountStatus(state.status);
+    } catch (err) {
+      console.error('Unable to read account status:', err);
+      if (auth.currentUser?.uid === user.uid) setAccountStatus(null);
+    }
+  };
+
   // Directive 29: verification state comes from Firebase Auth and a freshly
   // minted ID token, never from browser storage. App Owner authority is
   // recomputed from the same token: verified email AND the server-set claim.
@@ -88,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const state = await refreshVerificationState(user);
       setEmailVerified(state.emailVerified);
       setOwnerClaimVerified(hasVerifiedOwnerClaim(state.claims, state.emailVerified));
+      await refreshAccountStatus();
       return { ok: true, emailVerified: state.emailVerified };
     } catch (err) {
       return { ok: false, error: describeVerificationError(err) };
@@ -132,6 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('dbc_active_demo_persona');
     setUserProfile(null);
     setActiveCompany(null);
+    setAccountStatus(null);
     try {
       await authLogout();
     } catch (e) {
@@ -177,6 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setCurrentUser(firebaseUser);
       setEmailVerified(firebaseUser?.emailVerified === true);
+      if (!firebaseUser) setAccountStatus(null);
       if (firebaseUser) {
         // Real Firebase session: the Firestore profile and the ID-token claims
         // are the only sources of identity and platform authority.
@@ -187,7 +214,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Unable to read ID token claims:', err);
           if (isMounted) setOwnerClaimVerified(false);
         }
-        const prof = await getUserProfile(firebaseUser.uid);
+        // Directive 30: a pending customer's profile read may be refused by the
+        // rules; the status lookup is what tells the UI to show the waiting screen.
+        const [prof] = await Promise.all([getUserProfile(firebaseUser.uid), refreshAccountStatus()]);
         if (isMounted) {
           await loadProfileAndCompany(prof);
         }
@@ -233,6 +262,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isDemoMode,
         authMethod,
         emailVerified,
+        accountStatus,
+        refreshAccountStatus,
         refreshEmailVerification,
         resendVerificationEmail,
         refreshUserData,
