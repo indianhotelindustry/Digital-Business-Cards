@@ -100,12 +100,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 7316,
+                  "duration": 11018,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:04.942Z",
+                  "startTime": "2026-10-03T04:12:35.044Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -152,12 +152,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2324,
+                  "duration": 2180,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:15.673Z",
+                  "startTime": "2026-10-03T04:12:49.309Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -204,12 +204,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 985,
+                  "duration": 745,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:18.050Z",
+                  "startTime": "2026-10-03T04:12:51.513Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -256,12 +256,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1147,
+                  "duration": 924,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:19.088Z",
+                  "startTime": "2026-10-03T04:12:52.281Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -308,12 +308,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2275,
+                  "duration": 1655,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:20.283Z",
+                  "startTime": "2026-10-03T04:12:53.231Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -360,12 +360,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3868,
+                  "duration": 2870,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:22.600Z",
+                  "startTime": "2026-10-03T04:12:54.914Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -412,12 +412,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 4691,
+                  "duration": 3580,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:26.517Z",
+                  "startTime": "2026-10-03T04:12:57.820Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -464,12 +464,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2603,
+                  "duration": 2278,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:31.251Z",
+                  "startTime": "2026-10-03T04:13:01.424Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -516,12 +516,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5914,
+                  "duration": 5346,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:33.897Z",
+                  "startTime": "2026-10-03T04:13:03.727Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -541,6 +541,170 @@
           "id": "49ec2b88ba9186b665fe-8956f60f779c6d77a0fa",
           "file": "demo-journey.spec.ts",
           "line": 175,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "email-verification.spec.ts",
+      "file": "email-verification.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "EV-1: a new account is told to verify, can resend, and has no App Owner authority",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2298,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T04:13:09.291Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c8911a00cd533a6315d-6207a3283e1454f69045",
+          "file": "email-verification.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "EV-2: the emailed link verifies the account; the app picks it up; still no App Owner authority",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 738,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T04:13:11.616Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c8911a00cd533a6315d-1453e6b66e99e41526c1",
+          "file": "email-verification.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "EV-3: only the server/admin grant confers App Owner, and only after a fresh sign-in",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5309,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T04:13:12.412Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c8911a00cd533a6315d-336bed4fb6004f69a057",
+          "file": "email-verification.spec.ts",
+          "line": 75,
           "column": 1
         }
       ]
@@ -576,12 +740,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3109,
+                  "duration": 4609,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:40.237Z",
+                  "startTime": "2026-10-03T04:13:17.934Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -628,12 +792,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2963,
+                  "duration": 3967,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:43.857Z",
+                  "startTime": "2026-10-03T04:13:23.190Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -680,12 +844,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3039,
+                  "duration": 4363,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:46.846Z",
+                  "startTime": "2026-10-03T04:13:27.185Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -732,12 +896,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 110,
+                  "duration": 160,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:49.916Z",
+                  "startTime": "2026-10-03T04:13:31.584Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -784,12 +948,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 9086,
+                  "duration": 7341,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:50.066Z",
+                  "startTime": "2026-10-03T04:13:31.775Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -836,12 +1000,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3099,
+                  "duration": 2153,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:57:59.198Z",
+                  "startTime": "2026-10-03T04:13:39.157Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -888,12 +1052,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1922,
+                  "duration": 2269,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:58:02.342Z",
+                  "startTime": "2026-10-03T04:13:41.344Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -940,12 +1104,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5622,
+                  "duration": 5539,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:58:04.308Z",
+                  "startTime": "2026-10-03T04:13:43.647Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -992,12 +1156,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5574,
+                  "duration": 4931,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:58:09.977Z",
+                  "startTime": "2026-10-03T04:13:49.228Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -1044,12 +1208,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1395,
+                  "duration": 1138,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:58:15.592Z",
+                  "startTime": "2026-10-03T04:13:54.191Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -1096,12 +1260,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5662,
+                  "duration": 4149,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-03T02:58:17.012Z",
+                  "startTime": "2026-10-03T04:13:55.352Z",
                   "annotations": [
                     {
                       "type": "serial",
@@ -1128,9 +1292,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-03T02:57:00.648Z",
-    "duration": 84487.38500000001,
-    "expected": 20,
+    "startTime": "2026-10-03T04:12:31.368Z",
+    "duration": 90521.569,
+    "expected": 23,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

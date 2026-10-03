@@ -1,0 +1,136 @@
+{
+  "schema": "dsbc.mutationTesting/v1",
+  "directive": 27,
+  "generatedAt": "2026-10-03T03:56:48.545Z",
+  "environment": "Local: vitest (unit), Firebase Emulator Suite demo-dsbc (integration, rules, backend)",
+  "baseline": {
+    "unit": {
+      "exitCode": 0,
+      "summary": "Tests  26 passed (26)",
+      "failed": [],
+      "seconds": 2
+    },
+    "backend": {
+      "exitCode": 0,
+      "summary": "Tests  11 passed (11)",
+      "failed": [],
+      "seconds": 22
+    }
+  },
+  "summary": {
+    "total": 6,
+    "killed": 6,
+    "survived": []
+  },
+  "results": [
+    {
+      "id": "V01",
+      "area": "verification",
+      "runner": "unit",
+      "file": "src/services/emailVerification.ts",
+      "mutation": "refresh trusts a cached ID token minted before verification",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/emailVerification.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  2 failed | 17 passed (19)",
+      "failed": [
+        "tests/unit/emailVerification.test.ts > VERIFY-U02 refreshing the verified state > reloads, then forces a new ID token, and reports what that token says",
+        "tests/unit/emailVerification.test.ts > VERIFY-U02 refreshing the verified state > a cached token minted before verification is never trusted"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "V02",
+      "area": "verification",
+      "runner": "unit",
+      "file": "src/services/emailVerification.ts",
+      "mutation": "an already-verified account is sent another verification email",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/emailVerification.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 18 passed (19)",
+      "failed": [
+        "tests/unit/emailVerification.test.ts > VERIFY-U01 sending the verification email > does not send to an account that is already verified (e.g. verified in another tab)"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "V03",
+      "area": "verification",
+      "runner": "backend",
+      "file": "src/services/authService.ts",
+      "mutation": "registration does not send the verification email",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/email-verification.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  3 failed | 8 passed (11)",
+      "failed": [
+        "tests/backend/email-verification.test.ts > VERIFY: registration starts unverified and without authority > VERIFY-001 registering creates an unverified account and sends exactly one verification email",
+        "tests/backend/email-verification.test.ts > VERIFY: links, resend and refresh > VERIFY-005 resend issues a new verification link to the same address",
+        "tests/backend/email-verification.test.ts > VERIFY: links, resend and refresh > VERIFY-006 opening the link verifies the account, but an old ID token stays unverified until refreshed"
+      ],
+      "seconds": 23
+    },
+    {
+      "id": "V04",
+      "area": "verification",
+      "runner": "unit",
+      "file": "src/lib/authority.ts",
+      "mutation": "the client shows App Owner for the claim without a verified email",
+      "killed": true,
+      "testFiles": [
+        "tests/unit/authority.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  1 failed | 6 passed (7)",
+      "failed": [
+        "tests/unit/authority.test.ts > hasVerifiedOwnerClaim > requires both the platformRole claim and a verified email"
+      ],
+      "seconds": 2
+    },
+    {
+      "id": "V05",
+      "area": "verification",
+      "runner": "backend",
+      "file": "functions/src/auth/identity.ts",
+      "mutation": "the backend accepts the App Owner claim on an unverified email",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/email-verification.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  3 failed | 8 passed (11)",
+      "failed": [
+        "tests/backend/email-verification.test.ts > VERIFY: registration starts unverified and without authority > VERIFY-003 even a claim forced onto an unverified account (bypassing the script) is not authority",
+        "tests/backend/email-verification.test.ts > VERIFY: verification never grants authority by itself > VERIFY-008 a verified account without the server claim is still not the App Owner",
+        "tests/backend/email-verification.test.ts > VERIFY: verification never grants authority by itself > VERIFY-009 only the server/admin grant confers authority, and only on a token minted after it"
+      ],
+      "seconds": 22
+    },
+    {
+      "id": "V06",
+      "area": "verification",
+      "runner": "backend",
+      "file": "firestore.rules",
+      "mutation": "rules accept the App Owner claim on an unverified email",
+      "killed": true,
+      "testFiles": [
+        "tests/backend/email-verification.test.ts"
+      ],
+      "exitCode": 1,
+      "summary": "Tests  3 failed | 8 passed (11)",
+      "failed": [
+        "tests/backend/email-verification.test.ts > VERIFY: registration starts unverified and without authority > VERIFY-003 even a claim forced onto an unverified account (bypassing the script) is not authority",
+        "tests/backend/email-verification.test.ts > VERIFY: verification never grants authority by itself > VERIFY-008 a verified account without the server claim is still not the App Owner",
+        "tests/backend/email-verification.test.ts > VERIFY: verification never grants authority by itself > VERIFY-009 only the server/admin grant confers authority, and only on a token minted after it"
+      ],
+      "seconds": 22
+    }
+  ]
+}

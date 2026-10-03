@@ -1,6 +1,6 @@
 {
   "schema": "dsbc.directive27.preflight/v1",
-  "generatedAt": "2026-10-03T02:56:22.307Z",
+  "generatedAt": "2026-10-03T04:12:03.469Z",
   "target": "production",
   "status": "BLOCKED",
   "counts": {
@@ -72,7 +72,7 @@
     {
       "id": "BUILD_IDENTITY",
       "status": "PASS",
-      "detail": "dist = commit 898f053 for v-nexus-lite / ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5 (built from a dirty working tree: not a release build)."
+      "detail": "dist = commit 63c9d19 for v-nexus-lite / ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5 (built from a dirty working tree: not a release build)."
     },
     {
       "id": "PRODUCTION_BOUNDARY",
