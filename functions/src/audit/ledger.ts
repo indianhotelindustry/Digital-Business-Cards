@@ -10,7 +10,7 @@
 // describe, so a mutation without its audit record cannot be committed.
 
 import { createHash } from 'node:crypto';
-import type { Transaction, WriteBatch } from 'firebase-admin/firestore';
+import type { DocumentReference, Transaction, WriteBatch } from 'firebase-admin/firestore';
 import { db } from '../shared/firebase';
 import { serverNow } from '../shared/time';
 
@@ -67,9 +67,17 @@ function record(entry: AuditEntry) {
   };
 }
 
-/** Append inside a transaction. Returns the new record id. */
-export function appendAudit(tx: Transaction | WriteBatch, collection: AuditCollection, entry: AuditEntry): string {
-  const ref = db().collection(collection).doc();
+/**
+ * Append inside a transaction. Returns the new record id.
+ * An optional explicit `ref` (in the same collection) allows a deterministic
+ * id so callers can make an append idempotent; create() still fails if it exists.
+ */
+export function appendAudit(
+  tx: Transaction | WriteBatch,
+  collection: AuditCollection,
+  entry: AuditEntry,
+  ref: DocumentReference = db().collection(collection).doc(),
+): string {
   (tx as Transaction).create(ref, record(entry));
   return ref.id;
 }

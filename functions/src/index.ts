@@ -7,10 +7,11 @@
 
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall, onRequest, type CallableRequest } from 'firebase-functions/v2/https';
-import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
-import { DATABASE_ID } from './shared/firebase';
+import { DATABASE_ID, db } from './shared/firebase';
+import { appendAudit } from './audit/ledger';
 import { PAYMENTS_ENABLED, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET } from './shared/config';
 import { assertBackendEnvironment } from './shared/environment';
 import { loadCaller, type Caller } from './auth/identity';
@@ -149,6 +150,35 @@ export const onProfileWrittenMeasure = onDocumentWritten(doc('digitalIdentityPro
   const after = event.data?.after;
   if (!after?.exists) return;
   await quota.measureCounts({ targetType: 'individual', targetId: event.params.employeeId }, after.get('companyId') || event.params.employeeId, after.data(), quota.PROFILE_COUNT_FIELDS);
+});
+
+// ---- Registration audit (Directive 30) ----------------------------------------
+// Deterministic audit id + in-transaction existence guard => retries and
+// duplicate trigger deliveries never produce a second ACCOUNT_REGISTERED record.
+export const onUserCreated = onDocumentCreated(doc('users/{uid}'), async (event) => {
+  const data = event.data?.data();
+  if (!data) return;
+  const uid = event.params.uid;
+  await db().runTransaction(async (tx) => {
+    const auditRef = db().collection('commercialAuditLogs').doc(`ACCOUNT_REGISTERED_${uid}`);
+    if ((await tx.get(auditRef)).exists) return; // idempotent
+    appendAudit(
+      tx,
+      'commercialAuditLogs',
+      {
+        action: 'ACCOUNT_REGISTERED',
+        actor: { uid, name: (data.displayName as string) || uid, role: (data.accountType as string) || 'customer' },
+        targetType: (data.accountType as string) || 'individual',
+        targetId: uid,
+        tenantId: (data.tenantId as string) || uid,
+        previousValue: null,
+        newValue: { status: data.status || 'pending_approval' },
+        reason: 'Self-registration',
+        source: 'Registration',
+      },
+      auditRef
+    );
+  });
 });
 
 // ---- Lifecycle reconciler ----------------------------------------------------

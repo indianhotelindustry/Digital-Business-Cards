@@ -1,7 +1,7 @@
 // Directive 30 Task 5 — customer activation gate (emulator).
 // REG-010 .. REG-021, REG-033
 import { beforeAll, describe, expect, it } from 'vitest';
-import { adminAuth, adminDb, call, createUser, ok, seedWorld, type TestUser, type World } from './support/backendEnv';
+import { adminAuth, adminDb, call, createUser, eventually, ok, seedWorld, sleep, type TestUser, type World } from './support/backendEnv';
 
 let w: World;
 
@@ -194,6 +194,37 @@ describe('REG: adminListPendingCustomers', () => {
   it('REG-012b a non-owner and an unverified owner cannot list', async () => {
     expect((await call('adminListPendingCustomers', {}, w.adminA)).status).toBe('PERMISSION_DENIED');
     expect((await call('adminListPendingCustomers', {}, w.unverifiedOwner)).status).toBe('PERMISSION_DENIED');
+  });
+});
+
+describe('REG: onUserCreated registration audit', () => {
+  const registrationAudits = async (targetId: string) =>
+    (await adminDb.collection('commercialAuditLogs').where('action', '==', 'ACCOUNT_REGISTERED').where('targetId', '==', targetId).get()).docs;
+
+  it('REG-015b a new user doc yields exactly one ACCOUNT_REGISTERED audit, idempotent on re-create', async () => {
+    await seedPending('newreg');
+    const first = await eventually(() => registrationAudits('newreg'), (d) => d.length >= 1);
+    expect(first).toHaveLength(1);
+    expect(first[0].id).toBe('ACCOUNT_REGISTERED_newreg');
+    expect(first[0].data()).toMatchObject({
+      action: 'ACCOUNT_REGISTERED',
+      actor: { uid: 'newreg', name: 'Name newreg', role: 'individual' },
+      targetType: 'individual',
+      targetId: 'newreg',
+      tenantId: 'ind_newreg',
+      previousValue: null,
+      newValue: { status: 'pending_approval' },
+      reason: 'Self-registration',
+      source: 'Registration',
+    });
+    expect(typeof first[0].data().contentHash).toBe('string');
+
+    // A later update does not fire onCreate; delete + re-create fires it again and must not duplicate.
+    await adminDb.doc('users/newreg').update({ updatedAt: new Date().toISOString() });
+    await adminDb.doc('users/newreg').delete();
+    await adminDb.doc('users/newreg').set({ id: 'newreg', uid: 'newreg', displayName: 'Name newreg', status: 'pending_approval', accountType: 'individual', tenantId: 'ind_newreg' });
+    await sleep(3000); // give the (guarded) second trigger delivery time to run
+    expect(await registrationAudits('newreg')).toHaveLength(1);
   });
 });
 
