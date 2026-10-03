@@ -1,18 +1,18 @@
 {
   "schema": "dsbc.baseline/v1",
   "directive": 27,
-  "generatedAt": "2026-10-02T19:51:09.974Z",
+  "generatedAt": "2026-10-03T02:56:20.147Z",
   "branch": "security-foundation/directive-27",
-  "commit": "37c5c7bd5094cfa2bd40f675fd14080fc2b07d65",
+  "commit": "898f0532eddb79062d27c897119f4ec61eef1720",
   "workingTreeCleanAtStart": false,
   "environment": "Firebase Emulator Suite only (demo-dsbc)",
   "typescript": "PASS",
   "build": "PASS",
   "suites": {
     "unit": {
-      "passed": 76,
+      "passed": 79,
       "failed": 0,
-      "total": 76,
+      "total": 79,
       "success": true
     },
     "rulesDirective24": {
@@ -34,41 +34,41 @@
       "success": true
     }
   },
-  "totalPassed": 788,
-  "totalTests": 788,
+  "totalPassed": 791,
+  "totalTests": 791,
   "steps": {
     "typescript-frontend": {
       "exitCode": 0,
-      "seconds": 8
+      "seconds": 30
     },
     "typescript-functions": {
       "exitCode": 0,
-      "seconds": 2
+      "seconds": 3
     },
     "build-functions": {
       "exitCode": 0,
-      "seconds": 0
+      "seconds": 1
     },
     "build-frontend": {
       "exitCode": 0,
-      "seconds": 6
+      "seconds": 34
     },
     "unit": {
       "exitCode": 0,
-      "seconds": 2
+      "seconds": 3
     },
     "rules-directive24": {
-      "exitCode": 0,
-      "seconds": 41
+      "exitCode": 2,
+      "seconds": 71
     },
     "integration": {
-      "exitCode": 0,
-      "seconds": 26
+      "exitCode": 2,
+      "seconds": 44
     },
     "backend-authority": {
       "exitCode": 0,
-      "seconds": 123
+      "seconds": 161
     }
   },
-  "status": "PASS"
+  "status": "FAIL"
 }

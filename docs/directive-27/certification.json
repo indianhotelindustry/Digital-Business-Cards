@@ -1,9 +1,9 @@
 {
   "schema": "dsbc.directive27.certification/v1",
   "directive": 27,
-  "generatedAt": "2026-10-02T19:53:47.925Z",
+  "generatedAt": "2026-10-03T03:19:07.467Z",
   "branch": "security-foundation/directive-27",
-  "commit": "37c5c7bd5094cfa2bd40f675fd14080fc2b07d65",
+  "commit": "6d16d5a3f303a4c51a95df132c74d5dd58bbf39f",
   "environment": "Tests: Firebase Emulator Suite (demo-dsbc) + real Chrome against a production-mode bundle. Live levels: read-only measurements of the production target by scripts/directive27/liveProbe.mjs. This script deploys nothing.",
   "gate": "BLOCKED",
   "readiness": {
@@ -14,8 +14,8 @@
     "productionCertified": "FAIL"
   },
   "liveProbe": {
-    "commit": "37c5c7bd5094cfa2bd40f675fd14080fc2b07d65",
-    "generatedAt": "2026-10-02T19:48:22.021Z",
+    "commit": "6d16d5a3f303a4c51a95df132c74d5dd58bbf39f",
+    "generatedAt": "2026-10-03T03:17:38.546Z",
     "current": true,
     "target": {
       "projectId": "v-nexus-lite",
@@ -31,6 +31,7 @@
   },
   "finalStatus": "DEMO READY · DEPLOYMENT BLOCKED · LIVE DEPLOYMENT NOT COMPLETE · LIVE ACCEPTANCE NOT EXECUTED · PRODUCTION NOT CERTIFIED",
   "deploymentBlockers": [
+    "PRODUCTION_BOUNDARY: Production project v-nexus-lite is shared with: V-Nexus Lite (default hosting site, (default) database); Vidwan Kids (hosting site, Cloud Run service, ai-studio bucket); two other AI Studio applets (databases ai-studio-0d16e7c4-..., ai-studio-9106414b-...); one project-wide Auth pool, Firebase web app 'ai-studio-applet-webapp', default compute service account (roles/editor). DSBC needs a dedicated Firebase project (docs/directive-28/decision.json: v-nexus-lite cannot isolate DSBC; production must move to a dedicated DSBC Firebase project before any deployment.).",
     "HOSTING_SITE_DESIGNATED: No DSBC hosting site is designated (config/environments.json hosting.site, then firebase target:apply hosting dsbc-web <site>).",
     "PUBLIC_ORIGIN_DESIGNATED: No public origin is designated; share links and QR codes would carry the hosting default domain.",
     "STAGING_DESIGNATED: No staging project is designated; nothing can be rehearsed on real infrastructure before production.",
@@ -38,6 +39,10 @@
     "LIVE_FUNCTION_SECRETS: Secret Manager API disabled; RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET cannot exist, so `firebase deploy --only functions` cannot succeed",
     "LIVE_HOSTING_SITE: config/environments.json production.hosting.site is null; the owner must create or choose a dedicated DSBC site",
     "LIVE_PUBLIC_ORIGIN: config/environments.json production.publicOrigin is null; share links and QR codes have no canonical origin",
+    "LIVE_PROJECT_BOUNDARY: v-nexus-lite also hosts: databases (default), ai-studio-0d16e7c4-2d3a-4007-8e6c-d0d45fea2c9e, ai-studio-9106414b-d263-45a4-8b18-6ac28d996a0b; hosting sites v-nexus-lite, vidwan-kids; Firebase apps Vidwan Kids; DSBC's web config is the generic app \"ai-studio-applet-webapp\"; Cloud Run services vidwan-kids. Auth, IAM, quotas and the default service account are project-wide, so DSBC cannot be isolated here.",
+    "LIVE_AUTH_EMAIL_PROVIDER: Email/password sign-in is NOT enabled (DSBC registers with email/password); Auth is FIREBASE_AUTH, 15 authorized domains, one user pool for the whole project",
+    "LIVE_STORAGE_BUCKET: gs://v-nexus-lite.firebasestorage.app does not exist (404); the registry points at a bucket nobody has created",
+    "LIVE_FUNCTIONS_IDENTITY: the default compute service account (the default identity of Cloud Functions gen 2 and Cloud Run) holds project-wide editor/owner; DSBC functions would share it with the other apps and could read/write every database in the project",
     "APP_OWNER_ON_LIVE: no App Owner claim has been granted/verified on v-nexus-lite; the owner must designate the identity (runbook: grant right after the rules deploy, then setAppOwner.ts --verify).",
     "MIGRATION_DECISION: live discovery found only legacy demo-candidate companies (docs/overnight/evidence/migration-discovery-summary.json); the App Owner records SKIP for each (nothing migrated, nothing deleted).",
     "STORAGE_BUCKET_OWNERSHIP: deploying storage.rules replaces the rules of v-nexus-lite.firebasestorage.app for every app using it; confirm ownership or provision a dedicated bucket.",
@@ -64,12 +69,12 @@
     "build": "PASS"
   },
   "totals": {
-    "unit": "76/76",
+    "unit": "79/79",
     "rules": "559/559",
     "integration": "19/19",
     "backend": "134/134",
     "browser": "20/20",
-    "mutation": "41/41"
+    "mutation": "43/43"
   },
   "lines": [
     {
@@ -204,7 +209,7 @@
         {
           "check": "preflight has no FAIL",
           "ok": true,
-          "detail": "BLOCKED (13 pass, 0 fail, 3 blocked)"
+          "detail": "BLOCKED (13 pass, 0 fail, 4 blocked)"
         },
         {
           "check": "no secret in source or production bundle",
@@ -458,7 +463,7 @@
         {
           "check": "every D27 mutant killed",
           "ok": true,
-          "detail": "41/41"
+          "detail": "43/43"
         },
         {
           "check": "unmutated baselines passed first",
