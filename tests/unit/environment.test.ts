@@ -110,7 +110,7 @@ describe('ENV: client target resolution fails closed', () => {
 
 describe('ENV: backend target check', () => {
   const dev = { DSBC_ENVIRONMENT: 'development', GCLOUD_PROJECT: 'demo-dsbc', DSBC_FIRESTORE_DATABASE: '(default)', DSBC_FUNCTIONS_REGION: 'us-central1', DSBC_PUBLIC_ORIGIN: '', FUNCTIONS_EMULATOR: 'true', PAYMENTS_ENABLED: 'false' };
-  const prod = { DSBC_ENVIRONMENT: 'production', GCLOUD_PROJECT: PROD.firebase!.projectId, DSBC_FIRESTORE_DATABASE: PROD.firestoreDatabaseId, DSBC_FUNCTIONS_REGION: PROD.functionsRegion, DSBC_PUBLIC_ORIGIN: '', PAYMENTS_ENABLED: 'false' };
+  const prod = { DSBC_ENVIRONMENT: 'production', GCLOUD_PROJECT: PROD.firebase!.projectId, DSBC_FIRESTORE_DATABASE: PROD.firestoreDatabaseId, DSBC_FUNCTIONS_REGION: PROD.functionsRegion, DSBC_PUBLIC_ORIGIN: PROD.publicOrigin ?? '', PAYMENTS_ENABLED: 'false' };
 
   it('ENV-011 the emulator and production parameter sets are accepted', () => {
     expect(evaluateBackendEnvironment(dev).problems).toEqual([]);
@@ -230,10 +230,12 @@ describe('ENV: production boundary (Directive 28)', () => {
   };
 
   it('ENV-020 a shared or unrecorded production project blocks deployment; only a dedicated one passes', () => {
-    expect(PROD.boundary?.dedicatedProject).toBe(false); // v-nexus-lite, measured shared (docs/directive-28)
+    // production is now the dedicated project task360-ift
+    expect(PROD.boundary?.dedicatedProject).toBe(true);
     const report = runPreflight({ target: 'production' });
-    expect(report.checks.find((c) => c.id === 'PRODUCTION_BOUNDARY')?.status).toBe('BLOCKED');
-    expect(evaluateBoundary(PROD).ok).toBe(false);
+    expect(report.checks.find((c) => c.id === 'PRODUCTION_BOUNDARY')?.status).toBe('PASS');
+    expect(evaluateBoundary(PROD).ok).toBe(true);
+    expect(evaluateBoundary({ ...PROD, boundary: { dedicatedProject: false } }).ok).toBe(false);
     expect(evaluateBoundary({ ...PROD, boundary: undefined }).ok).toBe(false);
     expect(evaluateBoundary({ ...PROD, boundary: { dedicatedProject: true } }).ok).toBe(true);
   });
@@ -247,7 +249,9 @@ describe('ENV: production boundary (Directive 28)', () => {
     for (const f of ['projectId', 'appId', 'apiKey', 'authDomain', 'storageBucket', 'messagingSenderId'] as const) {
       expect(t.firebase[f]).not.toBe(PROD.firebase![f]);
     }
-    expect(t.firestoreDatabaseId).not.toBe(PROD.firestoreDatabaseId);
+    // the proposal has been promoted to production; the database name now matches
+    expect(t.firestoreDatabaseId).toBe('dsbc-production');
+    expect(t.firestoreDatabaseId).toBe(PROD.firestoreDatabaseId);
     expect(t.hostingSite).not.toBe(PROD.hosting?.site ?? 'v-nexus-lite');
     expect(t.hostingSite).not.toBe('v-nexus-lite');
     // Firestore triggers need the functions region to match the database location.
