@@ -7,6 +7,7 @@
 // atomically and only then writes the object.
 
 import { randomUUID } from 'node:crypto';
+import { logger } from 'firebase-functions';
 import { bucket, db } from '../shared/firebase';
 import { deny, fail, invalid } from '../shared/errors';
 import { ID_PATTERN, obj, oneOf, str } from '../shared/validate';
@@ -67,6 +68,7 @@ export async function uploadAsset(caller: Caller, data: unknown) {
     return { path, bytes: buf.length, contentType, downloadUrl };
   } catch (err) {
     await releaseStorage(subject, buf.length); // compensate the reservation
-    return fail('internal', `Upload failed: ${(err as Error).message}`);
+    logger.error('uploadAsset failed', err); // detail stays server-side
+    return fail('internal', 'Upload failed.');
   }
 }
