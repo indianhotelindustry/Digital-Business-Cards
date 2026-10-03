@@ -58,6 +58,18 @@ service cloud.firestore {
       return hasProfile() && me().status == 'active';
     }
 
+    // Directive 30: customer activation gate. Registration creates the account
+    // as 'pending_approval'; only the backend (approveCustomer, Admin SDK) can
+    // set 'active'. Every customer content write requires an active account in
+    // addition to its ownership / membership check.
+    function accountStatus(uid) {
+      return get(userPath(uid)).data.status;
+    }
+
+    function isActiveAccount() {
+      return isSignedIn() && exists(userPath(request.auth.uid)) && accountStatus(request.auth.uid) == 'active';
+    }
+
     function isNonEmptyString(v) {
       return v is string && v.size() > 0;
     }
@@ -162,7 +174,7 @@ service cloud.firestore {
         && isNonEmptyString(d.email)
         && d.email == request.auth.token.get('email', '')
         && isNonEmptyString(d.displayName) && d.displayName.size() <= 120
-        && d.status == 'active'
+        && d.status == 'pending_approval'
         && d.employeeId == null
         && d.createdAt is string
         && d.updatedAt is string
@@ -192,7 +204,7 @@ service cloud.firestore {
         && d.keys().hasAll(fields)
         && d.id == tenantId
         && d.ownerUid == uid
-        && d.status == 'active'
+        && d.status == 'pending_approval'
         && d.createdAt is string
         && (
           (tenantId == 'ind_' + uid && d.kind == 'individual' && d.companyId == null)
@@ -206,7 +218,7 @@ service cloud.firestore {
         && d.id == companyId
         && d.ownerUid == request.auth.uid
         && d.kind == 'company'
-        && d.status == 'active'
+        && d.status == 'pending_approval'
         && d.planId == 'company_free'
         && isNonEmptyString(d.name) && d.name.size() <= 120;
     }
@@ -264,7 +276,8 @@ service cloud.firestore {
       // Company admins edit content only; never id, status (no self-unsuspend),
       // plan, kind or ownership.
       allow update: if isAppOwner() || (
-        isCompanyAdmin(companyId)
+        isActiveAccount()
+        && isCompanyAdmin(companyId)
         && unchanged(['id', 'status', 'planId', 'kind', 'ownerUid', 'platformSuspended', 'publicationHidden'])
       );
 
@@ -278,11 +291,11 @@ service cloud.firestore {
       allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId))
         || isAppOwner()
         || isMemberOf(resource.data.companyId);
-      allow create: if isAppOwner() || isCompanyAdmin(request.resource.data.companyId);
+      allow create: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(request.resource.data.companyId));
       allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
+        isActiveAccount() && isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
       );
-      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+      allow delete: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(resource.data.companyId));
     }
 
     // ========================================================================
@@ -297,17 +310,20 @@ service cloud.firestore {
         || isMemberOf(resource.data.companyId);
 
       allow create: if isAppOwner() || (
-        isCompanyAdmin(request.resource.data.companyId)
+        isActiveAccount()
+        && isCompanyAdmin(request.resource.data.companyId)
         && noBackendFieldsOnCreate()
         && departmentBelongsTo(request.resource.data.get('departmentId', null), request.resource.data.companyId)
       );
 
       allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId)
+        isActiveAccount()
+        && isCompanyAdmin(resource.data.companyId)
         && unchanged(['companyId', 'seatState', 'seatLockedAt', 'platformSuspended'])
         && departmentBelongsTo(request.resource.data.get('departmentId', null), resource.data.companyId)
       ) || (
-        isSelfEmployee(employeeId)
+        isActiveAccount()
+        && isSelfEmployee(employeeId)
         && me().companyId == resource.data.companyId
         && isCompanyActive(resource.data.companyId)
         && onlyChanges([
@@ -317,7 +333,7 @@ service cloud.firestore {
         ])
       );
 
-      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+      allow delete: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(resource.data.companyId));
     }
 
     // ========================================================================
@@ -331,18 +347,20 @@ service cloud.firestore {
         || isMemberOf(resource.data.companyId);
 
       allow create: if isAppOwner() || (
-        isCompanyAdmin(request.resource.data.companyId)
+        isActiveAccount()
+        && isCompanyAdmin(request.resource.data.companyId)
         && noBackendFieldsOnCreate()
         && employeeBelongsTo(request.resource.data.employeeId, request.resource.data.companyId)
       );
 
       allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId)
+        isActiveAccount()
+        && isCompanyAdmin(resource.data.companyId)
         && unchanged(['companyId', 'platformSuspended', 'publicationHidden'])
         && employeeBelongsTo(request.resource.data.employeeId, resource.data.companyId)
       );
 
-      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+      allow delete: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(resource.data.companyId));
     }
 
     // ========================================================================
@@ -373,11 +391,11 @@ service cloud.firestore {
     // ========================================================================
     match /contacts/{contactId} {
       allow read: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
-      allow update: if isSignedIn()
+      allow create: if isActiveAccount() && request.resource.data.ownerUserId == request.auth.uid;
+      allow update: if isActiveAccount()
         && resource.data.ownerUserId == request.auth.uid
         && unchanged(['ownerUserId']);
-      allow delete: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+      allow delete: if isActiveAccount() && resource.data.ownerUserId == request.auth.uid;
     }
 
     // Public (unauthenticated) contact-exchange request from a card visitor:
@@ -420,7 +438,7 @@ service cloud.firestore {
       );
 
       allow create: if isAppOwner() || (
-        isSignedIn()
+        isActiveAccount()
         && request.resource.data.requesterUserId == request.auth.uid
         && request.resource.data.status in ['requested', 'pending']
       ) || isValidVisitorConnectionRequest();
@@ -428,7 +446,7 @@ service cloud.firestore {
       // Participants only; identities, companies and creation time are
       // immutable; a blocked connection cannot be silently unblocked.
       allow update: if isAppOwner() || (
-        isSignedIn() && (
+        isActiveAccount() && (
           resource.data.requesterUserId == request.auth.uid
           || resource.data.get('recipientUserId', null) == request.auth.uid
           || (hasProfile() && isNonEmptyString(me().employeeId) && me().employeeId == resource.data.recipientIdentityId)
@@ -437,25 +455,25 @@ service cloud.firestore {
         && (resource.data.status != 'blocked' || request.resource.data.status == 'blocked')
       );
 
-      allow delete: if isAppOwner() || (isSignedIn() && resource.data.requesterUserId == request.auth.uid);
+      allow delete: if isAppOwner() || (isActiveAccount() && resource.data.requesterUserId == request.auth.uid);
     }
 
     match /relationshipNotes/{noteId} {
       allow read: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
-      allow update: if isSignedIn()
+      allow create: if isActiveAccount() && request.resource.data.ownerUserId == request.auth.uid;
+      allow update: if isActiveAccount()
         && resource.data.ownerUserId == request.auth.uid
         && unchanged(['ownerUserId']);
-      allow delete: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+      allow delete: if isActiveAccount() && resource.data.ownerUserId == request.auth.uid;
     }
 
     match /followUps/{followUpId} {
       allow read: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
-      allow update: if isSignedIn()
+      allow create: if isActiveAccount() && request.resource.data.ownerUserId == request.auth.uid;
+      allow update: if isActiveAccount()
         && resource.data.ownerUserId == request.auth.uid
         && unchanged(['ownerUserId']);
-      allow delete: if isSignedIn() && resource.data.ownerUserId == request.auth.uid;
+      allow delete: if isActiveAccount() && resource.data.ownerUserId == request.auth.uid;
     }
 
     // Caller must be a party to the referenced connection.
@@ -482,7 +500,7 @@ service cloud.firestore {
         )
       );
       allow create: if isAppOwner() || (
-        isSignedIn()
+        isActiveAccount()
         && request.resource.data.actorUserId == request.auth.uid
         && request.resource.data.get('ownerUserId', null) in [null, request.auth.uid]
         && isNonEmptyString(request.resource.data.connectionId)
@@ -498,27 +516,28 @@ service cloud.firestore {
     // ========================================================================
     match /events/{eventId} {
       allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
-      allow create: if isAppOwner() || isCompanyAdmin(request.resource.data.companyId);
+      allow create: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(request.resource.data.companyId));
       allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
+        isActiveAccount() && isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
       );
-      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+      allow delete: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(resource.data.companyId));
     }
 
     match /eventMembers/{memberId} {
       allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
       allow create: if isAppOwner()
-        || isCompanyAdmin(request.resource.data.companyId)
+        || (isActiveAccount() && isCompanyAdmin(request.resource.data.companyId))
         || (
-          isActiveMemberOf(request.resource.data.companyId)
+          isActiveAccount()
+          && isActiveMemberOf(request.resource.data.companyId)
           && me().employeeId == request.resource.data.employeeId
         );
       allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
+        isActiveAccount() && isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
       );
       allow delete: if isAppOwner()
-        || isCompanyAdmin(resource.data.companyId)
-        || (isActiveMemberOf(resource.data.companyId) && me().employeeId == resource.data.employeeId);
+        || (isActiveAccount() && isCompanyAdmin(resource.data.companyId))
+        || (isActiveAccount() && isActiveMemberOf(resource.data.companyId) && me().employeeId == resource.data.employeeId);
     }
 
     match /campaigns/{campaignId} {
@@ -526,42 +545,44 @@ service cloud.firestore {
       allow read: if (resource != null && resource.data.status == 'active' && isCompanyActive(resource.data.companyId))
         || isAppOwner()
         || isActiveMemberOf(resource.data.companyId);
-      allow create: if isAppOwner() || isCompanyAdmin(request.resource.data.companyId);
+      allow create: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(request.resource.data.companyId));
       allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
+        isActiveAccount() && isCompanyAdmin(resource.data.companyId) && unchanged(['companyId'])
       );
-      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+      allow delete: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(resource.data.companyId));
     }
 
     match /leads/{leadId} {
       allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
-      allow create: if isAppOwner() || isActiveMemberOf(request.resource.data.companyId);
+      allow create: if isAppOwner() || (isActiveAccount() && isActiveMemberOf(request.resource.data.companyId));
       allow update: if isAppOwner() || (
-        isActiveMemberOf(resource.data.companyId) && unchanged(['companyId'])
+        isActiveAccount() && isActiveMemberOf(resource.data.companyId) && unchanged(['companyId'])
       );
-      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+      allow delete: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(resource.data.companyId));
     }
 
     match /leadNotes/{noteId} {
       allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
       allow create: if isAppOwner() || (
-        isActiveMemberOf(request.resource.data.companyId)
+        isActiveAccount()
+        && isActiveMemberOf(request.resource.data.companyId)
         && request.resource.data.authorUserId == request.auth.uid
       );
       allow update: if isAppOwner() || (
-        isActiveMemberOf(resource.data.companyId)
+        isActiveAccount()
+        && isActiveMemberOf(resource.data.companyId)
         && resource.data.authorUserId == request.auth.uid
         && unchanged(['companyId', 'authorUserId'])
       );
       allow delete: if isAppOwner()
-        || isCompanyAdmin(resource.data.companyId)
-        || (isActiveMemberOf(resource.data.companyId) && resource.data.authorUserId == request.auth.uid);
+        || (isActiveAccount() && isCompanyAdmin(resource.data.companyId))
+        || (isActiveAccount() && isActiveMemberOf(resource.data.companyId) && resource.data.authorUserId == request.auth.uid);
     }
 
     // Append-only lead audit trail.
     match /leadEvents/{eventId} {
       allow read: if isAppOwner() || isActiveMemberOf(resource.data.companyId);
-      allow create: if isAppOwner() || isActiveMemberOf(request.resource.data.companyId);
+      allow create: if isAppOwner() || (isActiveAccount() && isActiveMemberOf(request.resource.data.companyId));
       allow update, delete: if false;
     }
 
@@ -573,21 +594,24 @@ service cloud.firestore {
         || isAppOwner()
         || isMemberOf(resource.data.companyId);
       allow create: if isAppOwner()
-        || (isCompanyAdmin(request.resource.data.companyId) && noBackendFieldsOnCreate())
+        || (isActiveAccount() && isCompanyAdmin(request.resource.data.companyId) && noBackendFieldsOnCreate())
         || (
-          isSelfEmployee(employeeId)
+          isActiveAccount()
+          && isSelfEmployee(employeeId)
           && isActiveMemberOf(request.resource.data.companyId)
           && noBackendFieldsOnCreate()
         );
       allow update: if isAppOwner() || (
-        isCompanyAdmin(resource.data.companyId)
+        isActiveAccount()
+        && isCompanyAdmin(resource.data.companyId)
         && unchanged(['companyId', 'employeeId', 'platformSuspended', 'publicationHidden'])
       ) || (
-        isSelfEmployee(employeeId)
+        isActiveAccount()
+        && isSelfEmployee(employeeId)
         && isActiveMemberOf(resource.data.companyId)
         && unchanged(['companyId', 'employeeId', 'platformSuspended', 'publicationHidden'])
       );
-      allow delete: if isAppOwner() || isCompanyAdmin(resource.data.companyId);
+      allow delete: if isAppOwner() || (isActiveAccount() && isCompanyAdmin(resource.data.companyId));
     }
 
     // ========================================================================

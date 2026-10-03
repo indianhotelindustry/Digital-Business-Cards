@@ -44,7 +44,7 @@ describe('Phase 2 — registration (positive controls)', () => {
 
 describe('Phase 2 — registration attacks (must be DENIED)', () => {
   const attacker = newIndividual;
-  const base = { id: 'uid_new_ind', email: 'new-ind@dsbc.test', displayName: 'X', employeeId: null, status: 'active', createdAt: T, updatedAt: T };
+  const base = { id: 'uid_new_ind', email: 'new-ind@dsbc.test', displayName: 'X', employeeId: null, status: 'pending_approval', createdAt: T, updatedAt: T };
 
   it('self-assign company_admin of an EXISTING company (legacy client payload)', async () => {
     await assertFails(setDoc(doc(dbFor(env, attacker), 'users', 'uid_new_ind'), { ...base, role: 'company_admin', companyId: 'company_acme' }));
