@@ -250,3 +250,30 @@ describe('REG: getMyAccountState', () => {
     expect((await call('getMyAccountState', {}, null)).status).toBe('UNAUTHENTICATED');
   });
 });
+
+describe('REG: customer callables require an active account', () => {
+  const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64, 5)]).toString('base64');
+
+  it('REG-007 a pending user cannot consumeQuota; an active user passes the gate', async () => {
+    const pend = await seedPending('c07');
+    const denied = await call('consumeQuota', { featureId: 'individual.ai_assistance', operationId: 'reg007_pending_op' }, pend);
+    expect(denied.status).toBe('PERMISSION_DENIED');
+    expect(await countOf('usageLedger')).toBe(0);
+    // An active user clears the gate and reaches the (unentitled) quota check, not the activation denial.
+    const active = await call('consumeQuota', { featureId: 'individual.ai_assistance', operationId: 'reg007_active_op' }, w.individual);
+    expect(active.status).not.toBe('PERMISSION_DENIED');
+    expect(active.message).toContain('QUOTA_EXCEEDED');
+  });
+
+  it('REG-008 a pending user cannot uploadAsset', async () => {
+    const pend = await seedPending('c08');
+    const r = await call('uploadAsset', { kind: 'individual_photo', dataBase64: PNG, fileName: 'p.png' }, pend);
+    expect(r.status).toBe('PERMISSION_DENIED');
+  });
+
+  it('REG-008b a pending user cannot setPublishingState or setMyDeletionRequest', async () => {
+    const pend = await seedPending('c08b');
+    expect((await call('setPublishingState', { entityType: 'card', entityId: 'card_x', state: 'PUBLISHED' }, pend)).status).toBe('PERMISSION_DENIED');
+    expect((await call('setMyDeletionRequest', { requested: true }, pend)).status).toBe('PERMISSION_DENIED');
+  });
+});
