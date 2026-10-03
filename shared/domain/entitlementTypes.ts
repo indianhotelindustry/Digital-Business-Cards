@@ -116,6 +116,12 @@ export interface GlobalPlatformPolicy {
   globalFeatureOverrides: Record<string, EntitlementRule>;
   /** Directive 25: days a PAST_DUE paid subscription keeps access after period end. */
   paymentGraceDays?: number;
+  /**
+   * Directive 30: how newly registered customers are activated. 'manual_approval'
+   * (default) holds them in pending_approval until the App Owner approves;
+   * 'auto' is reserved and not implemented yet.
+   */
+  customerActivationMode: 'manual_approval' | 'auto';
   updatedAt?: string;
   updatedBy?: string;
   version?: number;

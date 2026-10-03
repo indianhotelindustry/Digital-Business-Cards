@@ -274,7 +274,7 @@ export async function deleteOverride(caller: Caller, data: unknown) {
 const POLICY_FIELDS = [
   'maintenanceMode', 'allowSelfRegistration', 'defaultIndividualPlanId', 'defaultCompanyPlanId',
   'defaultTrialDays', 'enforceLimitsStrictly', 'currency', 'currencySymbol', 'platformName',
-  'globalFeatureOverrides', 'paymentGraceDays',
+  'globalFeatureOverrides', 'paymentGraceDays', 'customerActivationMode',
 ] as const;
 
 export async function updateGlobalPolicy(caller: Caller, data: unknown) {
@@ -297,6 +297,7 @@ export async function updateGlobalPolicy(caller: Caller, data: unknown) {
   }
   if (u.defaultTrialDays !== undefined) updates.defaultTrialDays = num(u, 'defaultTrialDays', { min: 0, max: 365, int: true });
   if (u.paymentGraceDays !== undefined) updates.paymentGraceDays = num(u, 'paymentGraceDays', { min: 0, max: 60, int: true });
+  if (u.customerActivationMode !== undefined) updates.customerActivationMode = oneOf(u, 'customerActivationMode', ['manual_approval', 'auto'] as const);
   if (u.currency !== undefined) updates.currency = str(u, 'currency', { pattern: /^[A-Z]{3}$/ });
   if (u.currencySymbol !== undefined) updates.currencySymbol = str(u, 'currencySymbol', { max: 4 });
   if (u.platformName !== undefined) updates.platformName = str(u, 'platformName', { max: 80 });

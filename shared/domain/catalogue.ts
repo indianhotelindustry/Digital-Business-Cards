@@ -589,6 +589,7 @@ export const INITIAL_GLOBAL_POLICY: GlobalPlatformPolicy = {
   currencySymbol: '₹',
   platformName: 'DSBC Platform',
   globalFeatureOverrides: {},
+  customerActivationMode: 'manual_approval',
 };
 
 /** The standard plans that must always exist (Directive 25 constraint 12). */

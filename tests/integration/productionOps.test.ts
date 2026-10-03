@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
-import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { runBootstrap } from '../../scripts/admin/bootstrapProduction';
 import { template } from '../../scripts/admin/migrateCustomers';
 import { BOOTSTRAP_COLLECTIONS, CUSTOMER_COLLECTIONS } from '../../functions/src/platform/bootstrap';
@@ -132,6 +132,24 @@ describe('BOOT: production bootstrap', () => {
     })('src');
     const text = files.map((f) => readFileSync(f, 'utf8')).join('\n');
     expect(text).not.toMatch(/\.bootstrapControlPlane\(|seedControlPlane|seedDemoData\(|bootstrapPlatform/);
+  });
+});
+
+describe('BOOT: customerActivationMode policy field (D30)', () => {
+  it('BOOT-004 bootstrap writes customerActivationMode=manual_approval and reports zero drift', async () => {
+    const report = await bootstrap();
+    expect(report.status).toBe('PASS');
+    expect((await db.collection('globalPolicies').doc('platform').get()).get('customerActivationMode')).toBe('manual_approval');
+    expect(report.drift).toEqual([]);
+    expect((await bootstrap()).drift).toEqual([]);
+  });
+
+  it('BOOT-005 an App Owner change of customerActivationMode, or a legacy policy without it, is not drift', async () => {
+    await bootstrap();
+    await db.collection('globalPolicies').doc('platform').update({ customerActivationMode: 'auto' });
+    expect((await bootstrap()).drift).toEqual([]);
+    await db.collection('globalPolicies').doc('platform').update({ customerActivationMode: FieldValue.delete() });
+    expect((await bootstrap()).drift).toEqual([]);
   });
 });
 

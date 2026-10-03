@@ -238,4 +238,13 @@ describe('AUTH-025 unauthorized platform safety mutations are rejected', () => {
     expect(audit.docs[0].get('previousValue')).toEqual({ maintenanceMode: false });
     await ok('updateGlobalPolicy', { updates: { maintenanceMode: false }, reason: 'Maintenance over' }, w.owner);
   });
+
+  it('REG-031 customerActivationMode is validated and App Owner editable', async () => {
+    expect((await call('updateGlobalPolicy', { updates: { customerActivationMode: 'whenever' }, reason: 'x' }, w.owner)).status).toBe('INVALID_ARGUMENT');
+    expect((await call('updateGlobalPolicy', { updates: { customerActivationMode: 'auto' }, reason: 'x' }, w.adminA)).status).toBe('PERMISSION_DENIED');
+    await ok('updateGlobalPolicy', { updates: { customerActivationMode: 'auto' }, reason: 'Test activation mode' }, w.owner);
+    expect((await adminDb.doc('globalPolicies/platform').get()).get('customerActivationMode')).toBe('auto');
+    await ok('updateGlobalPolicy', { updates: { customerActivationMode: 'manual_approval' }, reason: 'Restore default' }, w.owner);
+    expect((await adminDb.doc('globalPolicies/platform').get()).get('customerActivationMode')).toBe('manual_approval');
+  });
 });
