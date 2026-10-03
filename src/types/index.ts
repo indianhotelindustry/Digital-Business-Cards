@@ -1,6 +1,8 @@
+import type { AccountStatus } from '../../shared/domain/accountStatus';
+
 export type UserRole = 'app_owner' | 'company_admin' | 'employee';
-export type UserStatus = 'active' | 'suspended';
-export type CompanyStatus = 'active' | 'suspended';
+export type UserStatus = AccountStatus;
+export type CompanyStatus = AccountStatus;
 export type DepartmentStatus = 'active' | 'inactive';
 export type EmployeeStatus = 'active' | 'inactive';
 export type CardStatus = 'active' | 'inactive';

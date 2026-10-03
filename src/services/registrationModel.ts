@@ -15,13 +15,15 @@
 // App Owner can never be produced by registration.
 
 import type { AccountType, Company, UserProfile } from '../types';
+import { INITIAL_ACCOUNT_STATUS } from '../../shared/domain/accountStatus';
+import type { AccountStatus } from '../../shared/domain/accountStatus';
 
 export interface TenantRecord {
   id: string;
   kind: AccountType;
   ownerUid: string;
   companyId: string | null;
-  status: 'active';
+  status: AccountStatus;
   createdAt: string;
 }
 
@@ -73,13 +75,13 @@ export function buildRegistrationDocuments(input: RegistrationInput): Registrati
         role: 'employee',
         companyId: null,
         employeeId: null,
-        status: 'active',
+        status: INITIAL_ACCOUNT_STATUS,
         accountType: 'individual',
         tenantId,
         createdAt: now,
         updatedAt: now,
       },
-      tenant: { id: tenantId, kind: 'individual', ownerUid: uid, companyId: null, status: 'active', createdAt: now },
+      tenant: { id: tenantId, kind: 'individual', ownerUid: uid, companyId: null, status: INITIAL_ACCOUNT_STATUS, createdAt: now },
       company: null,
     };
   }
@@ -94,13 +96,13 @@ export function buildRegistrationDocuments(input: RegistrationInput): Registrati
       role: 'company_admin',
       companyId,
       employeeId: null,
-      status: 'active',
+      status: INITIAL_ACCOUNT_STATUS,
       accountType: 'company',
       tenantId: companyId,
       createdAt: now,
       updatedAt: now,
     },
-    tenant: { id: companyId, kind: 'company', ownerUid: uid, companyId, status: 'active', createdAt: now },
+    tenant: { id: companyId, kind: 'company', ownerUid: uid, companyId, status: INITIAL_ACCOUNT_STATUS, createdAt: now },
     company: {
       id: companyId,
       name: companyName,
@@ -111,7 +113,7 @@ export function buildRegistrationDocuments(input: RegistrationInput): Registrati
       address: '',
       description: '',
       branding: { primaryColor: '#0f766e' },
-      status: 'active',
+      status: INITIAL_ACCOUNT_STATUS,
       planId: DEFAULT_COMPANY_PLAN_ID,
       kind: 'company',
       ownerUid: uid,

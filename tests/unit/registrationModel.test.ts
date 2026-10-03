@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import { buildRegistrationDocuments } from '../../src/services/registrationModel';
 
 const T = '2026-10-01T00:00:00.000Z';
@@ -7,12 +7,12 @@ describe('buildRegistrationDocuments — individual', () => {
   const docs = buildRegistrationDocuments({ uid: 'u1', email: 'a@b.test', displayName: '  Asha  ', accountType: 'individual', now: T });
 
   it('creates an independent individual tenant owned by the user', () => {
-    expect(docs.tenant).toEqual({ id: 'ind_u1', kind: 'individual', ownerUid: 'u1', companyId: null, status: 'active', createdAt: T });
+    expect(docs.tenant).toEqual({ id: 'ind_u1', kind: 'individual', ownerUid: 'u1', companyId: null, status: 'pending_approval', createdAt: T });
     expect(docs.company).toBeNull();
   });
 
   it('derives role/membership; companyId stays null so entitlements resolve as individual', () => {
-    expect(docs.user).toMatchObject({ id: 'u1', role: 'employee', companyId: null, employeeId: null, accountType: 'individual', tenantId: 'ind_u1', status: 'active', displayName: 'Asha' });
+    expect(docs.user).toMatchObject({ id: 'u1', role: 'employee', companyId: null, employeeId: null, accountType: 'individual', tenantId: 'ind_u1', status: 'pending_approval', displayName: 'Asha' });
   });
 });
 
@@ -25,7 +25,7 @@ describe('buildRegistrationDocuments — company', () => {
   });
 
   it('always starts on the free company plan, owned by the creator', () => {
-    expect(docs.company).toMatchObject({ id: 'co_u2', name: 'Ravi Co', planId: 'company_free', status: 'active', kind: 'company', ownerUid: 'u2' });
+    expect(docs.company).toMatchObject({ id: 'co_u2', name: 'Ravi Co', planId: 'company_free', status: 'pending_approval', kind: 'company', ownerUid: 'u2' });
   });
 });
 
@@ -53,4 +53,24 @@ describe('buildRegistrationDocuments — input that must never influence authori
     expect(() => buildRegistrationDocuments({ uid: '', email: 'x@y.test', displayName: 'X', accountType: 'individual' })).toThrow();
     expect(() => buildRegistrationDocuments({ uid: 'u7', email: '', displayName: 'X', accountType: 'individual' })).toThrow();
   });
+});
+
+test('REG-001 individual registration is pending_approval', () => {
+  const d = buildRegistrationDocuments({ uid: 'u1', email: 'a@b.com', displayName: 'A', accountType: 'individual' });
+  expect(d.user.status).toBe('pending_approval');
+  expect(d.tenant.status).toBe('pending_approval');
+});
+
+test('REG-001 company registration is pending_approval (user, tenant, company)', () => {
+  const d = buildRegistrationDocuments({ uid: 'u2', email: 'c@co.com', displayName: 'C', accountType: 'company', companyName: 'Co' });
+  expect(d.user.status).toBe('pending_approval');
+  expect(d.tenant.status).toBe('pending_approval');
+  expect(d.company?.status).toBe('pending_approval');
+});
+
+test('REG-002/003/004 registration creates no cards/employees/subscriptions/leads/slug', () => {
+  const d = buildRegistrationDocuments({ uid: 'u3', email: 'c@co.com', displayName: 'C', accountType: 'company', companyName: 'Co' });
+  expect(Object.keys(d)).toEqual(expect.arrayContaining(['user', 'tenant', 'company']));
+  // builder returns only these three keys; it cannot create cards/leads/subscriptions
+  expect(Object.keys(d).sort()).toEqual(['company', 'tenant', 'user']);
 });
