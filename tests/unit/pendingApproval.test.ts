@@ -1,6 +1,6 @@
 // Directive 30: the approve-button decision and approval target are pure (no DOM).
 import { describe, expect, it } from 'vitest';
-import { approvalTargetFor, canSubmitApproval } from '../../src/lib/pendingApproval';
+import { approvalTargetFor, canSubmitApproval, shouldShowApproveShortcut } from '../../src/lib/pendingApproval';
 
 describe('pendingApproval', () => {
   it('REG-ui2 approve is blocked until a reason is entered', () => {
@@ -19,5 +19,13 @@ describe('pendingApproval', () => {
 
   it('REG-ui2 a company is approved by its co_<uid> tenant id', () => {
     expect(approvalTargetFor({ uid: 'u2', accountType: 'company' })).toEqual({ customerType: 'company', customerId: 'co_u2' });
+  });
+
+  it('REG-ui3 the approve shortcut shows only for a pending_approval row', () => {
+    expect(shouldShowApproveShortcut('pending_approval')).toBe(true);
+    expect(shouldShowApproveShortcut('active')).toBe(false);
+    expect(shouldShowApproveShortcut('suspended')).toBe(false);
+    expect(shouldShowApproveShortcut(null)).toBe(false);
+    expect(shouldShowApproveShortcut(undefined)).toBe(false);
   });
 });

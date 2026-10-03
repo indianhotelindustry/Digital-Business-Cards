@@ -13,6 +13,17 @@ export function canSubmitApproval(reason: string): boolean {
   return reason.trim().length > 0;
 }
 
+/**
+ * Whether a customer/company roster row should surface a shortcut to the
+ * Pending Customers approval queue. Only a `pending_approval` account can be
+ * approved; the shortcut never performs the approval itself (that stays in the
+ * Pending Customers tab, reason-gated and enforced by the approveCustomer
+ * callable).
+ */
+export function shouldShowApproveShortcut(status: string | null | undefined): boolean {
+  return status === 'pending_approval';
+}
+
 export interface ApprovalTarget {
   customerType: 'individual' | 'company';
   customerId: string;

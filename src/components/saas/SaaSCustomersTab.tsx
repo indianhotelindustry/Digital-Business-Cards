@@ -13,7 +13,9 @@ import {
   CheckCircle,
   Clock,
   ArrowRight,
+  UserCheck,
 } from 'lucide-react';
+import { shouldShowApproveShortcut } from '../../lib/pendingApproval';
 
 interface SaaSCustomersTabProps {
   companies: Company[];
@@ -22,6 +24,8 @@ interface SaaSCustomersTabProps {
   overrides: EntitlementOverride[];
   onInspectCustomer: (type: 'company' | 'individual', id: string, name: string) => void;
   onNavigateToCard?: (slug: string) => void;
+  /** Routes the App Owner to the Pending Customers tab to approve a pending account. */
+  onGoToPendingApprovals?: () => void;
 }
 
 export const SaaSCustomersTab: React.FC<SaaSCustomersTabProps> = ({
@@ -31,6 +35,7 @@ export const SaaSCustomersTab: React.FC<SaaSCustomersTabProps> = ({
   overrides,
   onInspectCustomer,
   onNavigateToCard,
+  onGoToPendingApprovals,
 }) => {
   const [search, setSearch] = useState('');
   const [targetFilter, setTargetFilter] = useState<'all' | 'companies' | 'individuals'>('all');
@@ -173,6 +178,17 @@ export const SaaSCustomersTab: React.FC<SaaSCustomersTabProps> = ({
                         >
                           {comp.status}
                         </span>
+                        {shouldShowApproveShortcut(comp.status) && onGoToPendingApprovals && (
+                          <button
+                            type="button"
+                            onClick={onGoToPendingApprovals}
+                            title="This account is awaiting approval. Approve it in the Pending Customers tab."
+                            className="mt-1 flex items-center text-[10px] font-semibold text-teal-700 hover:text-teal-900"
+                          >
+                            <UserCheck className="w-3 h-3 mr-1" /> Approve in Pending Customers
+                            <ArrowRight className="w-3 h-3 ml-0.5" />
+                          </button>
+                        )}
                       </td>
 
                       <td className="py-3 px-4">

@@ -286,6 +286,7 @@ export const AppOwnerDashboard: React.FC<AppOwnerDashboardProps> = ({ onNavigate
           overrides={overrides}
           onInspectCustomer={handleInspectCustomer}
           onNavigateToCard={onNavigateToCard}
+          onGoToPendingApprovals={() => setActiveTab('pending-customers')}
         />
       )}
 
