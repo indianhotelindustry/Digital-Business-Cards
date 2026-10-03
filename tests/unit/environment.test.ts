@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ENVIRONMENT_REGISTRY, EnvironmentConfigurationError, resolveEnvironment, type EnvironmentRegistry } from '../../src/lib/environmentResolver';
 import { assertBackendEnvironment, evaluateBackendEnvironment } from '../../functions/src/shared/environment';
-import { runPreflight } from '../../scripts/directive27/preflight';
+import { evaluateBoundary, runPreflight } from '../../scripts/directive27/preflight';
 
 const clone = (): EnvironmentRegistry => JSON.parse(JSON.stringify(ENVIRONMENT_REGISTRY));
 const PROD = ENVIRONMENT_REGISTRY.environments.production;
@@ -162,7 +162,7 @@ describe('ENV: deployment preflight', () => {
     const report = runPreflight({ target: 'production' });
     expect(report.checks.filter((c) => c.status === 'FAIL')).toEqual([]);
     const blocked = report.checks.filter((c) => c.status === 'BLOCKED').map((c) => c.id);
-    for (const id of blocked) expect(['HOSTING_SITE_DESIGNATED', 'PUBLIC_ORIGIN_DESIGNATED', 'STAGING_DESIGNATED', 'BUNDLE', 'BUILD_IDENTITY']).toContain(id);
+    for (const id of blocked) expect(['HOSTING_SITE_DESIGNATED', 'PUBLIC_ORIGIN_DESIGNATED', 'STAGING_DESIGNATED', 'BUNDLE', 'BUILD_IDENTITY', 'PRODUCTION_BOUNDARY']).toContain(id);
   });
 
   it('ENV-016 a bare "firebase deploy" targets the emulator project, never production', () => {
@@ -208,5 +208,57 @@ describe('ENV: build artifact identity (overnight Phase 6)', () => {
     expect(stale?.status).toBe('BLOCKED');
     expect(stale?.detail).toMatch(/rebuild/);
     rmSync(FIXTURE, { recursive: true, force: true });
+  });
+});
+
+describe('ENV: production boundary (Directive 28)', () => {
+  const proposal = JSON.parse(readFileSync('docs/directive-28/environments.production.proposed.json', 'utf8'));
+  /** The proposal with every <PLACEHOLDER> replaced by an obviously sample value. */
+  const filled = () => {
+    const sample: Record<string, string> = {
+      '<DSBC_PROJECT_ID>': 'sample-dsbc-prod', '<WEB_APP_ID>': '1:111111111111:web:sample', '<WEB_API_KEY>': 'sample-web-key',
+      '<SENDER_ID>': '111111111111', '<DSBC_PUBLIC_ORIGIN>': 'https://cards.sample.invalid',
+    };
+    let text = JSON.stringify(proposal.production);
+    for (const [k, v] of Object.entries(sample)) text = text.split(k).join(v);
+    return JSON.parse(text);
+  };
+  const withProduction = (production: unknown): EnvironmentRegistry => {
+    const reg = clone();
+    reg.environments.production = production as EnvironmentRegistry['environments']['production'];
+    return reg;
+  };
+
+  it('ENV-020 a shared or unrecorded production project blocks deployment; only a dedicated one passes', () => {
+    expect(PROD.boundary?.dedicatedProject).toBe(false); // v-nexus-lite, measured shared (docs/directive-28)
+    const report = runPreflight({ target: 'production' });
+    expect(report.checks.find((c) => c.id === 'PRODUCTION_BOUNDARY')?.status).toBe('BLOCKED');
+    expect(evaluateBoundary(PROD).ok).toBe(false);
+    expect(evaluateBoundary({ ...PROD, boundary: undefined }).ok).toBe(false);
+    expect(evaluateBoundary({ ...PROD, boundary: { dedicatedProject: true } }).ok).toBe(true);
+  });
+
+  it('ENV-021 the filled-in dedicated-project proposal resolves as production and shares nothing with v-nexus-lite', () => {
+    const t = resolveEnvironment({ VITE_DSBC_ENV: 'production' }, withProduction(filled()));
+    expect(t.isProduction).toBe(true);
+    expect(t.payments).toBe('disabled');
+    expect(t.demoDataAllowed || t.mockPersonasAllowed || t.developmentToolsAllowed || t.securityTestRunnerAllowed).toBe(false);
+    expect(evaluateBoundary(filled()).ok).toBe(true);
+    for (const f of ['projectId', 'appId', 'apiKey', 'authDomain', 'storageBucket', 'messagingSenderId'] as const) {
+      expect(t.firebase[f]).not.toBe(PROD.firebase![f]);
+    }
+    expect(t.firestoreDatabaseId).not.toBe(PROD.firestoreDatabaseId);
+    expect(t.hostingSite).not.toBe(PROD.hosting?.site ?? 'v-nexus-lite');
+    expect(t.hostingSite).not.toBe('v-nexus-lite');
+    // Firestore triggers need the functions region to match the database location.
+    expect(proposal.production.functionsRegion).toBe(proposal.production.firestoreLocation);
+    expect(proposal.backendEnv.PAYMENTS_ENABLED).toBe('false');
+  });
+
+  it('ENV-022 a target that still contains a <PLACEHOLDER> can never be built', () => {
+    expect(() => resolveEnvironment({ VITE_DSBC_ENV: 'production' }, withProduction(proposal.production))).toThrow(EnvironmentConfigurationError);
+    expect(() => resolveEnvironment({ VITE_DSBC_ENV: 'production' }, withProduction(proposal.production))).toThrow(/placeholder/);
+    const onlyOrigin = { ...filled(), publicOrigin: '<DSBC_PUBLIC_ORIGIN>' };
+    expect(() => resolveEnvironment({ VITE_DSBC_ENV: 'production' }, withProduction(onlyOrigin))).toThrow(/placeholder/);
   });
 });

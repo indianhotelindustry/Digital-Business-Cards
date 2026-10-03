@@ -1,0 +1,51 @@
+{
+  "schema": "dsbc.environments.proposal/v1",
+  "description": "Directive 28: the production entry for config/environments.json once a dedicated DSBC Firebase project exists. Every <PLACEHOLDER> is a value only the App Owner can choose or Firebase can issue (project id, web app config, domain); none is invented. The resolver refuses any target that still contains a placeholder, so this file cannot be built or deployed as it is. See docs/directive-28/PRODUCTION-PROVISIONING.md.",
+  "placeholders": {
+    "<DSBC_PROJECT_ID>": "the new project's id, chosen at creation (globally unique, permanent), e.g. a name the owner picks for DSBC production",
+    "<WEB_APP_ID>": "appId of the 'DSBC Web' Firebase web app registered in the new project (firebase apps:create web)",
+    "<WEB_API_KEY>": "apiKey of that web app (public identifier; restrict it to the Firebase APIs and the DSBC origin)",
+    "<SENDER_ID>": "messagingSenderId of that web app (= project number)",
+    "<DSBC_PUBLIC_ORIGIN>": "https://<chosen DSBC domain>, or https://<DSBC_PROJECT_ID>.web.app until a custom domain is connected"
+  },
+  "production": {
+    "environment": "PRODUCTION",
+    "configured": true,
+    "emulators": { "required": false },
+    "firebase": {
+      "projectId": "<DSBC_PROJECT_ID>",
+      "appId": "<WEB_APP_ID>",
+      "apiKey": "<WEB_API_KEY>",
+      "authDomain": "<DSBC_PROJECT_ID>.firebaseapp.com",
+      "storageBucket": "<DSBC_PROJECT_ID>.firebasestorage.app",
+      "messagingSenderId": "<SENDER_ID>"
+    },
+    "firestoreDatabaseId": "dsbc-production",
+    "firestoreLocation": "asia-south1",
+    "firestoreEdition": "STANDARD",
+    "functionsRegion": "asia-south1",
+    "hosting": { "target": "dsbc-web", "site": "<DSBC_PROJECT_ID>" },
+    "publicOrigin": "<DSBC_PUBLIC_ORIGIN>",
+    "allow": { "demoData": false, "mockPersonas": false, "developmentTools": false, "securityTestRunner": false },
+    "payments": "disabled",
+    "boundary": {
+      "dedicatedProject": true,
+      "sharedWith": [],
+      "decision": "docs/directive-28/decision.json"
+    }
+  },
+  "backendEnv": {
+    "file": "functions/.env.<DSBC_PROJECT_ID>",
+    "DSBC_ENVIRONMENT": "production",
+    "DSBC_FIRESTORE_DATABASE": "dsbc-production",
+    "DSBC_FUNCTIONS_REGION": "asia-south1",
+    "DSBC_PUBLIC_ORIGIN": "<DSBC_PUBLIC_ORIGIN>",
+    "PAYMENTS_ENABLED": "false",
+    "RAZORPAY_KEY_ID": ""
+  },
+  "secrets": {
+    "RAZORPAY_KEY_SECRET": "Secret Manager in the new project; a placeholder value set by the owner while payments are disabled",
+    "RAZORPAY_WEBHOOK_SECRET": "Secret Manager in the new project; a placeholder value set by the owner while payments are disabled"
+  },
+  "firebaserc": { "projects": { "default": "demo-dsbc", "production": "<DSBC_PROJECT_ID>" } }
+}

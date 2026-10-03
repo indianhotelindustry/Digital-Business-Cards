@@ -127,7 +127,7 @@ line('rehearsal', 'Phase 6 — three-customer production-like rehearsal', [
   { check: 'all rehearsal scenarios', ok: pass(reh) && reh.length >= 11, detail: count(reh) },
 ]);
 line('mutation', 'Phase 7 — mutation testing', [
-  { check: 'every D27 mutant killed', ok: !!mutation && mutation.summary.total >= 41 && mutation.summary.survived.length === 0, detail: mutation ? `${mutation.summary.killed}/${mutation.summary.total}` : 'not run' },
+  { check: 'every D27 mutant killed', ok: !!mutation && mutation.summary.total >= 43 && mutation.summary.survived.length === 0, detail: mutation ? `${mutation.summary.killed}/${mutation.summary.total}` : 'not run' },
   { check: 'unmutated baselines passed first', ok: !!mutation && Object.values(mutation.baseline).every((b) => b.exitCode === 0) },
 ]);
 line('typescript', 'TypeScript', [{ check: 'frontend + functions typecheck', ok: final?.typescript === 'PASS' }]);

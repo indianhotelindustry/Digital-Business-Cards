@@ -75,6 +75,11 @@ const MUTANTS = [
   { id: 'E15', area: 'environment', runner: 'unit', file: 'scripts/directive27/preflight.ts', desc: 'a bundle without build identity passes the preflight',
     find: "      add('BUILD_IDENTITY', false, `${dist}/build-info.json is missing; rebuild with \"npx vite build\".`, 'FAIL');",
     replace: "      add('BUILD_IDENTITY', true, 'mutant: identity not required');", tests: [T.env] },
+  // ---- Directive 28: production boundary ---------------------------------------------------------
+  { id: 'E16', area: 'environment', runner: 'unit', file: 'scripts/directive27/preflight.ts', desc: 'a shared production project passes the boundary check',
+    find: '  if (b.dedicatedProject !== true) {', replace: '  if (false) {', tests: [T.env] },
+  { id: 'E17', area: 'environment', runner: 'unit', file: 'src/lib/environmentResolver.ts', desc: 'a target with unfilled <PLACEHOLDER> values resolves',
+    find: '  if (placeholder !== undefined) fail(', replace: '  if (false) fail(', tests: [T.env] },
   // ---- Phase 5: public routing -------------------------------------------------------------------
   { id: 'P01', area: 'routing', runner: 'unit', file: 'src/lib/routes.ts', desc: 'any text accepted as a slug (traversal, separators)',
     find: 'const SLUG = /^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/;', replace: 'const SLUG = /^.+$/;', tests: [T.routes] },

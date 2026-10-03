@@ -150,6 +150,47 @@ if (token) {
 }
 add('FIRESTORE_RULES_DEPLOYED', rulesStatus, rulesDetail);
 
+// ---- 5b. Directive 28: is the project a boundary DSBC owns alone? ---------------------------
+// Every other app found in the project is a shared dependency. Measured, never assumed.
+{
+  const others = [];
+  const otherDbs = dbNames.filter((n) => n !== DATABASE);
+  if (otherDbs.length) others.push(`databases ${otherDbs.join(', ')}`);
+  const otherSites = siteIds.filter((id) => id !== SITE);
+  if (otherSites.length) others.push(`hosting sites ${otherSites.join(', ')}`);
+  const apps = parse(firebase('apps:list').out)?.result ?? [];
+  const otherApps = apps.filter((a) => a.appId !== registry.firebase.appId).map((a) => a.displayName || a.appId);
+  if (otherApps.length) others.push(`Firebase apps ${otherApps.join(', ')}`);
+  const sharedWebApp = apps.find((a) => a.appId === registry.firebase.appId);
+  if (sharedWebApp && !/dsbc/i.test(sharedWebApp.displayName || '')) others.push(`DSBC's web config is the generic app "${sharedWebApp.displayName}"`);
+  const runSvcs = run('gcloud', ['run', 'services', 'list', '--project', PROJECT, '--format=value(metadata.name)']).out.split(/\r?\n/).filter(Boolean);
+  if (runSvcs.length) others.push(`Cloud Run services ${runSvcs.join(', ')}`);
+  add('PROJECT_BOUNDARY', others.length ? 'BLOCKED' : 'PASS',
+    others.length ? `${PROJECT} also hosts: ${others.join('; ')}. Auth, IAM, quotas and the default service account are project-wide, so DSBC cannot be isolated here.` : `${PROJECT} contains only DSBC resources`,
+    { others });
+}
+if (token) {
+  const auth = { headers: { Authorization: `Bearer ${token}`, 'x-goog-user-project': PROJECT } };
+  // Auth configuration only (providers, tenancy); users are never listed.
+  const cfg = await fetch(`https://identitytoolkit.googleapis.com/admin/v2/projects/${PROJECT}/config`, auth).then((r) => r.json()).catch(() => ({}));
+  if (cfg.signIn) {
+    const email = cfg.signIn.email?.enabled === true;
+    add('AUTH_EMAIL_PROVIDER', email ? 'PASS' : 'BLOCKED',
+      `${email ? 'Email/password enabled' : 'Email/password sign-in is NOT enabled (DSBC registers with email/password)'}; Auth is ${cfg.subtype ?? '?'}, ${cfg.authorizedDomains?.length ?? 0} authorized domains, one user pool for the whole project`);
+  } else add('AUTH_EMAIL_PROVIDER', 'FAIL', `could not read the Auth configuration: ${JSON.stringify(cfg.error ?? cfg).slice(0, 160)}`);
+}
+{
+  const bucket = registry.firebase.storageBucket;
+  const b = run('gcloud', ['storage', 'buckets', 'describe', `gs://${bucket}`, '--format=value(name)']);
+  add('STORAGE_BUCKET', b.code === 0 ? 'PASS' : 'BLOCKED', b.code === 0 ? `gs://${bucket} exists` : `gs://${bucket} does not exist (${(b.err.match(/\d{3}/) ?? ['?'])[0]}); the registry points at a bucket nobody has created`);
+}
+{
+  const policy = parse(run('gcloud', ['projects', 'get-iam-policy', PROJECT, '--format=json']).out);
+  const editorOfDefault = (policy?.bindings ?? []).some((b) => ['roles/editor', 'roles/owner'].includes(b.role) && b.members.some((m) => /^serviceAccount:\d+-compute@developer\.gserviceaccount\.com$/.test(m)));
+  add('FUNCTIONS_IDENTITY', editorOfDefault ? 'BLOCKED' : 'PASS',
+    editorOfDefault ? 'the default compute service account (the default identity of Cloud Functions gen 2 and Cloud Run) holds project-wide editor/owner; DSBC functions would share it with the other apps and could read/write every database in the project' : 'the default compute service account has no project-wide editor/owner role');
+}
+
 // ---- 6. deployed functions ----------------------------------------------------------------
 const indexSrc = readFileSync(join(root, 'functions/src/index.ts'), 'utf8');
 const expectedFns = [...indexSrc.matchAll(/^export const (\w+)/gm), ...indexSrc.matchAll(/^export \{ (\w+) \}/gm)].map((m) => m[1]).sort();
@@ -195,7 +236,7 @@ add('LIVE_ACCEPTANCE', !acceptance ? 'NOT_EXECUTED' : acceptanceOk ? 'PASS' : 'F
 // ---- verdicts ---------------------------------------------------------------------------------
 const st = (id) => checks.find((c) => c.id === id)?.status;
 const deployedIds = ['FIRESTORE_RULES_DEPLOYED', 'FUNCTIONS_DEPLOYED', 'HOSTING_DEPLOYED', 'CONTROL_PLANE_BOOTSTRAPPED'];
-const targetIds = ['TARGET_DATABASE', 'REQUIRED_APIS', 'FUNCTION_SECRETS', 'HOSTING_SITE', 'PUBLIC_ORIGIN'];
+const targetIds = ['TARGET_DATABASE', 'PROJECT_BOUNDARY', 'AUTH_EMAIL_PROVIDER', 'STORAGE_BUCKET', 'FUNCTIONS_IDENTITY', 'REQUIRED_APIS', 'FUNCTION_SECRETS', 'HOSTING_SITE', 'PUBLIC_ORIGIN'];
 const report = {
   schema: 'dsbc.liveProbe/v1',
   generatedAt: new Date().toISOString(),

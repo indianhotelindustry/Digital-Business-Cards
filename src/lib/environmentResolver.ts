@@ -50,6 +50,12 @@ export interface EnvironmentTarget {
   publicOrigin?: string | null;
   allow?: { demoData: boolean; mockPersonas: boolean; developmentTools: boolean; securityTestRunner: boolean };
   payments?: 'disabled' | 'test' | 'live';
+  /**
+   * Directive 28: the production boundary. A production target may only be
+   * deployed when it is a Firebase project used by DSBC alone (dedicated
+   * Auth pool, database, bucket, hosting, functions identity, secrets).
+   */
+  boundary?: { dedicatedProject: boolean; sharedWith?: string[]; decision?: string };
 }
 
 export interface EnvironmentRegistry {
@@ -115,6 +121,10 @@ export function resolveEnvironment(input: EnvironmentInput, registry: Environmen
   const region = target.functionsRegion || fail(`${key}: functionsRegion missing.`);
   const dbId = target.firestoreDatabaseId || fail(`${key}: firestoreDatabaseId missing (use "(default)" explicitly).`);
   const payments = target.payments ?? fail(`${key}: payments mode missing.`);
+  // Directive 28: a provisioning template keeps unknown values as <PLACEHOLDERS>;
+  // a target that still carries one was never filled in and must not build.
+  const placeholder = [...Object.values(firebase), dbId, region, target.hosting?.site, target.publicOrigin].find((v) => typeof v === 'string' && /<[^>]*>/.test(v));
+  if (placeholder !== undefined) fail(`${key}: "${placeholder}" is an unfilled placeholder; fill in the real value before building.`);
 
   const useEmulators = emulators.required === true;
   if (input.VITE_DSBC_USE_EMULATORS === 'true' && !useEmulators) fail(`${key} may not be pointed at the emulators.`);

@@ -16,7 +16,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { ENVIRONMENT_REGISTRY, resolveEnvironment, type EnvironmentKey } from '../../src/lib/environmentResolver';
+import { ENVIRONMENT_REGISTRY, resolveEnvironment, type EnvironmentKey, type EnvironmentTarget } from '../../src/lib/environmentResolver';
 import { evaluateBackendEnvironment } from '../../functions/src/shared/environment';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -36,6 +36,20 @@ const dotenv = (rel: string): Record<string, string> =>
       .filter((l) => l.trim() && !l.trim().startsWith('#'))
       .map((l) => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()])
   );
+
+/**
+ * Directive 28: production may only be deployed into a Firebase project used
+ * by DSBC alone. Anything else (a shared project, or no recorded boundary)
+ * blocks the deployment.
+ */
+export function evaluateBoundary(target: EnvironmentTarget | undefined): { ok: boolean; detail: string } {
+  const b = target?.boundary;
+  if (!b) return { ok: false, detail: 'No production boundary is recorded (config/environments.json production.boundary); a shared project is never assumed safe.' };
+  if (b.dedicatedProject !== true) {
+    return { ok: false, detail: `Production project ${target?.firebase?.projectId} is shared with: ${(b.sharedWith ?? ['unknown']).join('; ')}. DSBC needs a dedicated Firebase project (${b.decision ?? 'docs/directive-28'}).` };
+  }
+  return { ok: true, detail: `Production project ${target?.firebase?.projectId} is dedicated to DSBC.` };
+}
 
 export function runPreflight(opts: { target?: EnvironmentKey; dist?: string } = {}) {
   const key: EnvironmentKey = opts.target ?? 'production';
@@ -154,6 +168,10 @@ export function runPreflight(opts: { target?: EnvironmentKey; dist?: string } = 
   }
 
   // ---- What only the App Owner can designate / verify ------------------------------
+  if (key === 'production') {
+    const boundary = evaluateBoundary(reg);
+    add('PRODUCTION_BOUNDARY', boundary.ok, boundary.detail, 'BLOCKED');
+  }
   add('HOSTING_SITE_DESIGNATED', Boolean(reg.hosting?.site), reg.hosting?.site ? `hosting site ${reg.hosting.site}.` : 'No DSBC hosting site is designated (config/environments.json hosting.site, then firebase target:apply hosting dsbc-web <site>).', 'BLOCKED');
   add('PUBLIC_ORIGIN_DESIGNATED', Boolean(reg.publicOrigin), reg.publicOrigin ? `public origin ${reg.publicOrigin}.` : 'No public origin is designated; share links and QR codes would carry the hosting default domain.', 'BLOCKED');
   add('STAGING_DESIGNATED', ENVIRONMENT_REGISTRY.environments.staging.configured === true,

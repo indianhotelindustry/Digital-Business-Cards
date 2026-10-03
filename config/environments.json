@@ -54,7 +54,17 @@
       "hosting": { "target": "dsbc-web", "site": null },
       "publicOrigin": null,
       "allow": { "demoData": false, "mockPersonas": false, "developmentTools": false, "securityTestRunner": false },
-      "payments": "disabled"
+      "payments": "disabled",
+      "boundary": {
+        "dedicatedProject": false,
+        "sharedWith": [
+          "V-Nexus Lite (default hosting site, (default) database)",
+          "Vidwan Kids (hosting site, Cloud Run service, ai-studio bucket)",
+          "two other AI Studio applets (databases ai-studio-0d16e7c4-..., ai-studio-9106414b-...)",
+          "one project-wide Auth pool, Firebase web app 'ai-studio-applet-webapp', default compute service account (roles/editor)"
+        ],
+        "decision": "docs/directive-28/decision.json: v-nexus-lite cannot isolate DSBC; production must move to a dedicated DSBC Firebase project before any deployment."
+      }
     }
   }
 }
