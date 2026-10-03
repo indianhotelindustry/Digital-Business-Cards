@@ -25,6 +25,7 @@ import {
   Shield,
   Sparkles,
   Server,
+  UserPlus,
 } from 'lucide-react';
 
 // Sub Tabs
@@ -46,6 +47,7 @@ import { SaaSPilotControlTab } from '../saas/SaaSPilotControlTab';
 import { SaaSDemoReadinessTab } from '../saas/SaaSDemoReadinessTab';
 import { SaaSConversionFunnelTab } from '../saas/SaaSConversionFunnelTab';
 import { SaaSSupportTab } from '../saas/SaaSSupportTab';
+import { PendingCustomersTab } from '../saas/PendingCustomersTab';
 import { TrendingUp, MessageSquare, Rocket, CheckCircle2 } from 'lucide-react';
 
 interface AppOwnerDashboardProps {
@@ -163,6 +165,7 @@ export const AppOwnerDashboard: React.FC<AppOwnerDashboardProps> = ({ onNavigate
     { id: 'catalogue', label: 'Feature Catalogue', icon: ListTree },
     { id: 'matrix', label: 'Feature Matrix', icon: TableProperties },
     { id: 'customers', label: 'Customers', icon: Users2 },
+    { id: 'pending-customers', label: 'Pending Customers', icon: UserPlus },
     { id: 'individual-entitlements', label: 'Individual Entitlements', icon: UserCheck },
     { id: 'company-entitlements', label: 'Company Entitlements', icon: Building2 },
     { id: 'usage', label: 'Usage & Limits', icon: HardDrive },
@@ -285,6 +288,8 @@ export const AppOwnerDashboard: React.FC<AppOwnerDashboardProps> = ({ onNavigate
           onNavigateToCard={onNavigateToCard}
         />
       )}
+
+      {activeTab === 'pending-customers' && <PendingCustomersTab />}
 
       {activeTab === 'company-entitlements' && (
         <SaaSCompanyEntitlementsTab
