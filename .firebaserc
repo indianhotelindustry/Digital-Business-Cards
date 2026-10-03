@@ -2,5 +2,14 @@
   "projects": {
     "default": "demo-dsbc",
     "production": "task360-ift"
+  },
+  "targets": {
+    "task360-ift": {
+      "hosting": {
+        "dsbc-web": [
+          "task360-ift"
+        ]
+      }
+    }
   }
 }
