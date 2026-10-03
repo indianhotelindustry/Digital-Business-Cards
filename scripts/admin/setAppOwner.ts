@@ -59,7 +59,7 @@ export async function setAppOwner(opts: SetAppOwnerOptions): Promise<{ uid: stri
     const profileRef = opts.db.collection('users').doc(user.uid);
     const existing = await profileRef.get();
     if (existing.exists) {
-      await profileRef.set({ role: 'app_owner', updatedAt: now }, { merge: true });
+      await profileRef.set({ role: 'app_owner', status: 'active', updatedAt: now }, { merge: true });
     } else {
       await profileRef.set({
         id: user.uid,

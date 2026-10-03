@@ -45,6 +45,27 @@ describe('setAppOwner (Phase 2 authoritative App Owner mechanism)', () => {
     expect(audit.docs.map((d) => d.data().action)).toEqual(['APP_OWNER_GRANTED']);
   });
 
+  it('REG-owner: marks a pre-existing pending_approval profile active on grant', async () => {
+    const user = await auth.createUser({ email: 'pending-owner@dsbc.test', emailVerified: true, password: 'secret123' });
+    await db.collection('users').doc(user.uid).set({
+      id: user.uid, email: 'pending-owner@dsbc.test', displayName: 'Pending Owner',
+      role: 'company_owner', companyId: null, employeeId: null,
+      status: 'pending_approval', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    await setAppOwner({ auth, db, uid: user.uid, actor: 'test', projectId: PROJECT });
+    const profile = (await db.collection('users').doc(user.uid).get()).data();
+    expect(profile?.role).toBe('app_owner');
+    expect(profile?.status).toBe('active');
+  });
+
+  it('REG-owner: a brand-new owner profile is created active', async () => {
+    const user = await auth.createUser({ email: 'fresh-owner@dsbc.test', emailVerified: true, password: 'secret123' });
+    await setAppOwner({ auth, db, uid: user.uid, actor: 'test', projectId: PROJECT });
+    const profile = (await db.collection('users').doc(user.uid).get()).data();
+    expect(profile?.role).toBe('app_owner');
+    expect(profile?.status).toBe('active');
+  });
+
   it('refuses an identity whose email is not verified', async () => {
     const user = await auth.createUser({ email: 'unverified@dsbc.test', emailVerified: false, password: 'secret123' });
     await expect(setAppOwner({ auth, db, uid: user.uid, actor: 'test', projectId: PROJECT })).rejects.toThrow(/not verified/);
