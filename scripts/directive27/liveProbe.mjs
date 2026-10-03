@@ -45,8 +45,39 @@ const run = (cmd, args) => {
   return { code: r.status, out: (r.stdout || '').trim(), err: (r.stderr || '').trim() };
 };
 // The Firebase CLI on PATH (`npx firebase` resolves to the JS SDK package, which has no binary).
-const firebase = (...a) => run('firebase', [...a, '--project', PROJECT, '--json']);
+const firebase = (...a) => {
+  // Read-only list calls; retried because the CLI intermittently times out.
+  let r;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    r = run('firebase', [...a, '--project', PROJECT, '--json']);
+    if (parseCli(r.out)) return r;
+  }
+  return r;
+};
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
+/**
+ * The Firebase CLI with --json sometimes prints a second object after the
+ * result (e.g. {"status":"error","error":"Timed out."} from a background
+ * task). Return the first top-level object whose status is "success"; null
+ * when there is none, so callers report "could not read" instead of "absent".
+ */
+function parseCli(text) {
+  const objects = [];
+  let depth = 0, start = -1, inString = false, escaped = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{') { if (depth++ === 0) start = i; }
+    else if (ch === '}' && depth > 0 && --depth === 0) objects.push(parse(text.slice(start, i + 1)));
+  }
+  return objects.find((o) => o?.status === 'success') ?? null;
+}
 const git = (...a) => spawnSync('git', a, { cwd: root, encoding: 'utf8' }).stdout.trim();
 const commit = git('rev-parse', 'HEAD');
 /** True when `other` is HEAD or differs from it only in docs/ (evidence commits deploy nothing). */
@@ -71,10 +102,12 @@ async function http(url) {
 const titleOf = (html) => (/<title>([^<]*)<\/title>/i.exec(html)?.[1] ?? '').trim();
 
 // ---- 1. target: project + named database --------------------------------------------
-const dbs = parse(firebase('firestore:databases:list').out)?.result ?? [];
+const dbsOut = parseCli(firebase('firestore:databases:list').out);
+const dbs = dbsOut?.result ?? [];
 const dbNames = dbs.map((d) => String(d.name ?? d).split('/').pop());
 const dsbcDb = dbs.find((d) => String(d.name ?? d).endsWith(`/databases/${DATABASE}`));
-add('TARGET_DATABASE', dsbcDb ? 'PASS' : 'FAIL',
+if (!dbsOut) add('TARGET_DATABASE', 'FAIL', `could not list the databases of ${PROJECT} (Firebase CLI gave no successful result); nothing is concluded`);
+else add('TARGET_DATABASE', dsbcDb ? 'PASS' : 'FAIL',
   dsbcDb ? `${DATABASE} exists in ${PROJECT} (${dsbcDb.databaseEdition ?? dsbcDb.edition ?? '?'} edition, ${dsbcDb.locationId ?? '?'})` : `registered database ${DATABASE} not found in ${PROJECT}`,
   { databasesInProject: dbNames });
 if (dsbcDb && registry.firestoreEdition && (dsbcDb.databaseEdition ?? '').toUpperCase() !== registry.firestoreEdition) {
@@ -112,7 +145,7 @@ if (!enabled.has('secretmanager.googleapis.com')) {
 }
 
 // ---- 4. hosting site + public origin designation ------------------------------------------
-const sites = parse(firebase('hosting:sites:list').out)?.result?.sites ?? [];
+const sites = parseCli(firebase('hosting:sites:list').out)?.result?.sites ?? [];
 const siteIds = sites.map((s) => String(s.name).split('/').pop());
 const defaultSite = await http(`https://${PROJECT}.web.app/`);
 const defaultTitle = titleOf(defaultSite.body);
@@ -158,7 +191,7 @@ add('FIRESTORE_RULES_DEPLOYED', rulesStatus, rulesDetail);
   if (otherDbs.length) others.push(`databases ${otherDbs.join(', ')}`);
   const otherSites = siteIds.filter((id) => id !== SITE);
   if (otherSites.length) others.push(`hosting sites ${otherSites.join(', ')}`);
-  const apps = parse(firebase('apps:list').out)?.result ?? [];
+  const apps = parseCli(firebase('apps:list').out)?.result ?? [];
   const otherApps = apps.filter((a) => a.appId !== registry.firebase.appId).map((a) => a.displayName || a.appId);
   if (otherApps.length) others.push(`Firebase apps ${otherApps.join(', ')}`);
   const sharedWebApp = apps.find((a) => a.appId === registry.firebase.appId);
@@ -197,7 +230,7 @@ const expectedFns = [...indexSrc.matchAll(/^export const (\w+)/gm), ...indexSrc.
 if (!enabled.has('cloudfunctions.googleapis.com')) {
   add('FUNCTIONS_DEPLOYED', 'NOT_DEPLOYED', `Cloud Functions API is disabled on ${PROJECT}; none of the ${expectedFns.length} DSBC functions exist`, { expected: expectedFns });
 } else {
-  const fnList = parse(firebase('functions:list').out)?.result ?? [];
+  const fnList = parseCli(firebase('functions:list').out)?.result ?? [];
   const live = new Set(fnList.filter((f) => (f.region ?? '') === REGION).map((f) => f.id ?? String(f.name).split('/').pop()));
   const missing = expectedFns.filter((f) => !live.has(f));
   add('FUNCTIONS_DEPLOYED', missing.length ? 'NOT_DEPLOYED' : 'PASS', missing.length ? `${expectedFns.length - missing.length}/${expectedFns.length} DSBC functions in ${REGION}` : `all ${expectedFns.length} DSBC functions in ${REGION}`, { missing });
