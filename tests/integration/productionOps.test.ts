@@ -119,6 +119,16 @@ describe('BOOT: production bootstrap', () => {
     expect((await auth.listUsers()).users).toHaveLength(0);
   });
 
+  it('REG-027/028 a real (non-dry-run) bootstrap on a fresh DB creates control-plane records and zero customer records', async () => {
+    const report = await bootstrap();
+    expect(report.dryRun).toBe(false);
+    expect(report.created.length).toBeGreaterThan(0);
+    expect((await db.collection('plans').count().get()).data().count).toBeGreaterThan(0);
+    const counts = await inventory(['users', 'companies', 'employees', 'cards', 'digitalIdentityProfiles', 'subscriptions', 'invoices', 'leadEvents', 'slugs']);
+    expect(counts).toEqual({ users: 0, companies: 0, employees: 0, cards: 0, digitalIdentityProfiles: 0, subscriptions: 0, invoices: 0, leadEvents: 0, slugs: 0 });
+    expect((await auth.listUsers()).users).toHaveLength(0);
+  });
+
   it('BOOT-005 refuses to run without an audited reason', async () => {
     await expect(runBootstrap({})).rejects.toThrow(/--reason/);
   });

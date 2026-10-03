@@ -1,6 +1,7 @@
 // Directive 30 Task 5 — customer activation gate (emulator).
 // REG-010 .. REG-021, REG-033
 import { beforeAll, describe, expect, it } from 'vitest';
+import { PRODUCTION_TARGET, parseArgs, resolveAdminTarget } from '../../scripts/admin/adminTarget';
 import { adminAuth, adminDb, call, createUser, eventually, ok, seedWorld, sleep, type TestUser, type World } from './support/backendEnv';
 
 let w: World;
@@ -275,5 +276,57 @@ describe('REG: customer callables require an active account', () => {
     const pend = await seedPending('c08b');
     expect((await call('setPublishingState', { entityType: 'card', entityId: 'card_x', state: 'PUBLISHED' }, pend)).status).toBe('PERMISSION_DENIED');
     expect((await call('setMyDeletionRequest', { requested: true }, pend)).status).toBe('PERMISSION_DENIED');
+  });
+});
+
+describe('REG: data-safety and payment-gate regressions (Task 12)', () => {
+  // REG-027/028 (bootstrap creates control-plane only, zero customer records) run on a
+  // fresh emulator DB in tests/integration/productionOps.test.ts.
+
+  it('REG-029 the demo seeder target guard refuses production-like and unconfirmed real projects', () => {
+    const real: Record<string, string | undefined> = {}; // no FIRESTORE_EMULATOR_HOST: a real-project target
+    const named = (project: string, extra: Record<string, string | boolean> = {}) =>
+      parseArgs(['--project', project, '--confirm-project', project, '--database', '(default)', ...Object.entries(extra).flatMap(([k, v]) => (v === true ? [`--${k}`] : [`--${k}`, String(v)]))]);
+    // production-like ids are refused even with every override flag
+    expect(() => resolveAdminTarget(named('dsbc-prod', { 'allow-non-emulator': true }), 'seed-demo', real)).toThrow(/production-like/);
+    expect(() => resolveAdminTarget(named('customer-live', { 'allow-non-emulator': true }), 'seed-demo', { DSBC_PRODUCTION_PROJECT_IDS: 'customer-live' })).toThrow(/production-like/);
+    // the registry production project is refused even at its own database
+    expect(() => resolveAdminTarget(parseArgs(['--project', PRODUCTION_TARGET.projectId, '--confirm-project', PRODUCTION_TARGET.projectId, '--database', PRODUCTION_TARGET.databaseId, '--allow-non-emulator']), 'seed-demo', real)).toThrow(/production-like/);
+    // a real non-demo project is refused unless explicitly opted in
+    expect(() => resolveAdminTarget(named('dsbc-dev'), 'seed-demo', real)).toThrow(/allow-non-emulator/);
+    // a real project without a confirmation is refused outright
+    expect(() => resolveAdminTarget(parseArgs(['--project', 'dsbc-dev']), 'seed-demo', real)).toThrow(/confirm-project/);
+    // an emulator target that is not demo-* needs an explicit confirmation
+    expect(() => resolveAdminTarget(parseArgs(['--project', 'dsbc-dev']), 'seed-demo', { FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080' })).toThrow(/not a demo-\* project/);
+    // the sanctioned target: the demo-* emulator project
+    expect(resolveAdminTarget({}, 'seed-demo', { FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-dsbc' })).toMatchObject({ projectId: 'demo-dsbc', emulator: true });
+  });
+
+  it('REG-030 approveCustomer succeeds with payments disabled (emulator default)', async () => {
+    // Prove payments really are off in this environment, then approve.
+    const co = await call('createCheckoutOrder', { planId: 'individual_pro' }, w.individual);
+    expect(co.message).toContain('PAYMENTS_NOT_ENABLED');
+    await seedPending('c30');
+    const res = await ok('approveCustomer', { customerType: 'individual', customerId: 'c30', reason: 'payments-off approval' }, w.owner);
+    expect(res).toMatchObject({ customerId: 'c30', status: 'active', alreadyActive: false });
+  });
+
+  it('REG-031 createCheckoutOrder fails closed (payments disabled)', async () => {
+    const before = await countOf('paymentOrders');
+    const r = await call('createCheckoutOrder', { planId: 'individual_pro' }, w.individual);
+    expect(r.ok).toBe(false);
+    expect(r.status).toBe('FAILED_PRECONDITION');
+    expect(r.message).toContain('PAYMENTS_NOT_ENABLED');
+    expect(await countOf('paymentOrders')).toBe(before);
+  });
+
+  it('REG-032 manual/offline entitlement stays App-Owner-only', async () => {
+    const subsBefore = await countOf('subscriptions');
+    const grant = { customerType: 'individual', customerId: w.individual.uid, planId: 'individual_pro', durationDays: 30, reason: 'manual path probe' };
+    expect((await call('adminGrantComplimentary', grant, w.individual)).status).toBe('PERMISSION_DENIED');
+    expect((await call('adminGrantComplimentary', grant, w.adminA)).status).toBe('PERMISSION_DENIED');
+    expect((await call('adminGrantComplimentary', grant, w.unverifiedOwner)).status).toBe('PERMISSION_DENIED');
+    expect((await call('adminChangeCustomerPlan', { customerType: 'individual', customerId: w.individual.uid, planId: 'individual_pro', reason: 'probe' }, w.individual)).status).toBe('PERMISSION_DENIED');
+    expect(await countOf('subscriptions')).toBe(subsBefore);
   });
 });
