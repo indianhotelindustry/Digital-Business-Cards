@@ -7,6 +7,15 @@ import { getCompanyById } from '../services/companyService';
 import { DEMO_USERS } from '../services/seedService';
 import { DEMO_FEATURES_ENABLED } from '../lib/runtimeFlags';
 import { deriveEffectiveRole, hasVerifiedOwnerClaim } from '../lib/authority';
+import {
+  describeVerificationError,
+  refreshVerificationState,
+  sendVerificationEmail,
+  type VerificationError,
+} from '../services/emailVerification';
+
+export type VerificationRefreshResult = { ok: true; emailVerified: boolean } | { ok: false; error: VerificationError };
+export type VerificationResendResult = { ok: true; alreadyVerified: boolean } | { ok: false; error: VerificationError };
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -19,6 +28,12 @@ interface AuthContextType {
   isEmployee: boolean;
   isDemoMode: boolean;
   authMethod: 'DEMO_PERSONA' | 'FIREBASE_AUTH';
+  /** Firebase Auth's verified state for the signed-in account (false when signed out). */
+  emailVerified: boolean;
+  /** Reload the account and force a new ID token; recomputes verified state and claims. Grants nothing. */
+  refreshEmailVerification: () => Promise<VerificationRefreshResult>;
+  /** Send the verification email again (no-op if the address is already verified). */
+  resendVerificationEmail: () => Promise<VerificationResendResult>;
   refreshUserData: () => Promise<void>;
   switchDemoPersona: (personaKey: keyof typeof DEMO_USERS) => Promise<void>;
   logoutUser: () => Promise<void>;
@@ -34,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
   // Server-set custom claim (scripts/admin/setAppOwner.ts) on a verified email.
   const [ownerClaimVerified, setOwnerClaimVerified] = useState<boolean>(false);
+  const [emailVerified, setEmailVerified] = useState<boolean>(false);
 
   // Load profile & tenant company
   const loadProfileAndCompany = async (profile: UserProfile | null) => {
@@ -59,6 +75,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updated) {
         await loadProfileAndCompany(updated);
       }
+    }
+  };
+
+  // Directive 29: verification state comes from Firebase Auth and a freshly
+  // minted ID token, never from browser storage. App Owner authority is
+  // recomputed from the same token: verified email AND the server-set claim.
+  const refreshEmailVerification = async (): Promise<VerificationRefreshResult> => {
+    const user = auth.currentUser;
+    if (!user) return { ok: false, error: describeVerificationError({ code: 'auth/no-current-user' }) };
+    try {
+      const state = await refreshVerificationState(user);
+      setEmailVerified(state.emailVerified);
+      setOwnerClaimVerified(hasVerifiedOwnerClaim(state.claims, state.emailVerified));
+      return { ok: true, emailVerified: state.emailVerified };
+    } catch (err) {
+      return { ok: false, error: describeVerificationError(err) };
+    }
+  };
+
+  const resendVerificationEmail = async (): Promise<VerificationResendResult> => {
+    const user = auth.currentUser;
+    if (!user) return { ok: false, error: describeVerificationError({ code: 'auth/no-current-user' }) };
+    try {
+      const result = await sendVerificationEmail(user);
+      if (!result.sent) {
+        // Verified elsewhere (another tab or device): pick up the new state now.
+        await refreshEmailVerification();
+        return { ok: true, alreadyVerified: true };
+      }
+      return { ok: true, alreadyVerified: false };
+    } catch (err) {
+      return { ok: false, error: describeVerificationError(err) };
     }
   };
 
@@ -128,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setCurrentUser(firebaseUser);
+      setEmailVerified(firebaseUser?.emailVerified === true);
       if (firebaseUser) {
         // Real Firebase session: the Firestore profile and the ID-token claims
         // are the only sources of identity and platform authority.
@@ -183,6 +232,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isEmployee,
         isDemoMode,
         authMethod,
+        emailVerified,
+        refreshEmailVerification,
+        resendVerificationEmail,
         refreshUserData,
         switchDemoPersona,
         logoutUser,

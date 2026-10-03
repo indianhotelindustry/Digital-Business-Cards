@@ -37,6 +37,9 @@ const T = {
   ops: 'tests/integration/productionOps.test.ts',
   rules: 'tests/rules/directive27-platform.test.ts',
   health: 'tests/backend/platform-health.test.ts',
+  verifyUnit: 'tests/unit/emailVerification.test.ts',
+  authority: 'tests/unit/authority.test.ts',
+  verifyBackend: 'tests/backend/email-verification.test.ts',
 };
 
 /** runner: unit | integration | rules | backend. find must occur exactly once (after CRLF -> LF). */
@@ -80,6 +83,19 @@ const MUTANTS = [
     find: '  if (b.dedicatedProject !== true) {', replace: '  if (false) {', tests: [T.env] },
   { id: 'E17', area: 'environment', runner: 'unit', file: 'src/lib/environmentResolver.ts', desc: 'a target with unfilled <PLACEHOLDER> values resolves',
     find: '  if (placeholder !== undefined) fail(', replace: '  if (false) fail(', tests: [T.env] },
+  // ---- Directive 29: email verification and the App Owner boundary --------------------------------
+  { id: 'V01', area: 'verification', runner: 'unit', file: 'src/services/emailVerification.ts', desc: 'refresh trusts a cached ID token minted before verification',
+    find: '  const token = await user.getIdTokenResult(true);', replace: '  const token = await user.getIdTokenResult();', tests: [T.verifyUnit] },
+  { id: 'V02', area: 'verification', runner: 'unit', file: 'src/services/emailVerification.ts', desc: 'an already-verified account is sent another verification email',
+    find: '  if (user.emailVerified) return { sent: false, alreadyVerified: true };', replace: '  /* mutant: no already-verified check */', tests: [T.verifyUnit] },
+  { id: 'V03', area: 'verification', runner: 'backend', file: 'src/services/authService.ts', desc: 'registration does not send the verification email',
+    find: '    await sendVerificationEmail(user);', replace: '    /* mutant: no verification email */', tests: [T.verifyBackend] },
+  { id: 'V04', area: 'verification', runner: 'unit', file: 'src/lib/authority.ts', desc: 'the client shows App Owner for the claim without a verified email',
+    find: '  return emailVerified === true && claims?.[APP_OWNER_CLAIM] === APP_OWNER_CLAIM_VALUE;', replace: '  return claims?.[APP_OWNER_CLAIM] === APP_OWNER_CLAIM_VALUE;', tests: [T.authority] },
+  { id: 'V05', area: 'verification', runner: 'backend', file: 'functions/src/auth/identity.ts', desc: 'the backend accepts the App Owner claim on an unverified email',
+    find: "    isAppOwner: token[APP_OWNER_CLAIM] === 'app_owner' && emailVerified,", replace: "    isAppOwner: token[APP_OWNER_CLAIM] === 'app_owner',", tests: [T.verifyBackend] },
+  { id: 'V06', area: 'verification', runner: 'backend', file: 'firestore.rules', desc: 'rules accept the App Owner claim on an unverified email',
+    find: "        && request.auth.token.get('email_verified', false) == true;\n    }\n\n    function userPath(uid) {", replace: "        && true;\n    }\n\n    function userPath(uid) {", tests: [T.verifyBackend] },
   // ---- Phase 5: public routing -------------------------------------------------------------------
   { id: 'P01', area: 'routing', runner: 'unit', file: 'src/lib/routes.ts', desc: 'any text accepted as a slug (traversal, separators)',
     find: 'const SLUG = /^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/;', replace: 'const SLUG = /^.+$/;', tests: [T.routes] },

@@ -79,7 +79,7 @@ export const CustomerRegistrationModal: React.FC<CustomerRegistrationModalProps>
     try {
       // Directive 24: identity + requested account type only; no client-chosen
       // role/companyId and no fabricated fallback profile.
-      const profile: UserProfile = await registerAccount({
+      const { profile } = await registerAccount({
         email: email.trim(),
         password,
         displayName: fullName.trim(),
@@ -243,6 +243,11 @@ export const CustomerRegistrationModal: React.FC<CustomerRegistrationModalProps>
               />
             </div>
           </div>
+
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            We'll email you a link to verify this address. Please open it: an unverified address can't be
+            granted platform administration rights, and verifying protects your account.
+          </p>
 
           <div className="pt-2">
             <button

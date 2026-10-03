@@ -236,6 +236,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             </div>
 
+            {mode === 'register' && (
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                We'll email you a link to verify this address. Please open it: an unverified address can't be
+                granted platform administration rights, and verifying protects your account.
+              </p>
+            )}
+
             <button
               type="submit"
               disabled={submitting}
