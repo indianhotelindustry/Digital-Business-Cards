@@ -2,7 +2,7 @@
 // chosen only at build time (VITE_DSBC_ENV from the committed .env.<mode>),
 // fails closed, and the backend refuses to load for a mismatched target.
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ENVIRONMENT_REGISTRY, EnvironmentConfigurationError, resolveEnvironment, type EnvironmentRegistry } from '../../src/lib/environmentResolver';
@@ -264,5 +264,12 @@ describe('ENV: production boundary (Directive 28)', () => {
     expect(() => resolveEnvironment({ VITE_DSBC_ENV: 'production' }, withProduction(proposal.production))).toThrow(/placeholder/);
     const onlyOrigin = { ...filled(), publicOrigin: '<DSBC_PUBLIC_ORIGIN>' };
     expect(() => resolveEnvironment({ VITE_DSBC_ENV: 'production' }, withProduction(onlyOrigin))).toThrow(/placeholder/);
+  });
+});
+
+describe('ENV: legacy old-production artifacts (Directive 30 cleanup)', () => {
+  it('REG-legacy no committed old-prod v-nexus-lite env/config remains', () => {
+    expect(existsSync('functions/.env.v-nexus-lite')).toBe(false);
+    expect(existsSync('firebase-applet-config.json')).toBe(false);
   });
 });

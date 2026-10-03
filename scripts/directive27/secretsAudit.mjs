@@ -24,7 +24,7 @@ const git = (...a) => spawnSync('git', a, { cwd: root, encoding: 'utf8', maxBuff
 // Read from the registry (never written here, so this file cannot leak or match it).
 const FIREBASE_WEB_API_KEY = JSON.parse(readFileSync(join(root, 'config/environments.json'), 'utf8')).environments.production.firebase.apiKey;
 /** Files allowed to carry the public Firebase web configuration. */
-const PUBLIC_IDENTIFIERS = ['config/environments.json', 'firebase-applet-config.json'];
+const PUBLIC_IDENTIFIERS = ['config/environments.json'];
 
 // [id, description, regex]. Regexes are built from strings so this file never matches itself.
 const RULES = [
