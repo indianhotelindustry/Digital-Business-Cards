@@ -1,6 +1,6 @@
 {
   "projects": {
     "default": "demo-dsbc",
-    "production": "v-nexus-lite"
+    "production": "task360-ift"
   }
 }

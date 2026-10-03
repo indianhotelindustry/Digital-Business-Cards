@@ -1,14 +1,14 @@
 {
   "firestore": [
     {
-      "database": "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5",
+      "database": "dsbc-production",
       "rules": "firestore.rules",
       "indexes": "firestore.indexes.json"
     }
   ],
   "storage": [
     {
-      "bucket": "v-nexus-lite.firebasestorage.app",
+      "bucket": "task360-ift.firebasestorage.app",
       "rules": "storage.rules"
     }
   ],

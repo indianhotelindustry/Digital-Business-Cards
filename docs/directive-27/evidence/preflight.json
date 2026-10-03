@@ -1,12 +1,12 @@
 {
   "schema": "dsbc.directive27.preflight/v1",
-  "generatedAt": "2026-10-03T04:12:03.469Z",
+  "generatedAt": "2026-10-03T06:52:18.249Z",
   "target": "production",
   "status": "BLOCKED",
   "counts": {
-    "pass": 13,
+    "pass": 16,
     "fail": 0,
-    "blocked": 4
+    "blocked": 1
   },
   "checks": [
     {
@@ -37,7 +37,7 @@
     {
       "id": "CLIENT_RESOLVES",
       "status": "PASS",
-      "detail": "production resolves: v-nexus-lite / ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5 / us-west1, emulators false."
+      "detail": "production resolves: task360-ift / dsbc-production / asia-south1, emulators false."
     },
     {
       "id": "CLIENT_REFUSES_EMULATOR_OVERRIDE",
@@ -47,7 +47,7 @@
     {
       "id": "BACKEND_PARAMS",
       "status": "PASS",
-      "detail": "functions/.env.v-nexus-lite matches the registry (project, database, region, origin, payments off)."
+      "detail": "functions/.env.task360-ift matches the registry (project, database, region, origin, payments off)."
     },
     {
       "id": "BACKEND_REFUSES_WRONG_DATABASE",
@@ -57,12 +57,12 @@
     {
       "id": "DEPLOY_CONFIG",
       "status": "PASS",
-      "detail": "firebase.production.json: database ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5, bucket v-nexus-lite.firebasestorage.app, hosting target dsbc-web, public routes rewritten, unknown paths 404."
+      "detail": "firebase.production.json: database dsbc-production, bucket task360-ift.firebasestorage.app, hosting target dsbc-web, public routes rewritten, unknown paths 404."
     },
     {
       "id": "DEPLOY_PROJECT_ALIAS",
       "status": "PASS",
-      "detail": ".firebaserc: default demo-dsbc (emulator), production alias v-nexus-lite."
+      "detail": ".firebaserc: default demo-dsbc (emulator), production alias task360-ift."
     },
     {
       "id": "BUNDLE",
@@ -72,22 +72,22 @@
     {
       "id": "BUILD_IDENTITY",
       "status": "PASS",
-      "detail": "dist = commit 63c9d19 for v-nexus-lite / ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5 (built from a dirty working tree: not a release build)."
+      "detail": "dist = commit 267a35f for task360-ift / dsbc-production (built from a dirty working tree: not a release build)."
     },
     {
       "id": "PRODUCTION_BOUNDARY",
-      "status": "BLOCKED",
-      "detail": "Production project v-nexus-lite is shared with: V-Nexus Lite (default hosting site, (default) database); Vidwan Kids (hosting site, Cloud Run service, ai-studio bucket); two other AI Studio applets (databases ai-studio-0d16e7c4-..., ai-studio-9106414b-...); one project-wide Auth pool, Firebase web app 'ai-studio-applet-webapp', default compute service account (roles/editor). DSBC needs a dedicated Firebase project (docs/directive-28/decision.json: v-nexus-lite cannot isolate DSBC; production must move to a dedicated DSBC Firebase project before any deployment.)."
+      "status": "PASS",
+      "detail": "Production project task360-ift is dedicated to DSBC."
     },
     {
       "id": "HOSTING_SITE_DESIGNATED",
-      "status": "BLOCKED",
-      "detail": "No DSBC hosting site is designated (config/environments.json hosting.site, then firebase target:apply hosting dsbc-web <site>)."
+      "status": "PASS",
+      "detail": "hosting site task360-ift."
     },
     {
       "id": "PUBLIC_ORIGIN_DESIGNATED",
-      "status": "BLOCKED",
-      "detail": "No public origin is designated; share links and QR codes would carry the hosting default domain."
+      "status": "PASS",
+      "detail": "public origin https://task360-ift.web.app."
     },
     {
       "id": "STAGING_DESIGNATED",

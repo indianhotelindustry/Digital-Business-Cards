@@ -40,30 +40,25 @@
       "configured": true,
       "emulators": { "required": false },
       "firebase": {
-        "projectId": "v-nexus-lite",
-        "appId": "1:801214429564:web:6b4ce21ca9b2c009b08cf9",
-        "apiKey": "AIzaSyBfbd3Tslx4Lyj1XLAnQG7c34d-MDp8sT4",
-        "authDomain": "v-nexus-lite.firebaseapp.com",
-        "storageBucket": "v-nexus-lite.firebasestorage.app",
-        "messagingSenderId": "801214429564"
+        "projectId": "task360-ift",
+        "appId": "1:924082823565:web:674d0f142e8ca28dea1dc4",
+        "apiKey": "AIzaSyAX1FolGBHjaAsaCJJPXJT_6fn20L4bvzg",
+        "authDomain": "task360-ift.firebaseapp.com",
+        "storageBucket": "task360-ift.firebasestorage.app",
+        "messagingSenderId": "924082823565"
       },
-      "firestoreDatabaseId": "ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5",
-      "firestoreLocation": "us-west1",
-      "firestoreEdition": "ENTERPRISE",
-      "functionsRegion": "us-west1",
-      "hosting": { "target": "dsbc-web", "site": null },
-      "publicOrigin": null,
+      "firestoreDatabaseId": "dsbc-production",
+      "firestoreLocation": "asia-south1",
+      "firestoreEdition": "STANDARD",
+      "functionsRegion": "asia-south1",
+      "hosting": { "target": "dsbc-web", "site": "task360-ift" },
+      "publicOrigin": "https://task360-ift.web.app",
       "allow": { "demoData": false, "mockPersonas": false, "developmentTools": false, "securityTestRunner": false },
       "payments": "disabled",
       "boundary": {
-        "dedicatedProject": false,
-        "sharedWith": [
-          "V-Nexus Lite (default hosting site, (default) database)",
-          "Vidwan Kids (hosting site, Cloud Run service, ai-studio bucket)",
-          "two other AI Studio applets (databases ai-studio-0d16e7c4-..., ai-studio-9106414b-...)",
-          "one project-wide Auth pool, Firebase web app 'ai-studio-applet-webapp', default compute service account (roles/editor)"
-        ],
-        "decision": "docs/directive-28/decision.json: v-nexus-lite cannot isolate DSBC; production must move to a dedicated DSBC Firebase project before any deployment."
+        "dedicatedProject": true,
+        "sharedWith": [],
+        "decision": "docs/directive-28/decision.json"
       }
     }
   }
