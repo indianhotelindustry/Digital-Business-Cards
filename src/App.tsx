@@ -47,6 +47,7 @@ function AppContent() {
     emailVerified,
     pendingIntent,
     clearPendingIntent,
+    redirectError,
     logoutUser,
   } = useAuth();
 
@@ -57,6 +58,8 @@ function AppContent() {
   // legacy email/password modal is login-only and reached from that screen.
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [signInIntent, setSignInIntent] = useState<SessionIntent | null>(null);
+  // Back from a Google redirect: resolve the session like the popup flow does.
+  const [signInAfterRedirect, setSignInAfterRedirect] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [onboardingType, setOnboardingType] = useState<'individual' | 'company'>('individual');
@@ -110,6 +113,23 @@ function AppContent() {
     if (isProfilelessIdentity) setIsSignInOpen(true);
   }, [isProfilelessIdentity]);
 
+  // A completed Google redirect carries the entry point the person chose: open
+  // the sign-in screen in its post-sign-in mode with it (profile or not), so
+  // popup and redirect both go through resolveSession. The intent is taken
+  // over here and cleared from the context so it cannot linger.
+  useEffect(() => {
+    if (!pendingIntent) return;
+    setSignInIntent(pendingIntent);
+    setSignInAfterRedirect(true);
+    setIsSignInOpen(true);
+    clearPendingIntent();
+  }, [pendingIntent]);
+
+  // A failed Google redirect is reported on the sign-in screen.
+  useEffect(() => {
+    if (redirectError) setIsSignInOpen(true);
+  }, [redirectError]);
+
   const handleNavigateToCard = (slug: string, preview = false) => {
     navigate(`card/${slug}${preview ? '?preview=true' : ''}`);
   };
@@ -134,6 +154,7 @@ function AppContent() {
   const closeSignIn = () => {
     setIsSignInOpen(false);
     setSignInIntent(null);
+    setSignInAfterRedirect(false);
     clearPendingIntent();
   };
 
@@ -226,12 +247,12 @@ function AppContent() {
   // Directive 34: the Google sign-in screen (entry points, registration and
   // the post-sign-in destination of a profile-less identity). One branch, so
   // the screen keeps its state while the session changes underneath it.
-  if (isSignInOpen || isProfilelessIdentity) {
+  if (isSignInOpen || isProfilelessIdentity || !!redirectError) {
     return (
       <>
         <SignInScreen
           initialIntent={signInIntent ?? pendingIntent}
-          postSignIn={isProfilelessIdentity}
+          postSignIn={isProfilelessIdentity || (signInAfterRedirect && !!currentUser)}
           onClose={handleCloseSignIn}
           onEnterWorkspace={handleEnterWorkspace}
           onOpenLegacyLogin={() => setIsAuthModalOpen(true)}

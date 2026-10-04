@@ -12,7 +12,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Building2, Users, X, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { auth } from '../../lib/firebase';
-import { BackendError, describeBackendError } from '../../lib/backend';
+import { signInErrorCopy } from './signInErrorCopy';
 import { describeGoogleError, signInWithGoogle } from '../../services/googleAuthService';
 import { sessionService } from '../../services/sessionService';
 import { conversionFunnelService } from '../../services/conversionFunnelService';
@@ -22,7 +22,7 @@ import type { Destination, SessionIntent } from '../../../shared/domain/sessionR
 export interface SignInScreenProps {
   /** Entry point chosen before the screen opened (marketing button or a Google redirect). UI hint only. */
   initialIntent?: SessionIntent | null;
-  /** The identity is already signed in (no DSBC account yet): resolve its destination on open. */
+  /** The identity is already signed in (no DSBC account yet, or back from a Google redirect): resolve its destination on open. */
   postSignIn?: boolean;
   onClose(): void;
   onEnterWorkspace(): void;
@@ -57,11 +57,6 @@ function inactiveCopy(status: string): string {
     default:
       return 'Your account is not active yet.';
   }
-}
-
-/** Backend refusals carry a user-facing reason; anything else gets generic copy (never raw text). */
-function backendMessage(err: unknown): string {
-  return err instanceof BackendError ? describeBackendError(err) : 'Something went wrong. Please try again.';
 }
 
 const GoogleMark: React.FC = () => (
@@ -100,7 +95,7 @@ const inputCls =
   'w-full min-h-[44px] px-3 rounded-xl border border-slate-300 bg-white text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-600';
 
 export const SignInScreen: React.FC<SignInScreenProps> = ({ initialIntent = null, postSignIn = false, onClose, onEnterWorkspace, onOpenLegacyLogin }) => {
-  const { currentUser, refreshUserData, refreshAccountStatus, logoutUser } = useAuth();
+  const { currentUser, refreshUserData, refreshAccountStatus, logoutUser, redirectError, clearRedirectError } = useAuth();
   const [phase, setPhase] = useState<Phase>(postSignIn ? { kind: 'resolving' } : { kind: 'choose' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,10 +157,17 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({ initialIntent = null
     } catch (err) {
       if (mine !== seq.current) return;
       console.error('Session resolve failed:', err);
-      setError(backendMessage(err));
+      setError(signInErrorCopy(err));
       setPhase(fallback);
     }
   };
+
+  // A failed Google redirect sign-in is shown here (described copy only), once.
+  useEffect(() => {
+    if (!redirectError) return;
+    setError(redirectError);
+    clearRedirectError();
+  }, [redirectError]);
 
   // A signed-in identity without a DSBC account (page reload, Google redirect)
   // lands here: resolve its destination. A redirect's intent can arrive after
@@ -232,7 +234,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({ initialIntent = null
       await applyDestination(outcome.destination, name);
     } catch (err) {
       console.error('Company registration failed:', err);
-      setError(backendMessage(err));
+      setError(signInErrorCopy(err));
       setBusy(false);
     }
   };
@@ -251,7 +253,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({ initialIntent = null
       await applyDestination(outcome.destination, name);
     } catch (err) {
       console.error('Individual registration failed:', err);
-      setError(backendMessage(err));
+      setError(signInErrorCopy(err));
       setBusy(false);
     }
   };

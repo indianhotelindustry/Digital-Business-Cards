@@ -8,7 +8,7 @@ import { DEMO_USERS } from '../services/seedService';
 import { DEMO_FEATURES_ENABLED } from '../lib/runtimeFlags';
 import { deriveEffectiveRole, hasVerifiedOwnerClaim } from '../lib/authority';
 import { getMyAccountState } from '../services/accountService';
-import { completeGoogleRedirect } from '../services/googleAuthService';
+import { completeGoogleRedirect, describeGoogleError } from '../services/googleAuthService';
 import type { SessionIntent } from '../../shared/domain/sessionRouting';
 import {
   describeVerificationError,
@@ -48,6 +48,9 @@ interface AuthContextType {
   /** Entry point chosen before a Google redirect sign-in (UI hint only; never authority). */
   pendingIntent: SessionIntent | null;
   clearPendingIntent: () => void;
+  /** Described (never raw) message when finishing a Google redirect sign-in failed; null otherwise. */
+  redirectError: string | null;
+  clearRedirectError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,6 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
   const [pendingIntent, setPendingIntent] = useState<SessionIntent | null>(null);
   const clearPendingIntent = () => setPendingIntent(null);
+  const [redirectError, setRedirectError] = useState<string | null>(null);
+  const clearRedirectError = () => setRedirectError(null);
 
   // Load profile & tenant company
   const loadProfileAndCompany = async (profile: UserProfile | null) => {
@@ -214,7 +219,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .then((r) => {
         if (r && isMounted) setPendingIntent(r.intent);
       })
-      .catch((err) => console.error('Google redirect sign-in failed:', err));
+      .catch((err) => {
+        console.error('Google redirect sign-in failed:', err);
+        const described = describeGoogleError(err);
+        if (!described.cancelled && isMounted) setRedirectError(described.message);
+      });
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setCurrentUser(firebaseUser);
@@ -288,6 +297,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCustomUserProfile,
         pendingIntent,
         clearPendingIntent,
+        redirectError,
+        clearRedirectError,
       }}
     >
       {children}
