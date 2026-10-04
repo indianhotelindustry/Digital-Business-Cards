@@ -138,11 +138,18 @@ describe('ENV: backend target check', () => {
   });
 
   it('ENV-013 the backend entry point asserts the target before configuring any function', () => {
-    const index = readFileSync('functions/src/index.ts', 'utf8');
-    const assertAt = index.indexOf('assertBackendEnvironment()');
+    // Directive 31: the check + global options live in shared/runtime, which
+    // index.ts imports first and every function-defining module imports itself.
+    const runtime = readFileSync('functions/src/shared/runtime.ts', 'utf8');
+    const assertAt = runtime.indexOf('assertBackendEnvironment()');
     expect(assertAt).toBeGreaterThan(0);
-    expect(assertAt).toBeLessThan(index.indexOf('setGlobalOptions('));
-    expect(index).toMatch(/setGlobalOptions\(\{ region: BACKEND_ENV\.region!/);
+    expect(assertAt).toBeLessThan(runtime.indexOf('setGlobalOptions('));
+    expect(runtime).toMatch(/setGlobalOptions\(\{ region: BACKEND_ENV\.region!/);
+    const index = readFileSync('functions/src/index.ts', 'utf8');
+    expect(index.match(/^import .*$/m)?.[0]).toBe("import { BACKEND_ENV } from './shared/runtime';");
+    for (const f of ['functions/src/public/resolver.ts', 'functions/src/public/leads.ts']) {
+      expect(readFileSync(f, 'utf8')).toMatch(/^import '\.\.\/shared\/runtime';/m);
+    }
     expect(readFileSync('functions/src/shared/config.ts', 'utf8')).not.toMatch(/REGION\s*=/);
   });
 

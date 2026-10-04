@@ -19,7 +19,7 @@ export interface Customer {
   about: string;
   service: string;
   product: string;
-  employee: { first: string; last: string; title: string; email: string; slug: string };
+  employee: { first: string; last: string; title: string; email: string; slug: string; template?: 'classic' | 'modern' | 'minimal' };
 }
 
 export const fullName = (c: Customer) => `${c.employee.first} ${c.employee.last}`;
@@ -31,7 +31,12 @@ export async function newBrowser(browser: Browser) {
 
 export const shot = (page: Page, name: string) => page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: false });
 
-export async function registerCompany(page: Page, c: Customer, password = PASSWORD) {
+/**
+ * Registers a company. Directive 30: a new account waits for App Owner
+ * approval; `activate` performs it (verified email + approveCustomer) and the
+ * customer then presses "Check again", as a real customer would.
+ */
+export async function registerCompany(page: Page, c: Customer, password = PASSWORD, activate?: () => Promise<void>) {
   await page.goto('/');
   await page.locator('button:visible', { hasText: 'Create Company Profile' }).first().click();
   const form = page.locator('form', { has: page.getByRole('button', { name: 'Create Company Profile & Start Onboarding' }) });
@@ -41,6 +46,15 @@ export async function registerCompany(page: Page, c: Customer, password = PASSWO
   await form.getByRole('button', { name: 'Create Company Profile & Start Onboarding' }).click();
   await page.getByRole('button', { name: 'Close onboarding' }).click();
   await page.goto('/app');
+  if (activate) {
+    await expect(page.getByRole('heading', { name: 'Awaiting approval' })).toBeVisible();
+    await activate();
+    await page.getByRole('button', { name: 'Check again' }).click();
+    // "Check again" opens the workspace but does not re-fetch the entitlement
+    // snapshot refused while pending; a fresh load (as on next sign-in) does.
+    await expect(page.getByRole('button', { name: 'Profile & Branding' })).toBeVisible();
+    await page.reload();
+  }
   await expect(page.getByRole('button', { name: 'Profile & Branding' })).toBeVisible();
 }
 
@@ -81,19 +95,41 @@ export async function buildWebsite(page: Page, c: Customer) {
   await expect(panel.getByTestId('publishing-state')).toHaveText('Published');
 }
 
+/** Opens Add Employee and completes Step 1 (design). Continue stays disabled until a design is chosen. */
+export async function chooseCardDesign(page: Page, template: 'classic' | 'modern' | 'minimal') {
+  await page.getByRole('button', { name: 'Add Employee' }).first().click();
+  await expect(page.getByTestId('template-step')).toBeVisible();
+  for (const t of ['classic', 'modern', 'minimal']) await expect(page.getByTestId(`template-option-${t}`)).toBeVisible();
+  await expect(page.getByTestId('template-continue')).toBeDisabled();
+  await page.getByTestId(`template-option-${template}`).click();
+  await expect(page.getByTestId(`template-option-${template}`)).toHaveAttribute('aria-checked', 'true');
+  await page.getByTestId('template-continue').click();
+  await expect(page.getByTestId('selected-template')).toHaveText(template);
+}
+
+/** Step 2: details, photo upload and the optional custom card address. */
+export async function fillEmployeeDetails(page: Page, e: Customer['employee'], opts: { photo?: boolean; customSlug?: string } = {}) {
+  await page.locator('label:has-text("First Name") + input').fill(e.first);
+  await page.locator('label:has-text("Last Name") + input').fill(e.last);
+  await page.locator('label:has-text("Job Designation") + input').fill(e.title);
+  await page.locator('label:text-is("Email *") + input').fill(e.email);
+  if (opts.photo) {
+    await page.getByTestId('photo-file-input').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: PNG });
+    await expect(page.getByTestId('photo-preview')).toBeVisible();
+  }
+  if (opts.customSlug !== undefined) await page.getByTestId('custom-slug-input').fill(opts.customSlug);
+}
+
 export async function addAndPublishEmployee(page: Page, c: Customer) {
   await page.getByRole('button', { name: 'Employees & Cards' }).click();
   await expect(page.getByText(/0 \/ 3 employees used/)).toBeVisible(); // server entitlement snapshot loaded
-  await page.getByRole('button', { name: 'Add Employee' }).first().click();
-  await page.locator('label:has-text("First Name") + input').fill(c.employee.first);
-  await page.locator('label:has-text("Last Name") + input').fill(c.employee.last);
-  await page.locator('label:has-text("Job Designation") + input').fill(c.employee.title);
-  await page.locator('label:text-is("Email *") + input').fill(c.employee.email);
-  await page.getByRole('button', { name: 'Create & Generate Card' }).click();
-  await expect(page.getByText(fullName(c)).first()).toBeVisible();
-  await page.locator('[data-testid^="publish-card-"]').first().click();
+  await chooseCardDesign(page, c.employee.template || 'classic');
+  await fillEmployeeDetails(page, c.employee, { photo: true, customSlug: c.employee.slug });
+  await page.getByTestId('employee-submit').click();
+  // Step 6: the publishing panel opens on its own, seeded with the requested address.
   const panel = page.getByTestId('publishing-panel-card');
-  await panel.getByTestId('publishing-slug').fill(c.employee.slug);
+  await expect(panel.getByTestId('publishing-slug')).toHaveValue(c.employee.slug);
+  await expect(page.getByText(fullName(c)).first()).toBeVisible();
   await panel.getByTestId('publish-button').click();
   await expect(panel.getByTestId('public-url')).toHaveText(new RegExp(`^https?://[^#]+/card/${c.employee.slug}$`));
   await page.getByRole('button', { name: 'Close publishing' }).click();
