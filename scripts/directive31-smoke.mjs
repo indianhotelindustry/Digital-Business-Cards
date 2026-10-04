@@ -15,6 +15,8 @@ for (const slug of slugs) {
   await page.waitForTimeout(2500);
   const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 400);
   const cookies = (await ctx.cookies()).length;
+  const images = await page.$$eval('img', (els) => els.map((e) => ({ src: e.src.slice(0, 110), loaded: e.complete && e.naturalWidth > 0 })));
+  console.log(JSON.stringify(images));
   await page.screenshot({ path: `${OUT}/smoke-${slug}.png`, fullPage: false });
   console.log(JSON.stringify({ slug, calls, cookies, text }, null, 1));
   await ctx.close();
