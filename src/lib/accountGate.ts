@@ -17,6 +17,8 @@ export function isPendingApproval(status: string | null): boolean {
  * True when the awaiting-approval screen must replace the workspace.
  * Status alone decides: an unknown status (signed out, not fetched yet or a
  * failed lookup) never shows it, and the backend still refuses every request.
+ * `no_account` (a signed-in identity with no DSBC profile yet) is NOT "awaiting":
+ * this screen is only for `pending_approval`.
  */
 export function shouldShowAwaitingApproval(status: string | null, _emailVerified: boolean): boolean {
   return isPendingApproval(status);

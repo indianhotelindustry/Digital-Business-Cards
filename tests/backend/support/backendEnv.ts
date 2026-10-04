@@ -73,6 +73,24 @@ export async function idToken(email: string): Promise<string> {
   return body.idToken;
 }
 
+/** A real Auth-emulator Google identity (sign_in_provider = google.com). Emulator only. */
+export async function createGoogleUser(sub: string, email: string): Promise<TestUser> {
+  const idTokenJson = JSON.stringify({ sub, email, email_verified: true, name: sub });
+  const res = await fetch(`http://${AUTH_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=emulator-key`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      postBody: `id_token=${encodeURIComponent(idTokenJson)}&providerId=google.com`,
+      requestUri: 'http://localhost',
+      returnSecureToken: true,
+      returnIdpCredential: true,
+    }),
+  });
+  const body = (await res.json()) as { idToken?: string; localId?: string; error?: unknown };
+  if (!body.idToken || !body.localId) throw new Error(`Google emulator sign-in failed for ${email}: ${JSON.stringify(body.error)}`);
+  return { uid: body.localId, email, token: body.idToken };
+}
+
 // ---------------------------------------------------------------------------
 // Callables (same wire protocol as the browser SDK)
 // ---------------------------------------------------------------------------

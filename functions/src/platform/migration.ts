@@ -255,6 +255,7 @@ export async function validateApproval(approval: MigrationApproval, preview: Mig
     uid: approver.uid,
     email: approver.email ?? null,
     emailVerified: true,
+    signInProvider: null,
     isAppOwner: true,
     profile: profile.exists ? ({ id: profile.id, ...profile.data() } as ProfileDoc) : null,
   };

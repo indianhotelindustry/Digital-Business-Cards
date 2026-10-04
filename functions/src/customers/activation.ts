@@ -147,9 +147,8 @@ export async function adminListPendingCustomers(caller: Caller, _data: unknown) 
   return { pending };
 }
 
-/** Auth required; deliberately NOT gated on active status. Leaks nothing else. */
+/** Auth required; deliberately NOT gated on active status. A signed-in identity with no DSBC profile is `no_account`. */
 export async function getMyAccountState(caller: Caller) {
   if (!caller.uid) deny('Sign in required.');
-  const status = caller.profile?.status ?? INITIAL_ACCOUNT_STATUS;
-  return { status, emailVerified: caller.emailVerified };
+  return { status: caller.profile?.status ?? 'no_account', emailVerified: caller.emailVerified };
 }

@@ -29,6 +29,8 @@ export interface Caller {
   uid: string;
   email: string | null;
   emailVerified: boolean;
+  /** Verified token's firebase.sign_in_provider (e.g. google.com, password); null if absent. */
+  signInProvider: string | null;
   isAppOwner: boolean;
   profile: ProfileDoc | null;
 }
@@ -40,11 +42,13 @@ export async function loadCaller(auth: CallableRequest['auth']): Promise<Caller>
   if (!auth || !auth.uid) fail('unauthenticated', 'Sign in required.');
   const token = auth!.token as Record<string, unknown>;
   const emailVerified = token.email_verified === true;
+  const firebaseClaims = (token.firebase as { sign_in_provider?: string } | undefined) || undefined;
   const snap = await db().collection('users').doc(auth!.uid).get();
   return {
     uid: auth!.uid,
     email: (token.email as string) || null,
     emailVerified,
+    signInProvider: firebaseClaims?.sign_in_provider || null,
     isAppOwner: token[APP_OWNER_CLAIM] === 'app_owner' && emailVerified,
     profile: snap.exists ? ({ id: snap.id, ...snap.data() } as ProfileDoc) : null,
   };
