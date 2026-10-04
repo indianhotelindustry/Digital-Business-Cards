@@ -16,9 +16,10 @@ test-first task list for each phase lives in `docs/superpowers/plans/`.
 | Employees / cards | 1 / 1 (Moolchand, published) |
 | Individuals / pending accounts | 0 / 0 → **no status migration is needed** |
 
-Firebase Auth is per **project**, and task360-ift also hosts Task360. The project-level
-password provider must therefore **never be disabled** for DSBC's sake. DSBC enforces
-"Google only" in its own backend and rules (token `firebase.sign_in_provider == 'google.com'`).
+task360-ift is the DSBC project only (Task360/Tasking is a separate project, tasking-f8019).
+The project-level password provider may therefore be disabled — but only after both existing
+DSBC users have linked Google and that is verified (directive §12). DSBC also enforces Google in
+its own backend and rules (token `firebase.sign_in_provider == 'google.com'`) as defence in depth.
 
 ### Code
 1. **Auth is email/password only** (`src/services/authService.ts`); there is no Google sign-in,
@@ -78,8 +79,9 @@ Google sign-in (Firebase Auth, provider google.com)
   email equals an open invitation's email may accept it — the email is matched, never typed by the
   person signing in.
 * **Google-only enforcement** (after migration): backend `loadCaller` and the rules require
-  `sign_in_provider == 'google.com'`. Until both production users have linked Google, password
-  sign-in stays available only behind a "legacy sign-in → link Google" path.
+  `sign_in_provider == 'google.com'`, then the project's password provider is disabled. Until both
+  production users have linked Google, password sign-in stays available only behind a
+  "legacy sign-in → link Google" path.
 * **Capabilities**: catalogue in `shared/domain/capabilities.ts`; role defaults + App Owner
   role/company/user overrides; the backend materialises each member's effective access
   (capability ∩ plan entitlement) onto a backend-only field that rules and callables both check,
@@ -90,7 +92,7 @@ Google sign-in (Firebase Auth, provider google.com)
 | Phase | Delivers | Production effect |
 |---|---|---|
 | **1. Google identity + backend registration** | New sign-in screen (4 entries, one Google service, intents), `resolveSession`, `registerAccount` (free individual/company → active; duplicate prevention), rules close client registration creates, error/state screens, mobile 100dvh shell, "link Google" for signed-in password users | New sign-ups work with Google; existing users keep working and can link Google |
-| **2. Migration + Google-only enforcement** | Link both production users (user-mediated), verify same UID via `accounts:lookup`, then enforce `google.com` in backend + rules; password UI removed | Google-only for DSBC; project provider left enabled (Task360) |
+| **2. Migration + Google-only enforcement** | Link both production users (user-mediated), verify same UID via `accounts:lookup`, then enforce `google.com` in backend + rules; password UI removed; then disable the project password provider (separate approval) | Google-only for DSBC |
 | **3. Invitations + offline onboarding** | `invitations`, owner invitation via App Owner `adminOnboardCompany` (replaces client-side create), employee invitations from Employee Management, `confirmOfflinePayment`, "payment confirmation pending" screen, fix suspend/reinstate bypass, attach an owner to SHSPL | App Owner can onboard a paid offline tenant end to end; employees can log in |
 | **4. Individual workspace** | Individuals get their own card/profile (role `individual`, rules + UI), no demo fallbacks | "Create Free Card" acceptance |
 | **5. Capabilities + effective access** | Capability catalogue, role/override model, materialised access, enforcement in rules + callables, App Owner Roles tab + effective-access inspector | RBAC ∩ entitlements enforced |
