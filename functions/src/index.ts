@@ -20,6 +20,7 @@ import * as pay from './billing/payments';
 import * as pub from './publishing/service';
 import * as cust from './customers/service';
 import * as activation from './customers/activation';
+import * as session from './auth/session';
 import { adminGetDemoReadiness as demoReadiness } from './customers/readiness';
 import * as quota from './usage/quota';
 import { uploadAsset as uploadAssetHandler } from './usage/uploads';
@@ -83,6 +84,11 @@ export const adminSetPublishingSuspension = callable(pub.adminSetPublishingSuspe
 export const approveCustomer = callable(activation.approveCustomer);
 export const adminListPendingCustomers = callable(activation.adminListPendingCustomers);
 export const getMyAccountState = callable((c) => activation.getMyAccountState(c));
+
+// ---- Sessions & registration (Directive 34) --------------------------------
+export const resolveSession = callable(session.resolveSession);
+export const registerIndividual = callable(session.registerIndividual);
+export const registerCompany = callable(session.registerCompany);
 export const adminSetCustomerSuspension = callable(cust.adminSetCustomerSuspension);
 export const adminSetCustomerClassification = callable(cust.adminSetCustomerClassification);
 export const adminReviewDeletion = callable(cust.adminReviewDeletion);

@@ -19,6 +19,9 @@ export const BACKEND_CALLABLES = [
   'resolvePublicEntity',
   'submitPublicLead',
   // Customer-facing
+  'resolveSession',
+  'registerIndividual',
+  'registerCompany',
   'getMyCommercialState',
   'checkEntitlement',
   'consumeQuota',
