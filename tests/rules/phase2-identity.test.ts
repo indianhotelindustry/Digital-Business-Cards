@@ -16,7 +16,7 @@ const newIndividual: Identity = { label: 'new individual', uid: 'uid_new_ind', t
 const newCompanyOwner: Identity = { label: 'new company owner', uid: 'uid_new_co', token: { email: 'new-co@dsbc.test', email_verified: false } };
 
 function registrationWrites(uid: string, email: string, accountType: 'individual' | 'company') {
-  const docs = buildRegistrationDocuments({ uid, email, displayName: 'New Person', accountType, companyName: 'New Co', now: T });
+  const docs = buildRegistrationDocuments({ uid, email, displayName: 'New Person', accountType, companyName: 'New Co', status: 'pending_approval', now: T });
   const writes: Array<{ path: [string, string]; data: any }> = [];
   if (docs.company) writes.push({ path: ['companies', docs.company.id], data: docs.company });
   writes.push({ path: ['tenants', docs.tenant.id], data: docs.tenant });

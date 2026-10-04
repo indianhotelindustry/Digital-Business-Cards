@@ -9,6 +9,7 @@ import { doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { AccountType, UserProfile } from '../types';
 import { buildRegistrationDocuments } from './registrationModel';
+import { INITIAL_ACCOUNT_STATUS } from '../../shared/domain/accountStatus';
 import { describeVerificationError, sendVerificationEmail, type VerificationError } from './emailVerification';
 
 const USERS_COLLECTION = 'users';
@@ -85,6 +86,7 @@ export async function registerAccount(params: {
       displayName: params.displayName,
       accountType: params.accountType,
       companyName: params.companyName,
+      status: INITIAL_ACCOUNT_STATUS,
     });
 
     const batch = writeBatch(db);

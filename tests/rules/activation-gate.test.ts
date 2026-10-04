@@ -116,8 +116,8 @@ describe('REG-001 registration must create pending_approval, never active', () =
   const coUid = 'uid_new_co';
   const coRegistrant: Identity = { label: 'new company owner', uid: coUid, token: { email: 'new-co@dsbc.test', email_verified: false } };
 
-  const individualDocs = () => buildRegistrationDocuments({ uid, email: 'new-ind@dsbc.test', displayName: 'New', accountType: 'individual', now: T });
-  const companyDocs = () => buildRegistrationDocuments({ uid: coUid, email: 'new-co@dsbc.test', displayName: 'New', accountType: 'company', companyName: 'New Co', now: T });
+  const individualDocs = () => buildRegistrationDocuments({ uid, email: 'new-ind@dsbc.test', displayName: 'New', accountType: 'individual', status: 'pending_approval', now: T });
+  const companyDocs = () => buildRegistrationDocuments({ uid: coUid, email: 'new-co@dsbc.test', displayName: 'New', accountType: 'company', companyName: 'New Co', status: 'pending_approval', now: T });
 
   it('registration documents are pending_approval (positive control)', async () => {
     const d = individualDocs();

@@ -19,7 +19,7 @@ const withoutAcme = (): FixtureSet => {
   return w;
 };
 const freshlyRegisteredCompany = (): FixtureSet => {
-  const d = buildRegistrationDocuments({ uid: 'uid_brand_new', email: 'brand-new@dsbc.test', displayName: 'B', accountType: 'company', companyName: 'Brand New', now: T });
+  const d = buildRegistrationDocuments({ uid: 'uid_brand_new', email: 'brand-new@dsbc.test', displayName: 'B', accountType: 'company', companyName: 'Brand New', status: 'pending_approval', now: T });
   return { companies: { [d.company!.id]: d.company! }, tenants: { [d.tenant.id]: d.tenant }, users: { uid_brand_new: d.user } };
 };
 
