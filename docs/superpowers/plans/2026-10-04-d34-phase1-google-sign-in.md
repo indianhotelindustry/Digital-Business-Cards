@@ -2,13 +2,27 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** New DSBC sign-ins and registrations use Google (one service, four intents), free individuals and free companies become ACTIVE immediately through a backend registration callable, and existing password users keep working and can link Google to their same Firebase UID.
+**Goal:** New DSBC sign-ins and registrations use Google (one service, four intents); a free individual (`registerIndividual`) and a free company (`registerCompany`, a distinct onboarding workflow) become ACTIVE immediately through backend callables; existing password users keep working and can link Google to their same Firebase UID.
 
-**Architecture:** A single client `googleAuthService` signs in with Firebase's Google provider (popup, redirect fallback). The client then asks the backend `resolveSession(intent)` where to go; the destination is computed by a pure, unit-tested `shared/domain/sessionRouting.ts`. Registration moves from a client Firestore batch to the backend `registerAccount` callable (Admin SDK, transaction, duplicate protection by UID and ownership, audited); Firestore rules close client-side creation of `users`, `tenants` and self-registered `companies`. The old password modal remains reachable as a login-only "existing account" path until Phase 3.
+**Architecture:** A single client `googleAuthService` signs in with Firebase's Google provider (popup, redirect fallback). The client then asks the backend `resolveSession(intent)` where to go; the destination is computed by a pure, unit-tested `shared/domain/sessionRouting.ts`. Registration moves from a client Firestore batch to two distinct backend callables, `registerIndividual` and `registerCompany` (Admin SDK, transaction, duplicate protection by UID and ownership, audited); Firestore rules close client-side creation of `users`, `tenants` and self-registered `companies`. The old password modal remains reachable as a login-only "existing account" path until Phase 3.
 
 **Tech Stack:** React 19 + Vite, Firebase JS SDK (Auth, Firestore, Functions), Cloud Functions v2 (firebase-functions 7.4, esbuild bundle), Firestore rules, Vitest (unit / rules / backend emulator suites), Playwright (real Chrome against the Emulator Suite).
 
-**Spec:** Directive 34 (founder, 2026-10-04) and `docs/directive-34/PLAN.md` (audit + locked phases).
+**Spec:** Directive 34 (founder, 2026-10-04), `docs/directive-34/PLAN.md` (audit + locked phases), and the founder's Phase 1 approval (2026-10-04, ten conditions — locked into this plan; summarised under "Approval conditions").
+
+**Status:** APPROVED for implementation, subagent-driven (fresh implementer + reviewer per task). No production deploy without a separate approval.
+
+## Approval conditions (locked)
+
+1. **Two distinct registration workflows.** "Create Free Card" → Google → Free Individual → ACTIVE is `registerIndividual`. "Register as Company" is a separate company-onboarding workflow, `registerCompany` (Phase 1: Free company plan only). They are separate callables with their own validation and audit; never one generic path. App Owner company onboarding stays available until Phase 2.
+2. **No demo fallback anywhere in the new flow.** A Google identity without a DSBC account gets a genuine no-account / new-account state. No demo personas, demo employees, demo cards or placeholder customer records reach production; the employee portal's `emp_acme_rahul` / `demo_emp` fallbacks are removed.
+3. **Strict linking.** Password account → password sign-in → Link Google → same Firebase UID, proven by tests. A Google credential already attached to a different Firebase user is never merged: it fails safely with a clear message. Never merge because emails match.
+4. **Any Google identity the owner controls.** No Gmail-only or same-email matching; the In Future Technologies owner links whichever Google account they actually control, interactively; their UID and company membership stay intact.
+5. **Hash-config finding.** The value seen during the audit was the Auth scrypt password-hash signer key (project hashing parameter, not an access credential, not rotatable). It is never printed, committed or included in evidence; generated artifacts that read Auth config print only allow-listed fields.
+6. **Production Google verification is required** (after an approved deploy) before Phase 1 is production-ready: App Owner and In Future Technologies owner sign in with Google, UIDs unchanged, membership unchanged, no duplicate DSBC account, no unexpected data change. **Email/password is NOT disabled in Phase 1.**
+7. **Authorization stays server-side.** Never trusted from the client: role, companyId, ownerUid, platformRole, activation state, plan, entitlement, payment state.
+8. Phase order stays locked 1 → 6. 9. SHSPL (already paid) is Phase 2: attach real owner → record payment reference → audited offline confirmation → ACTIVE; never Free, never a direct `status = active` write.
+10. Task by task: implementer → tests → reviewer → commit → next. Stop at the end of Phase 1 with the full report.
 
 ## Global Constraints
 
@@ -20,12 +34,16 @@
 - Intents are exactly: `company_login`, `individual_login`, `register_company`, `create_free_card`. The intent is a routing hint only; authority comes from server records.
 - New test ids use the `D34-AUTH-0xx` prefix (`AUTH-0xx` already exists from Directive 25).
 - UI copy never shows raw Firebase or Cloud Function errors.
+- Never trusted from the client: role, companyId, ownerUid, platformRole, activation state, plan, entitlement, payment state.
+- Identities are never merged by email; Google linking is user-mediated from an authenticated session and keeps the Firebase UID.
+- The project's email/password provider stays ENABLED throughout Phase 1.
+- Anything that reads Auth configuration prints only allow-listed fields (never `signIn.hashConfig`).
 - Sign-in screen: `min-h-[100dvh]`, safe-area padding, touch targets ≥ 44px, works at 360px width and on desktop.
 - Phase 1 offers the Free plan only at registration (paid plans are Phase 6; payments are off). Paid plans are shown as "available soon", not selectable.
 
 ## Review Focus
 
-1. **A Google account whose email already belongs to a password DSBC account** (In Future Technologies owner on a Google Workspace domain): the user must get "sign in once with your existing account, then link Google" — never a second DSBC user, never an automatic merge by email. Pinned in Task 5 (`describeGoogleError` maps `auth/account-exists-with-different-credential`) and Task 3 (`registerAccount` refuses when a `users` doc already exists).
+1. **A Google account whose email already belongs to a password DSBC account** (In Future Technologies owner on a Google Workspace domain): the user must get "sign in once with your existing account, then link Google" — never a second DSBC user, never an automatic merge by email. Pinned in Task 5 (`describeGoogleError` maps `auth/account-exists-with-different-credential`), Task 3 (`registerIndividual` / `registerCompany` refuse when a `users` doc already exists) and Task 7 (credential already used by another Firebase user → refused, both UIDs unchanged).
 2. **Pop-up blocked or unavailable** (iOS Safari, in-app browsers): sign-in falls back to redirect and the chosen intent survives the round trip. Pinned in Task 5 (`signInWithGoogle` fallback test) and Task 6 (`completeGoogleRedirect` on load).
 3. **Registering twice** (double-click, retry after a network error, second tab): exactly one user, one tenant, one company. Pinned in Task 3 (D34-AUTH-009 concurrent double call).
 4. **An existing company owner pressing "Register as Company" or "Create Free Card"**: routed to the existing company, no new tenant. Pinned in Task 1 (`already_registered`) and Task 3.
@@ -41,16 +59,17 @@
 | `shared/domain/registrationModel.ts` (new, moved) | Pure: documents for a new account; status passed in |
 | `src/services/registrationModel.ts` (modify) | Re-export the shared model (existing imports keep working) |
 | `functions/src/auth/identity.ts` (modify) | `Caller.signInProvider` from the verified token |
-| `functions/src/auth/session.ts` (new) | `resolveSession`, `registerAccount` |
+| `functions/src/auth/session.ts` (new) | `resolveSession`, `registerIndividual`, `registerCompany` |
 | `functions/src/customers/activation.ts` (modify) | `getMyAccountState` → `no_account` for profile-less callers |
 | `functions/src/index.ts` (modify) | export the two callables |
 | `src/lib/backend.ts` (modify) | add the two callable names |
 | `firestore.rules` (modify) | close client creates of `users`, `tenants`, self-registered `companies` |
 | `src/services/googleAuthService.ts` (new) | sign in / link / redirect completion / error copy |
-| `src/services/sessionService.ts` (new) | typed wrappers for `resolveSession`, `registerAccount` |
+| `src/services/sessionService.ts` (new) | typed wrappers for `resolveSession`, `registerIndividual`, `registerCompany` |
 | `src/components/auth/SignInScreen.tsx` (new) | four entry points, Google button, destination states, registration forms |
 | `src/components/auth/LinkGoogleBanner.tsx` (new) | password session → link Google |
 | `src/components/views/IndividualHomeView.tsx` (new) | honest placeholder for individuals until Phase 4 (no demo fallback) |
+| `src/components/views/EmployeePortalView.tsx` (modify) | remove `emp_acme_rahul` / `demo_emp` fallbacks; genuine "no employee record" state |
 | `src/components/auth/AuthModal.tsx` (modify) | login-only legacy path, register mode removed |
 | `src/App.tsx`, `src/context/AuthContext.tsx`, `src/lib/accountGate.ts` (modify) | wiring, `no_account`, individual routing |
 | tests (see each task) | unit, rules, backend, browser |
@@ -68,7 +87,7 @@
 
 **Interfaces:**
 - Produces: `type SessionIntent = 'company_login' | 'individual_login' | 'register_company' | 'create_free_card'`; `SESSION_INTENTS: readonly SessionIntent[]`; `interface SessionFacts { isAppOwner: boolean; profile: null | { role: string | null; accountType: string | null; status: string | null; companyId: string | null }; companyStatus: string | null }`; `type Destination = { kind: 'app_owner_workspace' } | { kind: 'company_workspace' } | { kind: 'employee_workspace' } | { kind: 'individual_workspace' } | { kind: 'register_company' } | { kind: 'register_individual' } | { kind: 'already_registered'; existing: 'company' | 'individual' | 'employee' } | { kind: 'not_company_admin' } | { kind: 'no_account' } | { kind: 'account_inactive'; status: string }`; `resolveDestination(intent: SessionIntent, facts: SessionFacts): Destination`.
-- Produces: `buildRegistrationDocuments(input: RegistrationInput & { status: AccountStatus }): RegistrationDocuments` in `shared/domain/registrationModel.ts` with the same ids as today (`ind_<uid>`, `co_<uid>`, plan `company_free`).
+- Produces: `buildRegistrationDocuments(input: RegistrationInput & { status: AccountStatus }): RegistrationDocuments` in `shared/domain/registrationModel.ts` with the same ids as today (`ind_<uid>`, `co_<uid>`, plan `company_free`). Individual and company documents stay separate branches of the model (Task 3 calls it from two distinct workflows).
 
 - [ ] **Step 1: Write the failing routing tests**
 
@@ -190,7 +209,7 @@ export function resolveDestination(intent: SessionIntent, facts: SessionFacts): 
 Copy the body of today's `src/services/registrationModel.ts` into `shared/domain/registrationModel.ts` with these changes: declare local types instead of importing from `src/types` (`AccountType = 'individual' | 'company'`, a `RegistrationUser` interface with exactly the 11 fields the rules list today: `id, email, displayName, role, companyId, employeeId, status, accountType, tenantId, createdAt, updatedAt`, and a `RegistrationCompany` interface with the fields `buildRegistrationDocuments` writes today); add `status: AccountStatus` to `RegistrationInput` and use `input.status` everywhere `INITIAL_ACCOUNT_STATUS` was used. Then replace `src/services/registrationModel.ts` with:
 
 ```ts
-// Moved to shared/domain (Directive 34): the backend registerAccount callable builds the same documents.
+// Moved to shared/domain (Directive 34): the backend registerIndividual / registerCompany callables build the same documents.
 export * from '../../shared/domain/registrationModel';
 ```
 
@@ -329,108 +348,119 @@ git commit -m "feat(d34): caller sign-in provider; profile-less identities are n
 
 ---
 
-### Task 3: Backend `resolveSession` and `registerAccount`
+### Task 3: Backend `resolveSession`, `registerIndividual` and `registerCompany`
 
 **Files:**
 - Create: `functions/src/auth/session.ts`
 - Modify: `functions/src/index.ts` (export callables)
-- Modify: `src/lib/backend.ts` (`BACKEND_CALLABLES` += `resolveSession`, `registerAccount`)
+- Modify: `src/lib/backend.ts` (`BACKEND_CALLABLES` += `resolveSession`, `registerIndividual`, `registerCompany`)
 - Test: `tests/backend/d34-session.test.ts` (extend)
 
 **Interfaces:**
-- Consumes: `resolveDestination`, `SESSION_INTENTS` (Task 1); `buildRegistrationDocuments` (Task 1); `Caller.signInProvider` (Task 2).
+- Consumes: `resolveDestination`, `SESSION_INTENTS` (Task 1); `buildRegistrationDocuments`, `MAX_NAME_LENGTH` (Task 1); `Caller.signInProvider` (Task 2).
 - Produces: callable `resolveSession({ intent })` → `{ destination: Destination; displayName: string | null; companyName: string | null }`.
-- Produces: callable `registerAccount({ intent: 'register_company' | 'create_free_card', displayName: string, companyName?: string })` → `{ created: boolean; destination: Destination }`.
+- Produces: callable `registerIndividual({ displayName })` → `{ created: boolean; destination: Destination }` — the "Create Free Card" workflow.
+- Produces: callable `registerCompany({ displayName, companyName, planId })` → `{ created: boolean; destination: Destination }` — the "Register as Company" onboarding workflow; Phase 1 accepts `planId: 'company_free'` only (any other value → `FAILED_PRECONDITION` "Paid plans are not available yet").
 
 - [ ] **Step 1: Write the failing tests (append to `tests/backend/d34-session.test.ts`)**
 
 ```ts
 import { adminDb } from './support/backendEnv';
 
-describe('D34 registerAccount / resolveSession', () => {
-  it('D34-AUTH-011 free company: one user, tenant and company, all ACTIVE, owned by the Google UID', async () => {
-    const g = await createGoogleUser('g-co', 'owner@acme.test');
-    const r = await ok('registerAccount', { intent: 'register_company', displayName: 'Asha Owner', companyName: 'Acme Ltd' }, g);
-    expect(r).toEqual({ created: true, destination: { kind: 'company_workspace' } });
-    const user = (await adminDb.doc(`users/${g.uid}`).get()).data()!;
-    expect(user).toMatchObject({ id: g.uid, role: 'company_admin', companyId: `co_${g.uid}`, status: 'active', email: 'owner@acme.test' });
-    expect((await adminDb.doc(`tenants/co_${g.uid}`).get()).get('status')).toBe('active');
-    expect((await adminDb.doc(`companies/co_${g.uid}`).get()).data()).toMatchObject({ ownerUid: g.uid, status: 'active', planId: 'company_free', name: 'Acme Ltd' });
+describe('D34 registerIndividual (Create Free Card)', () => {
+  it('D34-AUTH-010 free individual is ACTIVE immediately, never queued for approval', async () => {
+    const g = await createGoogleUser('g-ind', 'me@person.test');
+    const r = await ok('registerIndividual', { displayName: 'Ravi' }, g);
+    expect(r).toEqual({ created: true, destination: { kind: 'individual_workspace' } });
+    expect((await adminDb.doc(`users/${g.uid}`).get()).data()).toMatchObject({ id: g.uid, role: 'employee', accountType: 'individual', companyId: null, employeeId: null, status: 'active', tenantId: `ind_${g.uid}` });
+    expect((await adminDb.doc(`tenants/ind_${g.uid}`).get()).data()).toMatchObject({ kind: 'individual', status: 'active', commercial: { state: 'free', method: 'free' } });
+    expect((await adminDb.collection('companies').where('ownerUid', '==', g.uid).get()).size).toBe(0);
+    expect((await adminDb.collection('users').where('status', '==', 'pending_approval').get()).size).toBe(0);
     const audits = await adminDb.collection('commercialAuditLogs').where('targetId', '==', g.uid).where('action', '==', 'ACCOUNT_ACTIVATED').get();
     expect(audits.size).toBe(1);
-    expect(audits.docs[0].get('reason')).toContain('Free plan');
+    expect(audits.docs[0].get('source')).toBe('Individual registration');
   });
-
-  it('D34-AUTH-010 free individual is ACTIVE immediately, no approval queue entry', async () => {
-    const g = await createGoogleUser('g-ind', 'me@person.test');
-    const r = await ok('registerAccount', { intent: 'create_free_card', displayName: 'Ravi' }, g);
-    expect(r.destination).toEqual({ kind: 'individual_workspace' });
-    expect((await adminDb.doc(`users/${g.uid}`).get()).data()).toMatchObject({ accountType: 'individual', companyId: null, status: 'active' });
-    expect((await adminDb.collection('users').where('status', '==', 'pending_approval').get()).size).toBe(0);
+  it('rejects company fields: the individual workflow never creates a company', async () => {
+    const g = await createGoogleUser('g-ind2', 'me2@person.test');
+    expect((await call('registerIndividual', { displayName: 'X', companyName: 'Sneaky Co' }, g)).status).toBe('INVALID_ARGUMENT');
   });
+});
 
-  it('D34-AUTH-009 / 030 registering twice (also concurrently) creates nothing new', async () => {
+describe('D34 registerCompany (Register as Company)', () => {
+  it('D34-AUTH-011 free company: one user, tenant and company, all ACTIVE, owned by the Google UID', async () => {
+    const g = await createGoogleUser('g-co', 'owner@acme.test');
+    const r = await ok('registerCompany', { displayName: 'Asha Owner', companyName: 'Acme Ltd', planId: 'company_free' }, g);
+    expect(r).toEqual({ created: true, destination: { kind: 'company_workspace' } });
+    expect((await adminDb.doc(`users/${g.uid}`).get()).data()).toMatchObject({ id: g.uid, role: 'company_admin', accountType: 'company', companyId: `co_${g.uid}`, status: 'active', email: 'owner@acme.test' });
+    expect((await adminDb.doc(`tenants/co_${g.uid}`).get()).data()).toMatchObject({ kind: 'company', status: 'active', commercial: { state: 'free', method: 'free' } });
+    expect((await adminDb.doc(`companies/co_${g.uid}`).get()).data()).toMatchObject({ ownerUid: g.uid, status: 'active', planId: 'company_free', name: 'Acme Ltd', kind: 'company' });
+    const audits = await adminDb.collection('commercialAuditLogs').where('targetId', '==', `co_${g.uid}`).where('action', '==', 'ACCOUNT_ACTIVATED').get();
+    expect(audits.size).toBe(1);
+    expect(audits.docs[0].get('source')).toBe('Company registration');
+  });
+  it('Phase 1 offers the Free company plan only (paid plans are Phase 6)', async () => {
+    const g = await createGoogleUser('g-paid', 'paid@acme.test');
+    expect((await call('registerCompany', { displayName: 'P', companyName: 'Paid Co', planId: 'company_pro' }, g)).status).toBe('FAILED_PRECONDITION');
+    expect((await adminDb.doc(`users/${g.uid}`).get()).exists).toBe(false);
+  });
+  it('validates names', async () => {
+    const g = await createGoogleUser('g-names', 'names@acme.test');
+    expect((await call('registerCompany', { displayName: 'N', companyName: '', planId: 'company_free' }, g)).status).toBe('INVALID_ARGUMENT');
+    expect((await call('registerCompany', { displayName: 'N', companyName: 'x'.repeat(121), planId: 'company_free' }, g)).status).toBe('INVALID_ARGUMENT');
+    expect((await call('registerCompany', { displayName: '', companyName: 'N', planId: 'company_free' }, g)).status).toBe('INVALID_ARGUMENT');
+  });
+});
+
+describe('D34 registration safety', () => {
+  it('D34-AUTH-009 / 030 registering twice (also concurrently, also across workflows) creates nothing new', async () => {
     const g = await createGoogleUser('g-dup', 'dup@acme.test');
     const [a, b] = await Promise.all([
-      call('registerAccount', { intent: 'register_company', displayName: 'D', companyName: 'Dup Co' }, g),
-      call('registerAccount', { intent: 'register_company', displayName: 'D', companyName: 'Dup Co 2' }, g),
+      call('registerCompany', { displayName: 'D', companyName: 'Dup Co', planId: 'company_free' }, g),
+      call('registerCompany', { displayName: 'D', companyName: 'Dup Co 2', planId: 'company_free' }, g),
     ]);
-    const created = [a, b].filter((r) => r.ok && r.data.created).length;
-    expect(created).toBe(1);
-    const again = await ok('registerAccount', { intent: 'create_free_card', displayName: 'D' }, g);
-    expect(again).toEqual({ created: false, destination: { kind: 'already_registered', existing: 'company' } });
+    expect([a, b].filter((r) => r.ok && r.data.created).length).toBe(1);
+    expect(await ok('registerIndividual', { displayName: 'D' }, g)).toEqual({ created: false, destination: { kind: 'already_registered', existing: 'company' } });
     expect((await adminDb.collection('companies').where('ownerUid', '==', g.uid).get()).size).toBe(1);
     expect((await adminDb.collection('tenants').where('ownerUid', '==', g.uid).get()).size).toBe(1);
   });
-
-  it('D34-AUTH-031 (Phase 1 scope) registration requires a Google sign-in', async () => {
+  it('D34-AUTH-031 (Phase 1 scope) both workflows require a Google sign-in', async () => {
     const pw = await createUser('u-pw-reg');
-    const r = await call('registerAccount', { intent: 'create_free_card', displayName: 'P' }, pw);
-    expect(r.status).toBe('PERMISSION_DENIED');
+    expect((await call('registerIndividual', { displayName: 'P' }, pw)).status).toBe('PERMISSION_DENIED');
+    expect((await call('registerCompany', { displayName: 'P', companyName: 'P', planId: 'company_free' }, pw)).status).toBe('PERMISSION_DENIED');
     expect((await adminDb.doc(`users/${pw.uid}`).get()).exists).toBe(false);
   });
-
-  it('D34-AUTH-023 the payload cannot choose role, company, plan or status', async () => {
+  it('D34-AUTH-023/025 the payload cannot choose role, company, owner, status, claims or payment state', async () => {
     const g = await createGoogleUser('g-forge', 'forge@acme.test');
-    for (const extra of [{ role: 'app_owner' }, { companyId: 'co_other' }, { planId: 'company_pro' }, { status: 'active' }]) {
-      const r = await call('registerAccount', { intent: 'register_company', displayName: 'F', companyName: 'F', ...extra }, g);
-      expect(r.status).toBe('INVALID_ARGUMENT');
+    for (const extra of [{ role: 'app_owner' }, { companyId: 'co_other' }, { ownerUid: 'someone' }, { status: 'active' }, { platformRole: 'app_owner' }, { paymentStatus: 'PAID' }]) {
+      expect((await call('registerCompany', { displayName: 'F', companyName: 'F', planId: 'company_free', ...extra }, g)).status).toBe('INVALID_ARGUMENT');
+      expect((await call('registerIndividual', { displayName: 'F', ...extra }, g)).status).toBe('INVALID_ARGUMENT');
     }
     expect((await adminDb.doc(`users/${g.uid}`).get()).exists).toBe(false);
   });
+});
 
-  it('validates names', async () => {
-    const g = await createGoogleUser('g-names', 'names@acme.test');
-    expect((await call('registerAccount', { intent: 'register_company', displayName: 'N', companyName: '' }, g)).status).toBe('INVALID_ARGUMENT');
-    expect((await call('registerAccount', { intent: 'register_company', displayName: 'N', companyName: 'x'.repeat(121) }, g)).status).toBe('INVALID_ARGUMENT');
-    expect((await call('registerAccount', { intent: 'company_login', displayName: 'N' }, g)).status).toBe('INVALID_ARGUMENT');
+describe('D34 resolveSession', () => {
+  it('D34-AUTH-001/002/004 reads server records for the token UID', async () => {
+    const g = await createGoogleUser('g-co', 'owner@acme.test'); // same sub as above → same UID
+    expect(await ok('resolveSession', { intent: 'company_login' }, g)).toEqual({ destination: { kind: 'company_workspace' }, displayName: 'Asha Owner', companyName: 'Acme Ltd' });
   });
-
-  it('D34-AUTH-001/002/004 resolveSession reads server records for the token UID', async () => {
-    const g = await createGoogleUser('g-co', 'owner@acme.test'); // same sub as the first test → same UID
-    const s = await ok('resolveSession', { intent: 'company_login' }, g);
-    expect(s).toEqual({ destination: { kind: 'company_workspace' }, displayName: 'Asha Owner', companyName: 'Acme Ltd' });
-  });
-
-  it('D34-AUTH-003/005 an unknown Google identity is not a company admin and reads nothing', async () => {
+  it('D34-AUTH-003/005 an unknown Google identity is not a company admin and gets a genuine no-account state', async () => {
     const g = await createGoogleUser('g-stranger', 'stranger@else.test');
     expect(await ok('resolveSession', { intent: 'company_login' }, g)).toEqual({ destination: { kind: 'not_company_admin' }, displayName: null, companyName: null });
+    expect((await ok('resolveSession', { intent: 'individual_login' }, g)).destination).toEqual({ kind: 'no_account' });
   });
-
   it('D34-AUTH-019/020 existing password accounts (App Owner, company owner) still resolve', async () => {
     const owner = await createUser('u-app-owner', { claims: { platformRole: 'app_owner' } });
     await adminDb.doc('users/u-app-owner').set({ id: 'u-app-owner', role: 'app_owner', status: 'active', companyId: null, employeeId: null, displayName: 'Owner', email: owner.email });
     expect((await ok('resolveSession', { intent: 'company_login' }, owner)).destination).toEqual({ kind: 'app_owner_workspace' });
-
     const admin = await createUser('u-ift');
     await adminDb.doc('companies/co_u-ift').set({ id: 'co_u-ift', name: 'Existing Co', status: 'active', ownerUid: 'u-ift', planId: 'company_free', kind: 'company' });
     await adminDb.doc('users/u-ift').set({ id: 'u-ift', role: 'company_admin', status: 'active', companyId: 'co_u-ift', employeeId: null, displayName: 'IFT', email: admin.email, accountType: 'company' });
     expect((await ok('resolveSession', { intent: 'company_login' }, admin)).destination).toEqual({ kind: 'company_workspace' });
   });
-
   it('D34-AUTH-022 a suspended company is restricted', async () => {
     const g = await createGoogleUser('g-susp', 'susp@acme.test');
-    await ok('registerAccount', { intent: 'register_company', displayName: 'S', companyName: 'Susp Co' }, g);
+    await ok('registerCompany', { displayName: 'S', companyName: 'Susp Co', planId: 'company_free' }, g);
     await adminDb.doc(`companies/co_${g.uid}`).update({ status: 'suspended' });
     expect((await ok('resolveSession', { intent: 'company_login' }, g)).destination).toEqual({ kind: 'account_inactive', status: 'suspended' });
   });
@@ -440,27 +470,30 @@ describe('D34 registerAccount / resolveSession', () => {
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `node scripts/directive25/runBackendTests.mjs tests/backend/d34-session.test.ts`
-Expected: FAIL — `registerAccount` / `resolveSession` not found (NOT_FOUND / non-JSON 404).
+Expected: FAIL — the callables do not exist (404 / non-JSON).
 
 - [ ] **Step 3: Implement `functions/src/auth/session.ts`**
 
 ```ts
 // ============================================================================
-// Google sign-in sessions and backend registration (Directive 34 Phase 1)
+// Google sign-in sessions and registration (Directive 34 Phase 1)
 // ============================================================================
-// resolveSession: where a signed-in identity goes, from server records only.
-// registerAccount: creates a FREE individual or company for the caller's
-// Firebase UID — ACTIVE immediately (free accounts need no approval). The
-// payload carries names and the entry intent only; role, ids, plan and status
-// are derived here. Idempotent by UID: a second call creates nothing.
+// resolveSession     where a signed-in identity goes, from server records only.
+// registerIndividual "Create Free Card": a FREE individual account.
+// registerCompany    "Register as Company": a distinct company-onboarding
+//                    workflow; Phase 1 offers the Free company plan only.
+// Free accounts are ACTIVE immediately (no approval). Payloads carry names
+// (and the company plan choice) only; role, ids, ownership and status are
+// derived here. Both are idempotent by UID: a second call creates nothing.
+import type { Transaction } from 'firebase-admin/firestore';
 import { db } from '../shared/firebase';
-import { deny, invalid } from '../shared/errors';
+import { deny, fail, invalid } from '../shared/errors';
 import { obj, oneOf, str } from '../shared/validate';
 import { serverNow } from '../shared/time';
 import { appendAudit } from '../audit/ledger';
 import { actorOf, type Caller } from './identity';
-import { resolveDestination, SESSION_INTENTS, type SessionFacts } from '../../../shared/domain/sessionRouting';
-import { buildRegistrationDocuments, MAX_NAME_LENGTH } from '../../../shared/domain/registrationModel';
+import { resolveDestination, SESSION_INTENTS, type SessionFacts, type SessionIntent } from '../../../shared/domain/sessionRouting';
+import { buildRegistrationDocuments, MAX_NAME_LENGTH, type RegistrationDocuments } from '../../../shared/domain/registrationModel';
 
 async function factsFor(caller: Caller): Promise<{ facts: SessionFacts; companyName: string | null }> {
   const p = caller.profile;
@@ -487,47 +520,80 @@ export async function resolveSession(caller: Caller, data: unknown) {
   return { destination: resolveDestination(intent, facts), displayName: caller.profile?.displayName ?? null, companyName };
 }
 
-export async function registerAccount(caller: Caller, data: unknown) {
-  const p = obj(data, ['intent', 'displayName', 'companyName']);
-  const intent = oneOf(p, 'intent', ['register_company', 'create_free_card'] as const);
-  const displayName = str(p, 'displayName', { max: MAX_NAME_LENGTH }).trim();
-  const companyName = intent === 'register_company' ? str(p, 'companyName', { max: MAX_NAME_LENGTH }).trim() : undefined;
-  if (!displayName) invalid('displayName is required.');
-  if (intent === 'register_company' && !companyName) invalid('companyName is required.');
+function requireGoogleIdentity(caller: Caller): string {
   if (caller.signInProvider !== 'google.com') deny('Register with Google.');
   if (!caller.email || !caller.emailVerified) deny('A verified Google email is required.');
+  return caller.email!;
+}
 
-  const accountType = intent === 'register_company' ? 'company' : 'individual';
-  const docs = buildRegistrationDocuments({ uid: caller.uid, email: caller.email!, displayName, accountType, companyName, status: 'active' });
-  const userRef = db().collection('users').doc(caller.uid);
+function requiredName(p: Record<string, unknown>, key: string): string {
+  const v = str(p, key, { max: MAX_NAME_LENGTH }).trim();
+  if (!v) invalid(`${key} is required.`);
+  return v;
+}
 
+/** True when this UID already has a DSBC user or owns a company (read inside the transaction). */
+async function alreadyRegistered(tx: Transaction, uid: string): Promise<boolean> {
+  const [user, owned] = await Promise.all([
+    tx.get(db().collection('users').doc(uid)),
+    tx.get(db().collection('companies').where('ownerUid', '==', uid).limit(1)),
+  ]);
+  return user.exists || !owned.empty;
+}
+
+async function outcome(caller: Caller, created: boolean, intent: SessionIntent, home: SessionIntent) {
+  const fresh = await db().collection('users').doc(caller.uid).get();
+  const { facts } = await factsFor({ ...caller, profile: fresh.exists ? ({ id: fresh.id, ...fresh.data() } as Caller['profile']) : null });
+  return { created, destination: resolveDestination(created ? home : intent, facts) };
+}
+
+function writeTenantAndUser(tx: Transaction, docs: RegistrationDocuments): void {
+  tx.create(db().collection('tenants').doc(docs.tenant.id), { ...docs.tenant, commercial: { state: 'free', method: 'free' } });
+  tx.create(db().collection('users').doc(docs.user.id), docs.user);
+}
+
+export async function registerIndividual(caller: Caller, data: unknown) {
+  const p = obj(data, ['displayName']);
+  const displayName = requiredName(p, 'displayName');
+  const email = requireGoogleIdentity(caller);
+  const docs = buildRegistrationDocuments({ uid: caller.uid, email, displayName, accountType: 'individual', status: 'active' });
   const created = await db().runTransaction(async (tx) => {
-    const [user, owned] = await Promise.all([tx.get(userRef), tx.get(db().collection('companies').where('ownerUid', '==', caller.uid).limit(1))]);
-    if (user.exists || !owned.empty) return false; // duplicate protection: never a second account for this UID
-    if (docs.company) tx.create(db().collection('companies').doc(docs.company.id), { ...docs.company, createdAt: serverNow(), updatedAt: serverNow() });
-    tx.create(db().collection('tenants').doc(docs.tenant.id), { ...docs.tenant, commercial: { state: 'free', method: 'free' } });
-    tx.create(userRef, docs.user);
+    if (await alreadyRegistered(tx, caller.uid)) return false;
+    writeTenantAndUser(tx, docs);
     appendAudit(tx, 'commercialAuditLogs', {
-      action: 'ACCOUNT_ACTIVATED', actor: actorOf(caller), targetType: accountType, targetId: caller.uid, tenantId: docs.tenant.id,
+      action: 'ACCOUNT_ACTIVATED', actor: actorOf(caller), targetType: 'individual', targetId: caller.uid, tenantId: docs.tenant.id,
       previousValue: null, newValue: { status: 'active', commercialState: 'free' },
-      reason: 'Free plan: immediate activation (Google registration)', source: 'Registration',
+      reason: 'Free individual: immediate activation', source: 'Individual registration',
     });
     return true;
   });
+  return outcome(caller, created, 'create_free_card', 'individual_login');
+}
 
-  // Destination from the records as they are now: a new account goes to its
-  // workspace; an existing one is reported as already registered.
-  const fresh = await userRef.get();
-  const { facts } = await factsFor({ ...caller, profile: fresh.exists ? ({ id: fresh.id, ...fresh.data() } as Caller['profile']) : null });
-  const destination = created
-    ? resolveDestination(intent === 'register_company' ? 'company_login' : 'individual_login', facts)
-    : resolveDestination(intent, facts);
-  return { created, destination };
+export async function registerCompany(caller: Caller, data: unknown) {
+  const p = obj(data, ['displayName', 'companyName', 'planId']);
+  const displayName = requiredName(p, 'displayName');
+  const companyName = requiredName(p, 'companyName');
+  const planId = str(p, 'planId', { max: 64 });
+  if (planId !== 'company_free') fail('failed-precondition', 'Paid plans are not available yet.');
+  const email = requireGoogleIdentity(caller);
+  const docs = buildRegistrationDocuments({ uid: caller.uid, email, displayName, accountType: 'company', companyName, status: 'active' });
+  const created = await db().runTransaction(async (tx) => {
+    if (await alreadyRegistered(tx, caller.uid)) return false;
+    tx.create(db().collection('companies').doc(docs.company!.id), { ...docs.company!, createdAt: serverNow(), updatedAt: serverNow() });
+    writeTenantAndUser(tx, docs);
+    appendAudit(tx, 'commercialAuditLogs', {
+      action: 'ACCOUNT_ACTIVATED', actor: actorOf(caller), targetType: 'company', targetId: docs.company!.id, tenantId: docs.tenant.id,
+      previousValue: null, newValue: { status: 'active', commercialState: 'free', planId },
+      reason: 'Free company plan: immediate activation', source: 'Company registration',
+    });
+    return true;
+  });
+  return outcome(caller, created, 'register_company', 'company_login');
 }
 ```
 
-`deny` and `invalid` come from `functions/src/shared/errors.ts` (both exist).
-
+`deny`, `fail` and `invalid` come from `functions/src/shared/errors.ts` (all exist).
 
 - [ ] **Step 4: Export and register the callables**
 
@@ -537,21 +603,22 @@ In `functions/src/index.ts`, next to the activation callables:
 import * as session from './auth/session';
 // ---- Sessions & registration (Directive 34) --------------------------------
 export const resolveSession = callable(session.resolveSession);
-export const registerAccount = callable(session.registerAccount);
+export const registerIndividual = callable(session.registerIndividual);
+export const registerCompany = callable(session.registerCompany);
 ```
 
-In `src/lib/backend.ts` add `'resolveSession', 'registerAccount',` to `BACKEND_CALLABLES` under "Customer-facing".
+In `src/lib/backend.ts` add `'resolveSession', 'registerIndividual', 'registerCompany',` to `BACKEND_CALLABLES` under "Customer-facing".
 
 - [ ] **Step 5: Run backend + contract tests**
 
 Run: `node scripts/directive25/runBackendTests.mjs tests/backend/d34-session.test.ts` then `npx vitest run tests/unit/backendContract.test.ts tests/unit/functionsRegion.test.ts`
-Expected: PASS (REGION-001 confirms both new callables land in the configured region).
+Expected: PASS (REGION-001 confirms the new callables land in the configured region).
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add functions/src/auth/session.ts functions/src/index.ts src/lib/backend.ts tests/backend/d34-session.test.ts
-git commit -m "feat(d34): resolveSession and registerAccount (free accounts active immediately, idempotent by UID)"
+git commit -m "feat(d34): resolveSession + distinct registerIndividual / registerCompany (free = active, idempotent by UID)"
 ```
 
 ---
@@ -565,7 +632,7 @@ git commit -m "feat(d34): resolveSession and registerAccount (free accounts acti
 - Test: `tests/rules/d34-registration-closed.test.ts` (new)
 
 **Interfaces:**
-- Consumes: Task 3 (registration now exists server-side).
+- Consumes: Task 3 (`registerIndividual` / `registerCompany` now create accounts server-side).
 - Produces: rules where `users` and `tenants` have `allow create: if false;` and `companies` has `allow create: if isAppOwner();`.
 
 - [ ] **Step 1: Write the failing rules test**
@@ -591,7 +658,7 @@ Expected: FAIL on the `companies` create (today a pending self-registration batc
 
 - [ ] **Step 3: Change the rules**
 
-In `firestore.rules`: `match /users/{userId}` → `allow create: if false;` with the comment `// Directive 34: accounts are created by the backend (registerAccount), never by a browser.`; `match /tenants/{tenantId}` → `allow create: if false;`; `match /companies/{companyId}` → `allow create: if isAppOwner();` (the App Owner's client-side create stays until Phase 2 replaces it). Delete the now-unused helpers `isRegistrationInProgress`, `isValidRegistrationProfile`, `isValidTenantRecord`, `isValidSelfRegisteredCompany`.
+In `firestore.rules`: `match /users/{userId}` → `allow create: if false;` with the comment `// Directive 34: accounts are created by the backend (registerIndividual / registerCompany), never by a browser.`; `match /tenants/{tenantId}` → `allow create: if false;`; `match /companies/{companyId}` → `allow create: if isAppOwner();` (the App Owner's client-side create stays until Phase 2 replaces it). Delete the now-unused helpers `isRegistrationInProgress`, `isValidRegistrationProfile`, `isValidTenantRecord`, `isValidSelfRegisteredCompany`.
 
 - [ ] **Step 4: Update the existing rules tests**
 
@@ -620,7 +687,7 @@ git commit -m "feat(d34): firestore.rules close browser-side account, tenant and
 
 **Interfaces:**
 - Produces: `signInWithGoogle(intent: SessionIntent): Promise<User | 'redirecting'>`; `completeGoogleRedirect(): Promise<{ user: User; intent: SessionIntent | null } | null>`; `linkGoogleToCurrentUser(): Promise<'linked' | 'already_linked'>`; `hasGoogleProvider(user: User | null): boolean`; `describeGoogleError(err: unknown): { code: string; message: string; cancelled: boolean }`.
-- Produces: `sessionService.resolve(intent): Promise<{ destination: Destination; displayName: string | null; companyName: string | null }>`; `sessionService.register(input: { intent: 'register_company' | 'create_free_card'; displayName: string; companyName?: string }): Promise<{ created: boolean; destination: Destination }>`.
+- Produces: `sessionService.resolve(intent): Promise<{ destination: Destination; displayName: string | null; companyName: string | null }>`; `sessionService.registerIndividual({ displayName }): Promise<{ created: boolean; destination: Destination }>`; `sessionService.registerCompany({ displayName, companyName, planId: 'company_free' }): Promise<{ created: boolean; destination: Destination }>`.
 
 - [ ] **Step 1: Write the failing unit tests (pure parts)**
 
@@ -756,10 +823,14 @@ import type { Destination, SessionIntent } from '../../shared/domain/sessionRout
 
 export interface SessionInfo { destination: Destination; displayName: string | null; companyName: string | null }
 
+export interface RegistrationOutcome { created: boolean; destination: Destination }
+
 export const sessionService = {
   resolve: (intent: SessionIntent) => callBackend<SessionInfo>('resolveSession', { intent }),
-  register: (input: { intent: 'register_company' | 'create_free_card'; displayName: string; companyName?: string }) =>
-    callBackend<{ created: boolean; destination: Destination }>('registerAccount', input),
+  /** "Create Free Card" workflow. */
+  registerIndividual: (input: { displayName: string }) => callBackend<RegistrationOutcome>('registerIndividual', input),
+  /** "Register as Company" workflow (Phase 1: Free company plan only). */
+  registerCompany: (input: { displayName: string; companyName: string; planId: 'company_free' }) => callBackend<RegistrationOutcome>('registerCompany', input),
 };
 ```
 
@@ -783,6 +854,7 @@ git commit -m "feat(d34): one Google auth service (popup, redirect fallback, lin
 - Modify: `src/components/auth/AuthModal.tsx` (login only: delete the register branch, Individual/Company toggle and registration error copy; title "Sign in with your existing email account")
 - Modify: `src/App.tsx` (entry handlers open `SignInScreen` with an intent; signed-in identity with `accountStatus === 'no_account'` shows `SignInScreen` in its post-sign-in state; individuals route to `IndividualHomeView`)
 - Modify: `src/context/AuthContext.tsx` (call `completeGoogleRedirect()` once on mount; expose `pendingIntent`)
+- Modify: `src/components/views/EmployeePortalView.tsx` (remove the `'emp_acme_rahul'` and `'demo_emp'` fallbacks)
 - Delete: `src/components/auth/CustomerRegistrationModal.tsx` (dead code, password registration)
 - Test: `tests/e2e/d34-google-sign-in.spec.ts` (Task 8 drives it)
 
@@ -794,8 +866,8 @@ git commit -m "feat(d34): one Google auth service (popup, redirect fallback, lin
 
 State machine: `choose` → (Google) → `resolving` → one of:
 - `company_workspace` / `employee_workspace` / `individual_workspace` / `app_owner_workspace` → `await refreshUserData(); await refreshAccountStatus(); onEnterWorkspace()`.
-- `register_company` → form: Company name (required, ≤120), Your name (prefilled from `auth.currentUser.displayName`, required), Plan: one selected radio "Free — start now" plus disabled "Paid plans — available soon"; button "Create company workspace" → `sessionService.register({ intent: 'register_company', displayName, companyName })`.
-- `register_individual` → confirm: Your name (prefilled) → "Create my free card account" → `sessionService.register({ intent: 'create_free_card', displayName })`.
+- `register_company` → form: Company name (required, ≤120), Your name (prefilled from `auth.currentUser.displayName`, required), Plan: one selected radio "Free — start now" plus disabled "Paid plans — available soon"; button "Create company workspace" → `sessionService.registerCompany({ displayName, companyName, planId: 'company_free' })`.
+- `register_individual` → confirm: Your name (prefilled) → "Create my free card account" → `sessionService.registerIndividual({ displayName })`.
 - `already_registered` → "This Google account already has a DSBC {company workspace | free card account | company membership}." + button "Go to my workspace".
 - `not_company_admin` → "This Google account is not authorized as a Company Owner or Admin." + buttons "Register as Company", "Use a different Google account" (sign out, back to `choose`).
 - `no_account` → "No DSBC account uses this Google account yet." + "Create Free Card", "Register as Company", and the hint "Joining your company? Ask your company admin to invite this Google account." + "Use a different Google account".
@@ -841,6 +913,19 @@ export const IndividualHomeView: React.FC = () => {
 };
 ```
 
+- [ ] **Step 2b: Remove the employee portal's demo fallbacks**
+
+In `src/components/views/EmployeePortalView.tsx` replace `const employeeId = userProfile?.employeeId || 'emp_acme_rahul';` with `const employeeId = userProfile?.employeeId || null;`, and the `'demo_emp'` fallback (around lines 371-372) with `null`. When `employeeId` is null, render only:
+
+```tsx
+<div className="max-w-xl mx-auto p-6" data-testid="no-employee-record">
+  <h1 className="text-lg font-bold text-slate-900">No employee card yet</h1>
+  <p className="text-sm text-slate-600">Your account is not linked to a company employee record. Ask your company admin to invite this Google account.</p>
+</div>
+```
+
+Guard every `getEmployeeById` / card lookup in that view behind `employeeId !== null`. Then `grep -rn "emp_acme_rahul\|demo_emp" src/components/views/EmployeePortalView.tsx` must return nothing.
+
 - [ ] **Step 3: Wire `App.tsx`**
 
 Replace `handleStartIndividualRegistration` / `handleStartCompanyRegistration` / `handleOpenLogin` so they set `signInIntent` to `'create_free_card'` / `'register_company'` / `null` and open `SignInScreen` (full screen, not a modal). Keep `AuthModal` mounted only for `onOpenLegacyLogin`, with `initialMode="login"`. In the default-view effect, before `role === 'employee'`, add: `else if (userProfile?.accountType === 'individual' && !userProfile?.companyId) setActiveView('individual-home');` and render `<IndividualHomeView />` for that view. Directly after the loading gate add: `if (currentUser && accountStatus === 'no_account') return <SignInScreen initialIntent={pendingIntent} postSignIn … />;` so a profile-less Google identity lands on its destination screen instead of the marketing page.
@@ -851,7 +936,7 @@ In the mount effect, before `onAuthStateChanged`, call `completeGoogleRedirect()
 
 - [ ] **Step 5: Make the legacy modal login-only and delete the dead registration modal**
 
-Delete the register-mode JSX and handlers from `AuthModal.tsx` (keep `loginWithEmail`, the existing error mapping for `auth/invalid-credential`); delete `src/components/auth/CustomerRegistrationModal.tsx`; remove `registerAccount` from `src/services/authService.ts` (the backend owns registration). `grep -rn "registerAccount\|CustomerRegistrationModal" src` must show only `sessionService` usage afterwards.
+Delete the register-mode JSX and handlers from `AuthModal.tsx` (keep `loginWithEmail`, the existing error mapping for `auth/invalid-credential`); delete `src/components/auth/CustomerRegistrationModal.tsx`; remove `registerAccount` from `src/services/authService.ts` (the backend owns registration). `grep -rn "registerAccount\|CustomerRegistrationModal" src` must return nothing afterwards.
 
 - [ ] **Step 6: Typecheck, build, commit**
 
@@ -905,6 +990,36 @@ it('D34-AUTH-002/030 linking Google to a password account keeps the same UID and
 ```
 
 (Import `adminAuth` from `./support/backendEnv`.)
+
+Add two more cases in the same `describe`, reusing the same emulator app setup:
+
+```ts
+it('D34-AUTH-030 a Google credential already attached to another Firebase user is never merged', async () => {
+  const other = await createGoogleUser('g-taken-sub', 'taken@else.test'); // a separate Firebase user owns this Google identity
+  const pw = await createUser('u-collide');
+  // sign in with password in the emulator app (as above), then:
+  //   await expect(linkWithCredential(cred.user, GoogleAuthProvider.credential(JSON.stringify({ sub: 'g-taken-sub', email: 'taken@else.test', email_verified: true }))))
+  //     .rejects.toMatchObject({ code: 'auth/credential-already-in-use' });
+  expect((await adminAuth.getUser(pw.uid)).providerData.map((p) => p.providerId)).toEqual(['password']);
+  expect((await adminAuth.getUser(other.uid)).providerData.map((p) => p.providerId)).toEqual(['google.com']);
+  expect(other.uid).not.toBe(pw.uid);
+});
+
+it('D34-AUTH-002 the owner may link a Google identity with a different email (no same-email or Gmail-only matching)', async () => {
+  const pw = await createUser('u-ift-like'); // email u-ift-like@dsbc.test — not a Google address
+  // password sign-in in the emulator app, then link a Google identity with another domain:
+  //   const linked = await linkWithCredential(cred.user, GoogleAuthProvider.credential(JSON.stringify({ sub: 'g-owner-personal', email: 'owner.personal@gmail.test', email_verified: true })));
+  //   expect(linked.user.uid).toBe(pw.uid);
+  // sign out; signInWithCredential with the same Google identity → uid === pw.uid
+  const u = await adminAuth.getUser(pw.uid);
+  expect(u.providerData.map((p) => p.providerId).sort()).toEqual(['google.com', 'password']);
+  expect(u.email).toBe(pw.email); // the DSBC account's email is unchanged by linking
+});
+```
+
+Write the commented lines as real code (they use the emulator app from the first case; extract a small `withEmulatorAuth(async (a) => …)` helper in the test file so all three cases share setup/teardown).
+
+The banner (Step 3) maps `auth/credential-already-in-use` to the Task 5 message "That Google account is already used by a different DSBC sign-in. Choose a different Google account." — the collision is reported, nothing is merged.
 
 - [ ] **Step 2: Run to verify it passes against Firebase itself (no product code needed)**
 
@@ -967,7 +1082,7 @@ Run the browser runner with a throwaway spec that clicks `google-create_free_car
 
 - [ ] **Step 2: Write the journeys**
 
-Cases (each in a fresh context): `D34-E2E-1` Create Free Card → Google → name → "Create my free card account" → `individual-home` visible, `users/{uid}.status === 'active'` (adminDb); `D34-E2E-2` Register as Company → Google → company form → workspace "Employees & Cards" visible, company `active`; `D34-E2E-3` the same Google identity → Register as Company again → "already has a DSBC company workspace", still one company; `D34-E2E-4` an unknown Google identity → Login as Company → "not authorized as a Company Owner or Admin"; `D34-E2E-5` cancel the popup → no error, still on the sign-in screen; `D34-E2E-6` the sign-in screen at 360×740 has no horizontal scroll and every Google button is ≥ 44px tall; `D34-E2E-7` legacy path: a password fixture signs in through "Existing account? Sign in with email", sees `link-google-banner`, links Google in the emulator popup, signs out, signs in with Google → same workspace (D34-AUTH-002).
+Cases (each in a fresh context): `D34-E2E-1` Create Free Card → Google → name → "Create my free card account" → `individual-home` visible, `users/{uid}.status === 'active'`, no company created (adminDb), and no demo text (`/Acme|Rahul|Nexus/` absent); `D34-E2E-2` Register as Company → Google → company form → workspace "Employees & Cards" visible, company `active`; `D34-E2E-3` the same Google identity → Register as Company again → "already has a DSBC company workspace", still one company; `D34-E2E-4` an unknown Google identity → Login as Company → "not authorized as a Company Owner or Admin"; `D34-E2E-5` cancel the popup → no error, still on the sign-in screen; `D34-E2E-6` the sign-in screen at 360×740 has no horizontal scroll and every Google button is ≥ 44px tall; `D34-E2E-7` legacy path: a password fixture signs in through "Existing account? Sign in with email", sees `link-google-banner`, links Google in the emulator popup, signs out, signs in with Google → same workspace (D34-AUTH-002).
 
 - [ ] **Step 3: Move existing journeys to Google registration**
 
@@ -1013,7 +1128,7 @@ Re-run the read-only checks used in the audit: Auth config (`google.com` enabled
 
 - [ ] **Step 3: Write `PHASE-1-REPORT.md`**
 
-Sections: what changed (files, callables, rules), tests with totals, production impact of a deploy (functions: 2 new callables + `getMyAccountState`/`loadCaller` change; rules: browser registration closed; hosting: new sign-in screen), deploy order (functions → rules → hosting), rollback (re-deploy the previous `firestore.rules` from git and the previous hosting release; the new callables are additive), and the production verification script for after the founder approves the deploy: founder signs in with Google ("Create Free Card" must NOT be used with a real account unless intended), App Owner links Google from the banner, In Future Technologies owner links Google, `accounts:lookup` shows `google.com` on both UIDs.
+Sections: exact commit and working-tree state, files changed, Firebase Auth changes (none expected: providers unchanged, email/password still enabled), identity-linking evidence (test ids + results), tests with exact totals (unit, backend, rules, integration, browser, typecheck, build), production read-only verification results, production impact of a deploy (functions: 2 new callables + `getMyAccountState`/`loadCaller` change; rules: browser registration closed; hosting: new sign-in screen), deploy order (functions → rules → hosting), rollback (re-deploy the previous `firestore.rules` from git and the previous hosting release; the new callables are additive), remaining risks, items deliberately not deployed, and the production Google verification required before Phase 1 is production-ready (run only after the founder approves the deploy): (1) App Owner signs in with the existing password, clicks Link Google, signs out, signs in with Google → App Owner workspace; (2) In Future Technologies owner does the same with the Google account they control → company workspace; (3) read-only `accounts:lookup` for both UIDs shows `password` + `google.com` on the SAME UIDs; (4) `users/{uid}` role/companyId/status unchanged, `companies/co_Xj7Q…` unchanged, no new `users`/`companies`/`tenants` docs (counts before/after); (5) Moolchand's public card still resolves. Email/password stays enabled. "Create Free Card" / "Register as Company" are not exercised with real accounts unless the founder intends to create them.
 
 - [ ] **Step 4: Commit and stop for approval**
 
