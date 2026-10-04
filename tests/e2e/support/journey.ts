@@ -44,7 +44,11 @@ export async function registerCompany(page: Page, c: Customer, password = PASSWO
   await form.getByPlaceholder('name@example.com').fill(c.email);
   await form.getByPlaceholder('••••••••').fill(password);
   await form.getByRole('button', { name: 'Create Company Profile & Start Onboarding' }).click();
-  await page.getByRole('button', { name: 'Close onboarding' }).click();
+  const closeWizard = page.getByRole('button', { name: 'Close onboarding' });
+  const awaiting = page.getByRole('heading', { name: 'Awaiting approval' });
+  // Directive 30: a pending account may go straight to the approval screen.
+  await expect(closeWizard.or(awaiting).first()).toBeVisible();
+  if (await closeWizard.isVisible()) await closeWizard.click();
   await page.goto('/app');
   if (activate) {
     await expect(page.getByRole('heading', { name: 'Awaiting approval' })).toBeVisible();
