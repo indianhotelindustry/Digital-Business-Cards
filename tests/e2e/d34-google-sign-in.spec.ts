@@ -148,6 +148,10 @@ test('D34-E2E-5: closing the Google popup shows no error and stays on the sign-i
     const popup = await popupP;
     await popup.waitForLoadState('load');
     await expect(popup.locator('#title')).toHaveText('Sign-in with Google.com');
+    // While Google is open, every entry point is disabled (no second popup).
+    for (const intent of ['company_login', 'individual_login', 'register_company', 'create_free_card']) {
+      await expect(page.getByTestId(`google-${intent}`)).toBeDisabled();
+    }
     await popup.close(); // the person dismisses Google
 
     // The SDK reports auth/popup-closed-by-user a few seconds later; the screen re-enables, silently.
@@ -166,15 +170,30 @@ test('D34-E2E-6: the sign-in screen at 360x740 has no horizontal scroll and ever
   await fresh(
     browser,
     async (page) => {
-      // Below 640px the marketing header has no "Sign In" (product finding, see the Task 8 report);
-      // the hero CTA opens the same screen with all four Google entry points.
-      await openSignIn(page, 'Create My Free Card');
-      const overflow = await page.evaluate(() => ({
-        doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        body: document.body.scrollWidth - document.body.clientWidth,
-      }));
+      // Below 640px the header "Sign In" is hidden; the mobile menu carries it (Task 8 fix round 1).
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Open menu' }).click();
+      const mobileSignIn = page.getByRole('button', { name: 'Sign In', exact: true });
+      await expect(mobileSignIn).toBeVisible();
+      expect((await mobileSignIn.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await mobileSignIn.click();
+      const screen = page.getByTestId('sign-in-screen');
+      await expect(screen).toBeVisible();
+      await expect(screen.locator('main')).toHaveAttribute('data-state', 'choose');
+      const overflow = await page.evaluate(() => {
+        const over = (el: Element | null) => (el ? el.scrollWidth - el.clientWidth : Number.NaN);
+        const screenEl = document.querySelector('[data-testid="sign-in-screen"]');
+        return {
+          doc: over(document.documentElement),
+          body: over(document.body),
+          screen: over(screenEl),
+          main: over(screenEl?.querySelector('main') ?? null),
+        };
+      });
       expect(overflow.doc).toBeLessThanOrEqual(0);
       expect(overflow.body).toBeLessThanOrEqual(0);
+      expect(overflow.screen).toBeLessThanOrEqual(0); // the screen itself does not scroll sideways
+      expect(overflow.main).toBeLessThanOrEqual(0);
       for (const intent of ['company_login', 'individual_login', 'register_company', 'create_free_card']) {
         const box = await page.getByTestId(`google-${intent}`).boundingBox();
         expect(box, intent).not.toBeNull();

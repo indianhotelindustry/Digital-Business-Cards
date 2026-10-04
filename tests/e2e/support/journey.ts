@@ -58,6 +58,9 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export async function completeGooglePopup(popup: Page, identity: GoogleIdentity) {
   await popup.waitForLoadState('load'); // the widget wires its click handlers at the end of the page
   await expect(popup.locator('#title')).toHaveText('Sign-in with Google.com');
+  // Decide reuse vs. new only once the account list and its "Add new account" action are rendered,
+  // so an existing identity is never missed (which would create a second Google identity for the email).
+  await expect(popup.locator('li.js-new-account')).toBeVisible();
   const closed = popup.waitForEvent('close');
   const existing = popup
     .locator('li.js-reuse-account')

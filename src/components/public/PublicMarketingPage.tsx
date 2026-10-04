@@ -249,6 +249,8 @@ export const PublicMarketingPage: React.FC<PublicMarketingPageProps> = ({
             <ThemeToggle variant="icon" />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
               className="p-2 text-slate-600 rounded-xl hover:bg-slate-100"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -305,6 +307,18 @@ export const PublicMarketingPage: React.FC<PublicMarketingPageProps> = ({
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex flex-col space-y-2">
+              {/* Directive 34: returning users sign in on phones too (the header Sign In is hidden below sm). */}
+              {!userProfile && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenLogin();
+                  }}
+                  className="w-full min-h-[44px] py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-bold text-xs text-center"
+                >
+                  Sign In
+                </button>
+              )}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
