@@ -30,15 +30,15 @@ beforeAll(async () => {
 afterAll(async () => env?.cleanup());
 beforeEach(async () => loadFixtures(env, fullWorld()));
 
-describe('Phase 2 — registration (positive controls)', () => {
-  it('individual registration creates identity + independent individual tenant', async () => {
+describe('Phase 2 — browser-side registration is closed (Directive 34: backend-only)', () => {
+  it('individual registration batch from a browser is denied (registration is backend-only, Directive 34)', async () => {
     const { writes } = registrationWrites('uid_new_ind', 'new-ind@dsbc.test', 'individual');
-    await assertSucceeds(commitBatch(dbFor(env, newIndividual), writes));
+    await assertFails(commitBatch(dbFor(env, newIndividual), writes));
   });
 
-  it('company registration creates company tenant; creator becomes its administrator', async () => {
+  it('company registration batch from a browser is denied (registration is backend-only, Directive 34)', async () => {
     const { writes } = registrationWrites('uid_new_co', 'new-co@dsbc.test', 'company');
-    await assertSucceeds(commitBatch(dbFor(env, newCompanyOwner), writes));
+    await assertFails(commitBatch(dbFor(env, newCompanyOwner), writes));
   });
 });
 

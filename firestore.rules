@@ -10,8 +10,9 @@ rules_version = '2';
 //   * App Owner authority = custom claim platformRole == 'app_owner', set only
 //     by scripts/admin/setAppOwner.ts, on an identity with a verified email.
 //     No email allow-list, no trust in users/{uid}.role for App Owner.
-//   * Registration establishes identity + requested account type only. Role,
-//     companyId, tenant and plan are fixed by these rules, not the client.
+//   * Directive 34: registration is backend-only (registerIndividual /
+//     registerCompany, Admin SDK). users and tenants cannot be created by a
+//     browser; companies only by the App Owner (until Phase 2).
 //   * Tenant role and membership (users.role / companyId / employeeId /
 //     status / tenantId / accountType) are never client-writable afterwards.
 //   * Commercial authority (plans, policies, overrides, subscriptions,
@@ -153,85 +154,14 @@ service cloud.firestore {
       return data.get('seatState', '') != 'locked';
     }
 
-    // ------------------------------------------------------------------------
-    // Registration (Phase 2): one batch writes users/{uid} + tenants/{id}
-    // (+ companies/co_<uid> for company accounts). The caller has no profile
-    // before the batch; ids are derived from the caller's uid.
-    // ------------------------------------------------------------------------
-    function isRegistrationInProgress() {
-      return isSignedIn()
-        && !exists(userPath(request.auth.uid))
-        && existsAfter(userPath(request.auth.uid));
-    }
-
-    function isValidRegistrationProfile(uid) {
-      let d = request.resource.data;
-      let fields = ['id', 'email', 'displayName', 'role', 'companyId', 'employeeId',
-                    'status', 'accountType', 'tenantId', 'createdAt', 'updatedAt'];
-      return d.keys().hasOnly(fields)
-        && d.keys().hasAll(fields)
-        && d.id == uid
-        && isNonEmptyString(d.email)
-        && d.email == request.auth.token.get('email', '')
-        && isNonEmptyString(d.displayName) && d.displayName.size() <= 120
-        && d.status == 'pending_approval'
-        && d.employeeId == null
-        && d.createdAt is string
-        && d.updatedAt is string
-        && (
-          (
-            d.accountType == 'individual'
-            && d.role == 'employee'
-            && d.companyId == null
-            && d.tenantId == 'ind_' + uid
-            && getAfter(tenantPath('ind_' + uid)).data.ownerUid == uid
-          ) || (
-            d.accountType == 'company'
-            && d.role == 'company_admin'
-            && d.companyId == 'co_' + uid
-            && d.tenantId == 'co_' + uid
-            && getAfter(tenantPath('co_' + uid)).data.ownerUid == uid
-            && getAfter(companyPath('co_' + uid)).data.ownerUid == uid
-          )
-        );
-    }
-
-    function isValidTenantRecord(tenantId) {
-      let d = request.resource.data;
-      let uid = request.auth.uid;
-      let fields = ['id', 'kind', 'ownerUid', 'companyId', 'status', 'createdAt'];
-      return d.keys().hasOnly(fields)
-        && d.keys().hasAll(fields)
-        && d.id == tenantId
-        && d.ownerUid == uid
-        && d.status == 'pending_approval'
-        && d.createdAt is string
-        && (
-          (tenantId == 'ind_' + uid && d.kind == 'individual' && d.companyId == null)
-          || (tenantId == 'co_' + uid && d.kind == 'company' && d.companyId == tenantId)
-        );
-    }
-
-    function isValidSelfRegisteredCompany(companyId) {
-      let d = request.resource.data;
-      return companyId == 'co_' + request.auth.uid
-        && d.id == companyId
-        && d.ownerUid == request.auth.uid
-        && d.kind == 'company'
-        && d.status == 'pending_approval'
-        && d.planId == 'company_free'
-        && isNonEmptyString(d.name) && d.name.size() <= 120;
-    }
-
     // ========================================================================
     // users
     // ========================================================================
     match /users/{userId} {
       allow read: if isAppOwner() || (isSignedIn() && request.auth.uid == userId);
 
-      allow create: if isSignedIn()
-        && request.auth.uid == userId
-        && isValidRegistrationProfile(userId);
+      // Directive 34: accounts are created by the backend (registerIndividual / registerCompany), never by a browser.
+      allow create: if false;
 
       // Users may only rename themselves. Role, membership, status, email,
       // tenant and account type are authority fields.
@@ -248,13 +178,11 @@ service cloud.firestore {
     }
 
     // ========================================================================
-    // tenants (Phase 2) — tenant registry; created only during registration
+    // tenants (Phase 2) — tenant registry; created only by the backend at registration
     // ========================================================================
     match /tenants/{tenantId} {
       allow read: if isAppOwner() || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
-      allow create: if isRegistrationInProgress()
-        && getAfter(userPath(request.auth.uid)).data.tenantId == tenantId
-        && isValidTenantRecord(tenantId);
+      allow create: if false;
       allow update, delete: if false;
     }
 
@@ -267,11 +195,9 @@ service cloud.firestore {
         || isAppOwner()
         || isMemberOf(companyId);
 
-      allow create: if isAppOwner() || (
-        isRegistrationInProgress()
-        && getAfter(userPath(request.auth.uid)).data.companyId == companyId
-        && isValidSelfRegisteredCompany(companyId)
-      );
+      // Directive 34: self-registered companies are created by the backend.
+      // The App Owner's client-side create stays until Phase 2 replaces it.
+      allow create: if isAppOwner();
 
       // Company admins edit content only; never id, status (no self-unsuspend),
       // plan, kind or ownership.

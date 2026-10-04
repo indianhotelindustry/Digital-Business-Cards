@@ -119,9 +119,9 @@ describe('REG-001 registration must create pending_approval, never active', () =
   const individualDocs = () => buildRegistrationDocuments({ uid, email: 'new-ind@dsbc.test', displayName: 'New', accountType: 'individual', status: 'pending_approval', now: T });
   const companyDocs = () => buildRegistrationDocuments({ uid: coUid, email: 'new-co@dsbc.test', displayName: 'New', accountType: 'company', companyName: 'New Co', status: 'pending_approval', now: T });
 
-  it('registration documents are pending_approval (positive control)', async () => {
+  it('browser-side individual registration batch is denied: registration is backend-only (Directive 34)', async () => {
     const d = individualDocs();
-    await assertSucceeds(
+    await assertFails(
       commitBatch(dbFor(env, registrant), [
         { path: ['tenants', d.tenant.id], data: d.tenant },
         { path: ['users', uid], data: d.user },
@@ -160,9 +160,9 @@ describe('REG-001 registration must create pending_approval, never active', () =
     );
   });
 
-  it('company registration with all three documents pending is allowed (positive control)', async () => {
+  it('browser-side company registration batch (all three documents pending) is denied: registration is backend-only (Directive 34)', async () => {
     const d = companyDocs();
-    await assertSucceeds(
+    await assertFails(
       commitBatch(dbFor(env, coRegistrant), [
         { path: ['companies', d.company!.id], data: d.company },
         { path: ['tenants', d.tenant.id], data: d.tenant },
