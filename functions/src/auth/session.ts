@@ -12,7 +12,6 @@ import type { Transaction } from 'firebase-admin/firestore';
 import { db } from '../shared/firebase';
 import { deny, fail, invalid } from '../shared/errors';
 import { obj, oneOf, str } from '../shared/validate';
-import { serverNow } from '../shared/time';
 import { appendAudit } from '../audit/ledger';
 import { actorOf, type Caller } from './identity';
 import { resolveDestination, SESSION_INTENTS, type SessionFacts, type SessionIntent } from '../../../shared/domain/sessionRouting';
@@ -103,7 +102,7 @@ export async function registerCompany(caller: Caller, data: unknown) {
   const docs = buildRegistrationDocuments({ uid: caller.uid, email, displayName, accountType: 'company', companyName, status: 'active' });
   const created = await db().runTransaction(async (tx) => {
     if (await alreadyRegistered(tx, caller.uid)) return false;
-    tx.create(db().collection('companies').doc(docs.company!.id), { ...docs.company!, createdAt: serverNow(), updatedAt: serverNow() });
+    tx.create(db().collection('companies').doc(docs.company!.id), { ...docs.company! });
     writeTenantAndUser(tx, docs);
     appendAudit(tx, 'commercialAuditLogs', {
       action: 'ACCOUNT_ACTIVATED', actor: actorOf(caller), targetType: 'company', targetId: docs.company!.id, tenantId: docs.tenant.id,

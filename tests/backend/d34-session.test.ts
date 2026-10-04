@@ -51,6 +51,9 @@ describe('D34 registerCompany (Register as Company)', () => {
     expect((await adminDb.doc(`users/${g.uid}`).get()).data()).toMatchObject({ id: g.uid, role: 'company_admin', accountType: 'company', companyId: `co_${g.uid}`, status: 'active', email: 'owner@acme.test' });
     expect((await adminDb.doc(`tenants/co_${g.uid}`).get()).data()).toMatchObject({ kind: 'company', status: 'active', commercial: { state: 'free', method: 'free' } });
     expect((await adminDb.doc(`companies/co_${g.uid}`).get()).data()).toMatchObject({ ownerUid: g.uid, status: 'active', planId: 'company_free', name: 'Acme Ltd', kind: 'company' });
+    const company = (await adminDb.doc(`companies/co_${g.uid}`).get()).data()!;
+    expect(typeof company.createdAt).toBe('string');
+    expect(typeof company.updatedAt).toBe('string');
     const audits = await adminDb.collection('commercialAuditLogs').where('targetId', '==', `co_${g.uid}`).where('action', '==', 'ACCOUNT_ACTIVATED').get();
     expect(audits.size).toBe(1);
     expect(audits.docs[0].get('source')).toBe('Company registration');
