@@ -67,6 +67,8 @@ const MESSAGES: Record<string, string> = {
   'auth/account-exists-with-different-credential':
     'This email already has a DSBC account. Use "Existing account? Sign in with email" once, then choose "Link Google" — your account and data stay the same.',
   'auth/credential-already-in-use': 'That Google account is already used by a different DSBC sign-in. Choose a different Google account.',
+  'auth/popup-blocked': 'Your browser blocked the Google window. Allow pop-ups for this site and try again.',
+  'auth/no-current-user': 'Please sign in first.',
   'auth/provider-already-linked': 'Google is already linked to this account.',
   'auth/unauthorized-domain': 'Google sign-in is not available on this address. Please use the official DSBC link.',
   'auth/network-request-failed': 'No connection. Check your internet and try again.',
