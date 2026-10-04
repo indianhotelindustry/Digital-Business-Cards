@@ -5,7 +5,7 @@
 // verified Firebase ID token (request.auth) — never from the payload.
 // See docs/directive-25/ARCHITECTURE.md for the full map.
 
-import { setGlobalOptions } from 'firebase-functions/v2';
+import { BACKEND_ENV } from './shared/runtime';
 import { onCall, onRequest, type CallableRequest } from 'firebase-functions/v2/https';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
@@ -13,7 +13,6 @@ import { logger } from 'firebase-functions';
 import { DATABASE_ID, db } from './shared/firebase';
 import { appendAudit } from './audit/ledger';
 import { PAYMENTS_ENABLED, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET } from './shared/config';
-import { assertBackendEnvironment } from './shared/environment';
 import { loadCaller, type Caller } from './auth/identity';
 import * as ent from './entitlements/admin';
 import * as subs from './subscriptions/service';
@@ -29,11 +28,8 @@ import { adminGetPlatformHealth as platformHealth } from './platform/health';
 export { resolvePublicEntity } from './public/resolver';
 export { submitPublicLead } from './public/leads';
 
-// Directive 27: refuse to load (deploy discovery and cold start fail) unless
-// project, database, region, payments and public origin match the registry.
-const BACKEND_ENV = assertBackendEnvironment();
-
-setGlobalOptions({ region: BACKEND_ENV.region!, maxInstances: 10 });
+// Directive 27 environment check and global options: see ./shared/runtime
+// (imported first, before any module defines a function).
 
 type Handler = (caller: Caller, data: unknown) => Promise<unknown>;
 

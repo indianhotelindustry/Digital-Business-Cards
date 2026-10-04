@@ -21,6 +21,7 @@
 // for preview=true and receive DRAFT / UNPUBLISHED content. For everyone else
 // the flag is ignored. Suspended content is never served, preview or not.
 
+import '../shared/runtime'; // region + environment before onCall (Directive 31)
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { db } from '../shared/firebase';
 import { fail } from '../shared/errors';

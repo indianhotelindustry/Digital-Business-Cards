@@ -8,6 +8,7 @@
 // bounded by strict field validation, a honeypot and a per-company hourly cap.
 
 import { randomBytes } from 'node:crypto';
+import '../shared/runtime'; // region + environment before onCall (Directive 31)
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { db } from '../shared/firebase';
 import { fail, invalid } from '../shared/errors';
