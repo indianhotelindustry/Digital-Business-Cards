@@ -12,9 +12,10 @@ test-first task list for each phase lives in `docs/superpowers/plans/`.
 | Firebase Auth providers (project-wide) | email/password **enabled**, google.com **enabled** |
 | Authorized domains | localhost, task360-ift.firebaseapp.com, task360-ift.web.app |
 | DSBC users (`dsbc-production/users`) | 2: App Owner `qwDf…` (gmail.com) and In Future Technologies owner `Xj7Q…` (infuturetechnologies.com). Both `active`, both **password-only**, both email-verified. |
-| Companies | 2: `co_Xj7Q…` In Future Technologies (active, company_free, owner Xj7Q…) and `DP71jsze…` "SHSPL" (active, company_free, **no owner, no user can sign in to it**; created 2026-10-04 19:06 IST by the App Owner dashboard's client-side "onboard company" form) |
+| Companies | 2: `co_Xj7Q…` In Future Technologies (active, company_free, owner Xj7Q…) and `DP71jsze…` "SHSPL" (status active, planId company_free, **no owner, no user can sign in to it**; created 2026-10-04 19:06 IST by the App Owner dashboard's client-side "onboard company" form). **SHSPL has already paid an advance** — it is not a free company. |
 | Employees / cards | 1 / 1 (Moolchand, published) |
 | Individuals / pending accounts | 0 / 0 → **no status migration is needed** |
+| Auth settings | one account per email (`allowDuplicateEmails: false`); improved email privacy (enumeration protection) ON; MFA off |
 
 task360-ift is the DSBC project; its Firebase Authentication serves DSBC only.
 The project-level password provider may therefore be disabled — but only after both existing
@@ -87,17 +88,21 @@ Google sign-in (Firebase Auth, provider google.com)
   (capability ∩ plan entitlement) onto a backend-only field that rules and callables both check,
   so client-side Firestore writes are covered too.
 
-## 3. Phases (each independently testable and deployable)
+## 3. Phases — order LOCKED (founder, Directive 34 §19): 1 → 2 → 3 → 4 → 5 → 6
+
+No phase starts before the previous one is implemented and verified.
 
 | Phase | Delivers | Production effect |
 |---|---|---|
-| **1. Google identity + backend registration** | New sign-in screen (4 entries, one Google service, intents), `resolveSession`, `registerAccount` (free individual/company → active; duplicate prevention), rules close client registration creates, error/state screens, mobile 100dvh shell, "link Google" for signed-in password users | New sign-ups work with Google; existing users keep working and can link Google |
-| **2. Migration + Google-only enforcement** | Link both production users (user-mediated), verify same UID via `accounts:lookup`, then enforce `google.com` in backend + rules; password UI removed; then disable the project password provider (separate approval) | Google-only for DSBC |
-| **3. Invitations + offline onboarding** | `invitations`, owner invitation via App Owner `adminOnboardCompany` (replaces client-side create), employee invitations from Employee Management, `confirmOfflinePayment`, "payment confirmation pending" screen, fix suspend/reinstate bypass, attach an owner to SHSPL | App Owner can onboard a paid offline tenant end to end; employees can log in |
-| **4. Individual workspace** | Individuals get their own card/profile (role `individual`, rules + UI), no demo fallbacks | "Create Free Card" acceptance |
-| **5. Capabilities + effective access** | Capability catalogue, role/override model, materialised access, enforcement in rules + callables, App Owner Roles tab + effective-access inspector | RBAC ∩ entitlements enforced |
-| **6. Paid online state machine** | `payment_pending` registration, `activatePaidOrder` activates account, webhook `PAYMENTS_ENABLED` guard, frontend-success-cannot-activate tests | Ready; stays off while `PAYMENTS_ENABLED=false` |
+| **1. Google sign-in foundation** | One Google auth service (popup, redirect fallback, cancellation, intents `company_login` / `individual_login` / `register_company` / `create_free_card`); new sign-in screen (100dvh, safe areas); backend `resolveSession` + `registerAccount` (free individual/company → active immediately, duplicate protection by UID/ownership); rules close client-side registration creates; `getMyAccountState` reports `no_account` instead of `pending_approval`; "Link Google" for signed-in password users; the legacy password sign-in stays reachable (login only) for existing users | New sign-ups use Google; existing users keep working and can link Google |
+| **2. Owner/employee invitations + offline payment confirmation** | Backend-only `invitations` (tenant-scoped, single-use, expiring, audited, matched to the Google-verified email); App Owner `adminOnboardCompany` (replaces the client-side create) with an owner invitation; employee invitations from Employee Management; `confirmOfflinePayment` (App Owner only, reference + reason, idempotent, audited) → company ACTIVE; "payment confirmation pending" screen; fix the suspend/reinstate bypass. **SHSPL validation:** attach the real owner via invitation, record the advance with its reference, App Owner confirms through `confirmOfflinePayment` → ACTIVE (never a direct `status = active` write) | App Owner can onboard an offline-paid tenant; employees can sign in; SHSPL becomes the first real offline confirmation |
+| **3. DSBC Google-only cutover** | Verify Google sign-in for App Owner, In Future Technologies owner and SHSPL owner (`accounts:lookup` shows google.com on the same UID); backend + rules require `sign_in_provider == 'google.com'`; password UI removed; recovery path tested. Disabling the project's email/password provider is a **separate founder approval** | Google-only for DSBC |
+| **4. Individual workspace** | Individuals get their own card/profile (rules + UI), no demo fallbacks, private Connect data stays private | "Create Free Card" acceptance |
+| **5. Capabilities / RBAC** | Capability catalogue, role mappings, company/user overrides, materialised effective access (capability ∩ entitlement) enforced in rules + callables, App Owner Roles tab + effective-access inspector, audit | RBAC ∩ entitlements enforced |
+| **6. Paid online activation** | `payment_pending` registration, verified payment (`activatePaidOrder`) also activates the account, webhook `PAYMENTS_ENABLED` guard, frontend success can never activate | Ready; stays off while `PAYMENTS_ENABLED=false` |
 
-Every phase: TDD, AUTH-0xx tests from the directive mapped to the owning phase, full regression
-(unit, rules, integration, backend, browser), preflight, explicit approval immediately before any
-production deploy, no demo data, `(default)` database untouched.
+Every phase: test-first where practical, D34-AUTH-0xx tests (namespaced: `AUTH-0xx` ids already exist
+from Directive 25), full regression with exact totals, preflight, explicit founder approval
+immediately before any production deploy, no demo/fake data, only `task360-ift` / `dsbc-production`.
+
+Phase 1 detailed plan: `docs/superpowers/plans/2026-10-04-d34-phase1-google-sign-in.md`.
