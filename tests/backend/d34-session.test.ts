@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { adminDb, call, createGoogleUser, createUser, ok, resetEmulators } from './support/backendEnv';
+import { deleteApp, initializeApp } from 'firebase/app';
+import { connectAuthEmulator, getAuth, GoogleAuthProvider, linkWithCredential, signInWithCredential, signInWithEmailAndPassword, type Auth } from 'firebase/auth';
+import { adminAuth, adminDb, call, createGoogleUser, createUser, ok, PASSWORD, resetEmulators } from './support/backendEnv';
 
 beforeAll(async () => {
   await resetEmulators();
@@ -123,5 +125,65 @@ describe('D34 resolveSession', () => {
     await ok('registerCompany', { displayName: 'S', companyName: 'Susp Co', planId: 'company_free' }, g);
     await adminDb.doc(`companies/co_${g.uid}`).update({ status: 'suspended' });
     expect((await ok('resolveSession', { intent: 'company_login' }, g)).destination).toEqual({ kind: 'account_inactive', status: 'suspended' });
+  });
+});
+
+// Directive 34 migration: an existing password account links Google and keeps its Firebase UID.
+// These run the Firebase JS SDK against the Auth emulator, exactly as the browser's linkWithPopup does
+// after the Google popup returns a credential.
+let emulatorAppCounter = 0;
+async function withEmulatorAuth(run: (auth: Auth) => Promise<void>): Promise<void> {
+  const app = initializeApp({ apiKey: 'emulator-key', projectId: process.env.GCLOUD_PROJECT || 'demo-dsbc' }, `link-test-${++emulatorAppCounter}`);
+  const auth = getAuth(app);
+  connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
+  try {
+    await run(auth);
+  } finally {
+    await deleteApp(app);
+  }
+}
+const googleCredential = (sub: string, email: string) => GoogleAuthProvider.credential(JSON.stringify({ sub, email, email_verified: true }));
+
+describe('D34 linking Google to an existing password account', () => {
+  it('D34-AUTH-002/030 linking Google to a password account keeps the same UID and creates no second user', async () => {
+    const pw = await createUser('u-link');
+    await withEmulatorAuth(async (a) => {
+      const cred = await signInWithEmailAndPassword(a, pw.email, PASSWORD);
+      const linked = await linkWithCredential(cred.user, googleCredential('g-link-sub', pw.email));
+      expect(linked.user.uid).toBe(pw.uid);
+      await a.signOut();
+      const viaGoogle = await signInWithCredential(a, googleCredential('g-link-sub', pw.email));
+      expect(viaGoogle.user.uid).toBe(pw.uid);
+      const providers = (await adminAuth.getUser(pw.uid)).providerData.map((p) => p.providerId).sort();
+      expect(providers).toEqual(['google.com', 'password']);
+      expect((await adminAuth.listUsers()).users.filter((u) => u.email === pw.email)).toHaveLength(1);
+    });
+  });
+
+  it('D34-AUTH-030 a Google credential already attached to another Firebase user is never merged', async () => {
+    const other = await createGoogleUser('g-taken-sub', 'taken@else.test'); // a separate Firebase user owns this Google identity
+    const pw = await createUser('u-collide');
+    await withEmulatorAuth(async (a) => {
+      const cred = await signInWithEmailAndPassword(a, pw.email, PASSWORD);
+      await expect(linkWithCredential(cred.user, googleCredential('g-taken-sub', 'taken@else.test'))).rejects.toMatchObject({ code: 'auth/credential-already-in-use' });
+    });
+    expect((await adminAuth.getUser(pw.uid)).providerData.map((p) => p.providerId)).toEqual(['password']);
+    expect((await adminAuth.getUser(other.uid)).providerData.map((p) => p.providerId)).toEqual(['google.com']);
+    expect(other.uid).not.toBe(pw.uid);
+  });
+
+  it('D34-AUTH-002 the owner may link a Google identity with a different email (no same-email or Gmail-only matching)', async () => {
+    const pw = await createUser('u-ift-like'); // email u-ift-like@dsbc.test — not a Google address
+    await withEmulatorAuth(async (a) => {
+      const cred = await signInWithEmailAndPassword(a, pw.email, PASSWORD);
+      const linked = await linkWithCredential(cred.user, googleCredential('g-owner-personal', 'owner.personal@gmail.test'));
+      expect(linked.user.uid).toBe(pw.uid);
+      await a.signOut();
+      const viaGoogle = await signInWithCredential(a, googleCredential('g-owner-personal', 'owner.personal@gmail.test'));
+      expect(viaGoogle.user.uid).toBe(pw.uid);
+    });
+    const u = await adminAuth.getUser(pw.uid);
+    expect(u.providerData.map((p) => p.providerId).sort()).toEqual(['google.com', 'password']);
+    expect(u.email).toBe(pw.email); // the DSBC account's email is unchanged by linking
   });
 });

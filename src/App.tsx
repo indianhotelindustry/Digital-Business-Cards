@@ -33,6 +33,7 @@ import { DEMO_FEATURES_ENABLED } from './lib/runtimeFlags';
 import { canonicalizeLegacyHash, navigate, onRouteChange, routeFromLocation } from './lib/routes';
 import { NotFoundPage } from './components/public/NotFoundPage';
 import { EmailVerificationBanner } from './components/auth/EmailVerificationBanner';
+import { LinkGoogleBanner } from './components/auth/LinkGoogleBanner';
 import { AwaitingApprovalBanner } from './components/auth/AwaitingApprovalBanner';
 import { shouldShowAwaitingApproval } from './lib/accountGate';
 import { Shield, Sparkles, Building2, ExternalLink, Lock } from 'lucide-react';
@@ -425,6 +426,9 @@ function AppContent() {
 
       {/* Directive 29: unverified accounts are reminded until Firebase confirms the address. */}
       <EmailVerificationBanner />
+
+      {/* Directive 34: password accounts link Google to keep the same UID. */}
+      <LinkGoogleBanner />
 
       {/* Main Structural Layout */}
       <div className="flex-1 flex overflow-hidden">
