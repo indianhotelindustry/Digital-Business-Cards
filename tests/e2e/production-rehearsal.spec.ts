@@ -14,7 +14,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { addAndPublishEmployee, buildWebsite, fullName, newBrowser, registerCompany, shot, signIn, type Customer } from './support/journey';
-import { adminDb, createUser, idToken, ok, PASSWORD as OWNER_PASSWORD, resetEmulators } from '../backend/support/backendEnv';
+import { adminAuth, adminDb, createUser, idToken, ok, PASSWORD as OWNER_PASSWORD, resetEmulators, type TestUser } from '../backend/support/backendEnv';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -26,6 +26,7 @@ const others = (c: Customer) => CUSTOMERS.filter((o) => o !== c);
 const DEMO_TEXT = /Acme Innovations|Nexus Global|Rahul Sharma|Priya Patel|Innovating today|Building What|People\. Ideas\. Progress/;
 
 const sessions: Record<string, { ctx: BrowserContext; page: Page }> = {};
+let owner: TestUser;
 
 /** A clean visitor: fresh context, no storage, never signed in. */
 async function clean<T>(browser: Browser, path: string, fn: (page: Page) => Promise<T>): Promise<T> {
@@ -43,7 +44,7 @@ const companyIdOf = async (c: Customer) => (await adminDb.collection('users').wh
 
 test.beforeAll(async () => {
   await resetEmulators();
-  const owner = await createUser('u_owner', { claims: { platformRole: 'app_owner' } });
+  owner = await createUser('u_owner', { claims: { platformRole: 'app_owner' } });
   await adminDb.doc('users/u_owner').set({ id: 'u_owner', email: owner.email, displayName: 'Platform Owner', role: 'app_owner', companyId: null, status: 'active', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
   await ok('bootstrapControlPlane', { reason: 'D27 rehearsal bootstrap' }, owner);
 });
@@ -56,7 +57,12 @@ for (const c of CUSTOMERS) {
   test(`REH-${c.key}: customer registers, creates the company, adds an employee, publishes card and website`, async ({ browser }) => {
     sessions[c.key] = await newBrowser(browser);
     const { page } = sessions[c.key];
-    await registerCompany(page, c);
+    await registerCompany(page, c, undefined, async () => {
+      // Directive 30: verified email + App Owner approval before the workspace opens.
+      const user = (await adminDb.collection('users').where('email', '==', c.email).get()).docs[0];
+      await adminAuth.updateUser(user.id, { emailVerified: true });
+      await ok('approveCustomer', { customerType: 'company', customerId: user.get('companyId'), reason: 'D27 rehearsal onboarding' }, owner);
+    });
     await buildWebsite(page, c);
     await addAndPublishEmployee(page, c);
     // Quota is measured by the server: one of three free seats used.
