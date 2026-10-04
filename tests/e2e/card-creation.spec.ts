@@ -5,7 +5,7 @@
 //   Step 2 details + photo upload + optional custom card address
 //   Create → publishing panel opens with that address → Publish → QR / public URL
 //   A clean, never-signed-in browser opens the public card.
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { addAndPublishEmployee, chooseCardDesign, fillEmployeeDetails, fullName, newBrowser, registerCompany, shot, type Customer } from './support/journey';
 import { adminAuth, adminDb, createUser, ok, resetEmulators, type TestUser } from '../backend/support/backendEnv';
 
@@ -25,6 +25,7 @@ const C: Customer = {
 const SECOND = { first: 'Ravi', last: 'Nair', title: 'Site Engineer', email: 'ravi@kesar-interiors.test', slug: 'ravi-nair' };
 
 let page: Page;
+let session: BrowserContext;
 let owner: TestUser;
 
 const companyId = async () => (await adminDb.collection('users').where('email', '==', C.email).get()).docs[0].get('companyId') as string;
@@ -46,7 +47,13 @@ test.beforeAll(async ({ browser }) => {
   owner = await createUser('u_owner', { claims: { platformRole: 'app_owner' } });
   await adminDb.doc('users/u_owner').set({ id: 'u_owner', email: owner.email, displayName: 'Platform Owner', role: 'app_owner', companyId: null, status: 'active', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
   await ok('bootstrapControlPlane', { reason: 'D31 bootstrap' }, owner);
-  page = (await newBrowser(browser)).page;
+  const b = await newBrowser(browser);
+  session = b.ctx;
+  page = b.page;
+});
+
+test.afterAll(async () => {
+  await session?.close();
 });
 
 test('D31-SETUP: customer registers and is activated through the App Owner approval', async () => {
