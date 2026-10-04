@@ -11,6 +11,12 @@ import {
 import { getDepartmentsByCompany } from '../../services/departmentService';
 import { getCardById, getCardTemplates, updateCard } from '../../services/cardService';
 import { PublishingPanel } from '../publishing/PublishingPanel';
+import { TemplatePicker, type CardTemplateId } from '../cards/TemplatePicker';
+import { PhotoUploadField, type PhotoValue } from '../cards/PhotoUploadField';
+import { uploadEmployeePhoto } from '../../services/storageService';
+import { slugService } from '../../services/slugService';
+import { publishingService } from '../../services/publishingService';
+import { describeBackendError } from '../../lib/backend';
 import {
   Users,
   Search,
@@ -59,7 +65,7 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [shareModalEmp, setShareModalEmp] = useState<{ emp: Employee; slug: string } | null>(null);
-  const [publishingEmp, setPublishingEmp] = useState<Employee | null>(null);
+  const [publishingEmp, setPublishingEmp] = useState<{ emp: Employee; slug: string } | null>(null);
 
   // Form State
   const [firstName, setFirstName] = useState('');
@@ -72,9 +78,15 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
   const [bio, setBio] = useState('');
   const [linkedin, setLinkedin] = useState('');
   const [website, setWebsite] = useState('');
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
-  const [cardTemplateId, setCardTemplateId] = useState<'classic' | 'modern' | 'minimal'>('classic');
+  const [photo, setPhoto] = useState<PhotoValue>({ url: '', file: null });
+  // Directive 31: no silent default — null until the user picks a design.
+  const [cardTemplateId, setCardTemplateId] = useState<CardTemplateId | null>(null);
+  const [originalTemplateId, setOriginalTemplateId] = useState<CardTemplateId | null>(null);
+  const [step, setStep] = useState<'template' | 'details'>('template');
   const [customSlug, setCustomSlug] = useState('');
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [pageNotice, setPageNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const loadData = async () => {
@@ -115,10 +127,32 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     setBio('');
     setLinkedin('');
     setWebsite('');
-    setProfilePhotoUrl('');
-    setCardTemplateId('classic');
+    setPhoto({ url: '', file: null });
+    setCardTemplateId(null);
+    setOriginalTemplateId(null);
+    setStep('template');
     setCustomSlug('');
+    setSlugError(null);
+    setFormError(null);
     setIsAddModalOpen(true);
+  };
+
+  const closeEmployeeModal = () => {
+    setIsAddModalOpen(false);
+    setEditingEmployee(null);
+  };
+
+  /** Opens the publishing panel seeded with the card's own slug candidate. */
+  const openPublishing = async (emp: Employee, knownSlug?: string) => {
+    let slug = knownSlug || '';
+    if (!slug && emp.cardId) {
+      try {
+        slug = (await getCardById(emp.cardId))?.publicSlug || '';
+      } catch {
+        /* fall back to the name below */
+      }
+    }
+    setPublishingEmp({ emp, slug: slug || emp.cardSlug || emp.displayName });
   };
 
   const handleOpenEditModal = (emp: Employee) => {
@@ -133,13 +167,52 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     setBio(emp.bio || '');
     setLinkedin(emp.linkedin || '');
     setWebsite(emp.website || '');
-    setProfilePhotoUrl(emp.profilePhotoUrl || '');
+    setPhoto({ url: emp.profilePhotoUrl || '', file: null });
     setCustomSlug('');
+    setSlugError(null);
+    setFormError(null);
+    setStep('details');
+    // Load the card's real design so saving the form never resets it.
+    setCardTemplateId(null);
+    setOriginalTemplateId(null);
+    if (emp.cardId) {
+      getCardById(emp.cardId)
+        .then((card) => {
+          if (card) {
+            setCardTemplateId(card.templateId);
+            setOriginalTemplateId(card.templateId);
+          }
+        })
+        .catch((err) => console.error('Failed to load card design:', err));
+    }
+  };
+
+  /** Validates a requested custom slug; returns the normalised slug, '' for none, or null when rejected. */
+  const checkCustomSlug = async (): Promise<string | null> => {
+    const raw = customSlug.trim();
+    if (!raw) return '';
+    const candidate = slugService.sanitize(raw);
+    const format = slugService.validateSlug(candidate);
+    if (!format.isValid) {
+      setSlugError(format.errorMessage || 'This address is not allowed.');
+      return null;
+    }
+    const availability = await slugService.checkAvailability(candidate);
+    if (!availability.isValid) {
+      setSlugError(availability.errorMessage || 'This address is already in use. Please choose another.');
+      return null;
+    }
+    setSlugError(null);
+    return candidate;
   };
 
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCompany || !firstName.trim() || !email.trim()) return;
+    if (!cardTemplateId) {
+      setStep('template');
+      return;
+    }
 
     if (!checkLimit('company.team_members', 1)) {
       openUpgradeModal('company.team_members');
@@ -148,7 +221,10 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     }
 
     setSubmitting(true);
+    setFormError(null);
     try {
+      const slug = await checkCustomSlug();
+      if (slug === null) return;
       const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
       const result = await createEmployee(
         {
@@ -158,7 +234,6 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
           lastName: lastName.trim(),
           displayName,
           designation: designation.trim() || 'Team Member',
-          profilePhotoUrl: profilePhotoUrl.trim() || undefined,
           email: email.trim(),
           phone: phone.trim(),
           whatsapp: whatsapp.trim() || phone.trim(),
@@ -169,15 +244,32 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
         },
         {
           cardTemplateId,
-          customSlug: customSlug.trim() || undefined,
+          customSlug: slug || undefined,
         }
       );
 
-      setEmployees((prev) => [result.employee, ...prev]);
+      // The photo can only be uploaded once the employee exists (uploadAsset checks it).
+      let employee = result.employee;
+      let photoProblem: string | null = null;
+      if (photo.file) {
+        try {
+          const profilePhotoUrl = await uploadEmployeePhoto(activeCompany.id, employee.id, photo.file);
+          await updateEmployee(employee.id, { profilePhotoUrl });
+          employee = { ...employee, profilePhotoUrl };
+        } catch (err) {
+          console.error('Photo upload failed:', err);
+          photoProblem = describeBackendError(err);
+        }
+      }
+
+      setEmployees((prev) => [employee, ...prev]);
       setIsAddModalOpen(false);
+      setPageNotice(photoProblem ? `The card was created, but the photo could not be uploaded: ${photoProblem} Use Edit to add the photo again.` : null);
+      // Step 6: preview / publish with the card's own slug.
+      if (result.cardId) await openPublishing(employee, result.publicSlug);
     } catch (err: any) {
       console.error('Failed to create employee:', err);
-      alert(`Error creating employee: ${err.message || 'Unknown error'}`);
+      setFormError(`Error creating employee: ${describeBackendError(err)}`);
     } finally {
       setSubmitting(false);
     }
@@ -188,7 +280,10 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     if (!editingEmployee) return;
 
     setSubmitting(true);
+    setFormError(null);
     try {
+      let profilePhotoUrl = photo.url;
+      if (photo.file) profilePhotoUrl = await uploadEmployeePhoto(editingEmployee.companyId, editingEmployee.id, photo.file);
       const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
       const updates: Partial<Employee> = {
         firstName: firstName.trim(),
@@ -202,13 +297,13 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
         bio: bio.trim(),
         linkedin: linkedin.trim(),
         website: website.trim(),
-        profilePhotoUrl: profilePhotoUrl.trim() || undefined,
+        profilePhotoUrl,
       };
 
       await updateEmployee(editingEmployee.id, updates);
 
-      // If template was selected, update card as well
-      if (editingEmployee.cardId && cardTemplateId) {
+      // Only an explicit design change touches the card (the loaded design is kept otherwise).
+      if (editingEmployee.cardId && cardTemplateId && cardTemplateId !== originalTemplateId) {
         await updateCard(editingEmployee.cardId, { templateId: cardTemplateId });
       }
 
@@ -218,7 +313,7 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
       setEditingEmployee(null);
     } catch (err: any) {
       console.error('Failed to update employee:', err);
-      alert(`Error updating employee: ${err.message || 'Unknown error'}`);
+      setFormError(`Error updating employee: ${describeBackendError(err)}`);
     } finally {
       setSubmitting(false);
     }
@@ -240,8 +335,11 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     let slug = emp.displayName.toLowerCase().replace(/[^a-z0-9]/g, '-');
     if (emp.cardId) {
       try {
-        const card = await getCardById(emp.cardId);
-        if (card?.publicSlug) slug = card.publicSlug;
+        // The published slug (backend record) is the live address; the card's slug is only a candidate.
+        const record = await publishingService.fetchRecord(emp.cardId);
+        const card = record?.slug ? null : await getCardById(emp.cardId);
+        if (record?.slug) slug = record.slug;
+        else if (card?.publicSlug) slug = card.publicSlug;
       } catch (e) {
         // fallback
       }
@@ -264,6 +362,14 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
 
   return (
     <div className="space-y-6">
+      {pageNotice && (
+        <div className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-start justify-between gap-3" role="alert">
+          <span>{pageNotice}</span>
+          <button onClick={() => setPageNotice(null)} className="text-amber-700 hover:text-amber-900" aria-label="Dismiss">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -467,7 +573,7 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
 
                         {emp.cardId && (
                           <button
-                            onClick={() => setPublishingEmp(emp)}
+                            onClick={() => openPublishing(emp)}
                             className="px-2 py-1 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition inline-flex items-center text-[10px] font-semibold"
                             title="Publish Card"
                             data-testid={`publish-card-${emp.id}`}
@@ -505,20 +611,26 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
       </div>
 
       {/* Directive 26: publish an employee card through the backend */}
-      {publishingEmp && publishingEmp.cardId && (
+      {publishingEmp && publishingEmp.emp.cardId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden">
             <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="text-sm font-bold text-slate-900">Publish card: {publishingEmp.displayName}</h3>
+              <h3 className="text-sm font-bold text-slate-900">Publish card: {publishingEmp.emp.displayName}</h3>
               <button onClick={() => setPublishingEmp(null)} className="p-1.5 rounded-lg hover:bg-slate-200" aria-label="Close publishing">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-4">
+            <div className="p-4 space-y-3">
+              {publishingEmp.emp.status !== 'active' && (
+                <div className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-[11px] text-amber-800" data-testid="publishing-inactive-warning">
+                  This employee is <strong>inactive</strong>, so the public card shows "unavailable" even when published.
+                  Click <strong>Activate</strong> on the employee row to make it visible.
+                </div>
+              )}
               <PublishingPanel
                 entityType="card"
-                entityId={publishingEmp.cardId}
-                defaultSlug={publishingEmp.cardSlug || publishingEmp.displayName}
+                entityId={publishingEmp.emp.cardId}
+                defaultSlug={publishingEmp.slug}
                 title="Employee Card"
               />
             </div>
@@ -529,22 +641,48 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
       {/* Add / Edit Employee Modal */}
       {(isAddModalOpen || editingEmployee) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className={`bg-white rounded-3xl w-full ${step === 'template' ? 'max-w-5xl' : 'max-w-lg'} shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col`}>
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <h3 className="text-sm font-bold text-slate-900">
-                {editingEmployee ? 'Edit Employee Credentials' : 'Add New Employee'}
+                {step === 'template'
+                  ? editingEmployee ? 'Change Card Design' : 'Step 1 of 2 — Choose Your Card Design'
+                  : editingEmployee ? 'Edit Employee Credentials' : 'Step 2 of 2 — Employee Details'}
               </h3>
               <button
-                onClick={() => {
-                  setIsAddModalOpen(false);
-                  setEditingEmployee(null);
-                }}
+                onClick={closeEmployeeModal}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                aria-label="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
+            {step === 'template' ? (
+              <div className="p-6 overflow-y-auto space-y-4 text-xs" data-testid="template-step">
+                <p className="text-slate-600">
+                  Select the design for this employee&apos;s digital business card. Previews use sample details; the real card shows the employee&apos;s information.
+                </p>
+                <TemplatePicker company={activeCompany} selected={cardTemplateId} onSelect={setCardTemplateId} />
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={editingEmployee ? () => setStep('details') : closeEmployeeModal}
+                    className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium"
+                  >
+                    {editingEmployee ? 'Back' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="template-continue"
+                    disabled={!cardTemplateId}
+                    onClick={() => setStep('details')}
+                    className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : (
             <form
               onSubmit={editingEmployee ? handleUpdateEmployee : handleCreateEmployee}
               className="p-6 overflow-y-auto space-y-4 text-xs"
@@ -634,17 +772,9 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Profile Photo URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={profilePhotoUrl}
-                    onChange={(e) => setProfilePhotoUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
               </div>
+
+              <PhotoUploadField value={photo} onChange={setPhoto} disabled={submitting} />
 
               <div>
                 <label className="block font-medium text-slate-700 mb-1">Short Bio</label>
@@ -680,67 +810,82 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
                 </div>
               </div>
 
-              {/* Template Selection */}
-              <div>
-                <label className="block font-medium text-slate-700 mb-1.5">
-                  Card Design Template
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['classic', 'modern', 'minimal'] as const).map((tpl) => (
-                    <button
-                      key={tpl}
-                      type="button"
-                      onClick={() => setCardTemplateId(tpl)}
-                      className={`p-2.5 rounded-xl border text-center transition capitalize font-semibold ${
-                        cardTemplateId === tpl
-                          ? 'border-teal-600 bg-teal-50 text-teal-800 ring-2 ring-teal-500/20'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                      }`}
-                    >
-                      {tpl}
-                    </button>
-                  ))}
+              {/* Card design (chosen in step 1) */}
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
+                <div>
+                  <span className="block font-medium text-slate-700">Card Design</span>
+                  <span className="text-[11px] text-slate-900 font-semibold capitalize" data-testid="selected-template">
+                    {cardTemplateId || (editingEmployee ? 'Loading…' : 'Not selected')}
+                  </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setStep('template')}
+                  disabled={!!editingEmployee && !cardTemplateId}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold disabled:opacity-50"
+                >
+                  Change design
+                </button>
               </div>
 
               {!editingEmployee && (
                 <div>
                   <label className="block font-medium text-slate-700 mb-1">
-                    Custom Card Slug (Optional)
+                    Custom Card Address (Optional)
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. rahul-sharma"
+                    data-testid="custom-slug-input"
                     value={customSlug}
-                    onChange={(e) => setCustomSlug(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-[11px]"
+                    onChange={(e) => {
+                      setCustomSlug(e.target.value);
+                      setSlugError(null);
+                    }}
+                    className={`w-full px-3 py-2 rounded-xl border ${slugError ? 'border-rose-400' : 'border-slate-200'} focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-[11px]`}
                   />
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    Public URL: /card/{customSlug || 'auto-generated'}
-                  </span>
+                  {slugError ? (
+                    <span className="text-[11px] text-rose-700 mt-1 block" role="alert" data-testid="custom-slug-error">{slugError}</span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      Public URL: /card/{customSlug.trim() ? slugService.sanitize(customSlug) : 'generated from the name'}. The address is reserved for this card when you publish it.
+                    </span>
+                  )}
                 </div>
               )}
 
+              {formError && (
+                <div className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-[11px] text-rose-800" role="alert">{formError}</div>
+              )}
+
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                {!editingEmployee && (
+                  <button
+                    type="button"
+                    onClick={() => setStep('template')}
+                    className="mr-auto px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium"
+                  >
+                    Back
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsAddModalOpen(false);
-                    setEditingEmployee(null);
-                  }}
+                  onClick={closeEmployeeModal}
                   className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !cardTemplateId}
+                  data-testid="employee-submit"
                   className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-sm disabled:opacity-50"
                 >
-                  {submitting ? 'Saving...' : editingEmployee ? 'Update Employee' : 'Create & Generate Card'}
+                  {submitting ? 'Saving...' : editingEmployee ? 'Update Employee' : 'Create Card'}
                 </button>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}

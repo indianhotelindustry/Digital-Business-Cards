@@ -12,6 +12,7 @@ import { auth, db } from '../lib/firebase';
 import { Employee, EmployeeStatus } from '../types';
 import { createCard, findUniqueSlug, generateSlug, updateCard } from './cardService';
 import { demoDataAllowed, demoStore } from './demoStore';
+import { slugService } from './slugService';
 
 const EMPLOYEES_COLLECTION = 'employees';
 
@@ -103,7 +104,9 @@ export async function createEmployee(
   // Directive 26 order: the employee must exist before its card (the card rule
   // verifies the employee belongs to the same company). The slug is only a
   // candidate until the card is published through the backend.
-  const uniqueSlug = await findUniqueSlug(rawSlug);
+  // A requested custom slug is kept exactly (normalised) — never silently
+  // suffixed; the backend claims it atomically or refuses it at publish.
+  const uniqueSlug = options?.customSlug ? slugService.sanitize(options.customSlug) : await findUniqueSlug(rawSlug);
   const cardRef = doc(collection(db, 'cards'));
   const employee: Employee = {
     ...data,
