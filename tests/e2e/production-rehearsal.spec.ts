@@ -13,8 +13,8 @@
 // /company/{slug} resolved by the server-authoritative resolver.
 import { readFileSync } from 'node:fs';
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
-import { addAndPublishEmployee, buildWebsite, fullName, newBrowser, registerCompany, shot, signIn, type Customer } from './support/journey';
-import { adminAuth, adminDb, createUser, idToken, ok, PASSWORD as OWNER_PASSWORD, resetEmulators, type TestUser } from '../backend/support/backendEnv';
+import { addAndPublishEmployee, buildWebsite, fullName, googleLogin, newBrowser, registerCompany, shot, signIn, type Customer } from './support/journey';
+import { adminDb, createUser, idToken, ok, PASSWORD as OWNER_PASSWORD, resetEmulators, type TestUser } from '../backend/support/backendEnv';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -57,12 +57,8 @@ for (const c of CUSTOMERS) {
   test(`REH-${c.key}: customer registers, creates the company, adds an employee, publishes card and website`, async ({ browser }) => {
     sessions[c.key] = await newBrowser(browser);
     const { page } = sessions[c.key];
-    await registerCompany(page, c, undefined, async () => {
-      // Directive 30: verified email + App Owner approval before the workspace opens.
-      const user = (await adminDb.collection('users').where('email', '==', c.email).get()).docs[0];
-      await adminAuth.updateUser(user.id, { emailVerified: true });
-      await ok('approveCustomer', { customerType: 'company', customerId: user.get('companyId'), reason: 'D27 rehearsal onboarding' }, owner);
-    });
+    // Directive 34: Google registration; a free company is active immediately (no approval step).
+    await registerCompany(page, c);
     await buildWebsite(page, c);
     await addAndPublishEmployee(page, c);
     // Quota is measured by the server: one of three free seats used.
@@ -144,7 +140,8 @@ test('REH-PERSIST: customer data survives a reload and a brand-new browser', asy
 
   const fresh = await newBrowser(browser);
   try {
-    await signIn(fresh.page, R1.email);
+    // Directive 34: R1 registered with Google, so it signs back in with Google (same identity, same workspace).
+    await googleLogin(fresh.page, { email: R1.email, name: R1.company });
     await fresh.page.getByRole('button', { name: 'Employees & Cards' }).click();
     await expect(fresh.page.getByText(fullName(R1)).first()).toBeVisible();
     await expect(fresh.page.getByText(/1 \/ 3 employees used/)).toBeVisible();

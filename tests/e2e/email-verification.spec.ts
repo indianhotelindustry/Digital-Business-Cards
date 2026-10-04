@@ -1,14 +1,18 @@
 // Directive 29: email verification through the real UI (production-mode
 // bundle, Firebase Emulator Suite, real Chrome).
-//   EV-1 registration -> unverified banner, resend, early check -> no App Owner UI
+//   EV-1 an unverified account -> unverified banner, resend, early check -> no App Owner UI
+//        (Directive 34: Google accounts arrive verified and browsers can no longer
+//        create password accounts, so the unverified account is a legacy password
+//        fixture seeded with the Admin SDK and sent its verification email, as the
+//        old registration did; it signs in through "Sign in with email")
 //   EV-2 the emailed link verifies; the app picks it up without signing out;
 //        still no App Owner UI (verification grants nothing)
 //   EV-3 only the server/admin grant (the real scripts/admin/setAppOwner.ts CLI,
 //        against the emulator) confers App Owner, after a fresh sign-in
 import { spawnSync } from 'node:child_process';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { newBrowser, registerCompany, shot, signIn, type Customer } from './support/journey';
-import { adminAuth, PROJECT } from '../backend/support/backendEnv';
+import { newBrowser, PASSWORD, seedPasswordCompany, shot, signIn, type Customer } from './support/journey';
+import { adminAuth, PROJECT, resetEmulators } from '../backend/support/backendEnv';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -22,6 +26,18 @@ async function verificationLinks(email: string): Promise<string[]> {
   return (body.oobCodes ?? []).filter((c) => c.email === email && c.requestType === 'VERIFY_EMAIL').map((c) => c.oobLink);
 }
 
+/** The verification email the old registration sent: the Auth REST sendOobCode for the signed-in user. */
+async function sendInitialVerification(email: string, password: string) {
+  const api = `http://${AUTH_HOST}/identitytoolkit.googleapis.com/v1/accounts`;
+  const signedIn = (await (await fetch(`${api}:signInWithPassword?key=emulator-key`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password, returnSecureToken: true }),
+  })).json()) as { idToken: string };
+  const sent = await fetch(`${api}:sendOobCode?key=emulator-key`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ requestType: 'VERIFY_EMAIL', idToken: signedIn.idToken }),
+  });
+  expect(sent.ok).toBe(true);
+}
+
 let session: { ctx: BrowserContext; page: Page };
 const banner = () => session.page.getByRole('region', { name: 'Email verification' });
 
@@ -29,9 +45,16 @@ test.afterAll(async () => {
   await session?.ctx.close();
 });
 
-test('EV-1: a new account is told to verify, can resend, and has no App Owner authority', async ({ browser }) => {
+test.beforeAll(async () => {
+  await resetEmulators();
+  await seedPasswordCompany(customer, { verified: false });
+  await sendInitialVerification(customer.email, PASSWORD);
+});
+
+test('EV-1: an unverified account is told to verify, can resend, and has no App Owner authority', async ({ browser }) => {
   session = await newBrowser(browser);
-  await registerCompany(session.page, customer);
+  await signIn(session.page, customer.email);
+  await expect(session.page.getByRole('button', { name: 'Profile & Branding' })).toBeVisible();
 
   await expect(banner()).toBeVisible();
   await expect(banner()).toContainText('Verify your email address');

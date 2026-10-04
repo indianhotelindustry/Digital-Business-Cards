@@ -1,0 +1,2098 @@
+{
+  "config": {
+    "argv": [
+      "C:\\nvm4w\\nodejs\\node.exe",
+      "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\node_modules\\@playwright\\test\\cli.js",
+      "test"
+    ],
+    "configFile": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\playwright.config.ts",
+    "rootDir": "C:/Users/SIPL Server/Downloads/DSS/digital-business-card-saas/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/SIPL Server/Downloads/DSS/digital-business-card-saas/test-results/e2e",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "C:/Users/SIPL Server/Downloads/DSS/digital-business-card-saas/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/directive-34/evidence/browser/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npx vite preview --outDir dist-e2e --port 4173 --strictPort --host 127.0.0.1",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false,
+      "timeout": 60000
+    }
+  },
+  "suites": [
+    {
+      "title": "card-creation.spec.ts",
+      "file": "card-creation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "D31-SETUP: customer registers with Google; the free company is active immediately",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12766,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:03.219Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901caaef8227862ce98f-31c34589a1264d1d2a6b",
+          "file": "card-creation.spec.ts",
+          "line": 59,
+          "column": 1
+        },
+        {
+          "title": "D31-TEMPLATE: all three real templates are shown and one must be chosen before details",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 598,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:19.293Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901caaef8227862ce98f-6ae17524659f9e9734f7",
+          "file": "card-creation.spec.ts",
+          "line": 66,
+          "column": 1
+        },
+        {
+          "title": "D31-CREATE: design + details + photo + custom address → created, published, QR",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10085,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:19.905Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901caaef8227862ce98f-31e29143cdfa0c21f18c",
+          "file": "card-creation.spec.ts",
+          "line": 85,
+          "column": 1
+        },
+        {
+          "title": "D31-PUBLIC: a clean, never-signed-in browser sees the real card with its photo",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3794,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:30.007Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901caaef8227862ce98f-be0d219134af02d8b207",
+          "file": "card-creation.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "D31-SLUG: Card Link ID is suggested from the name, checked inline, and a typed ID is never replaced",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5606,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:33.816Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901caaef8227862ce98f-7b62fc95d64fcc792b9f",
+          "file": "card-creation.spec.ts",
+          "line": 113,
+          "column": 1
+        },
+        {
+          "title": "D31-EDIT: editing an employee keeps the card design unless it is changed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 197,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:39.457Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901caaef8227862ce98f-2ecd86e019a5012573c1",
+          "file": "card-creation.spec.ts",
+          "line": 143,
+          "column": 1
+        },
+        {
+          "title": "D31-INACTIVE: a deactivated employee is unavailable publicly and the panel says why; activation restores it",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1461,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:39.671Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901caaef8227862ce98f-f27d1fcdb1b8d7f54611",
+          "file": "card-creation.spec.ts",
+          "line": 157,
+          "column": 1
+        },
+        {
+          "title": "D31-UNPUBLISH: unpublish hides the card, republish restores the same address",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1887,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:41.149Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\card-creation.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901caaef8227862ce98f-b3fa9db2db121776b585",
+          "file": "card-creation.spec.ts",
+          "line": 174,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "d34-google-sign-in.spec.ts",
+      "file": "d34-google-sign-in.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "D34-E2E-1: Create Free Card with Google makes an active individual account, no company, no demo data",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4820,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:43.166Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b49d01673b848d8250f0-a5089906f673f6e914e7",
+          "file": "d34-google-sign-in.spec.ts",
+          "line": 52,
+          "column": 1
+        },
+        {
+          "title": "D34-E2E-2: Register as Company with Google opens an active company workspace (Free plan)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2696,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:48.053Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b49d01673b848d8250f0-dd86d716d5a37da7ddac",
+          "file": "d34-google-sign-in.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "D34-E2E-3: the same Google identity registering again is told it already has a workspace; still one company",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2240,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:50.760Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b49d01673b848d8250f0-60472091cf599fb7c31d",
+          "file": "d34-google-sign-in.spec.ts",
+          "line": 110,
+          "column": 1
+        },
+        {
+          "title": "D34-E2E-4: an unknown Google identity at Login as Company is not authorized and gets no account",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2298,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:53.008Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b49d01673b848d8250f0-8c09b71a3484278e4af7",
+          "file": "d34-google-sign-in.spec.ts",
+          "line": 127,
+          "column": 1
+        },
+        {
+          "title": "D34-E2E-5: closing the Google popup shows no error and stays on the sign-in screen",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11673,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:30:55.314Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b49d01673b848d8250f0-df1ab3e078b70c5ba350",
+          "file": "d34-google-sign-in.spec.ts",
+          "line": 142,
+          "column": 1
+        },
+        {
+          "title": "D34-E2E-6: the sign-in screen at 360x740 has no horizontal scroll and every Google button is at least 44px tall",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1684,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:06.996Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b49d01673b848d8250f0-555a487080d1974a5be0",
+          "file": "d34-google-sign-in.spec.ts",
+          "line": 165,
+          "column": 1
+        },
+        {
+          "title": "D34-E2E-7: a password account signs in by email, links Google (same UID), then signs in with Google to the same workspace",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9988,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:08.691Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\d34-google-sign-in.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b49d01673b848d8250f0-4cdb7bb9f67d497520a5",
+          "file": "d34-google-sign-in.spec.ts",
+          "line": 191,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "demo-journey.spec.ts",
+      "file": "demo-journey.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Browser A: company registers, builds and publishes its website",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3248,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:18.719Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-b76f963b792c0d2bb057",
+          "file": "demo-journey.spec.ts",
+          "line": 48,
+          "column": 1
+        },
+        {
+          "title": "Browser B: the real company website appears for an anonymous visitor",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 567,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:23.192Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-9f225f1c22f204cda33a",
+          "file": "demo-journey.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "Browser A: adds an employee and publishes the card",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1445,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:23.784Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-c2e3315df4183c1d63fe",
+          "file": "demo-journey.spec.ts",
+          "line": 67,
+          "column": 1
+        },
+        {
+          "title": "Browser B: the real employee card appears; website → card → website loop works",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 732,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:25.253Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-c4d89e21100e2e2999cd",
+          "file": "demo-journey.spec.ts",
+          "line": 72,
+          "column": 1
+        },
+        {
+          "title": "Browser B: enquiry from the website reaches customer A",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7796,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:26.007Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-a3e7e9b4252a83750d7c",
+          "file": "demo-journey.spec.ts",
+          "line": 89,
+          "column": 1
+        },
+        {
+          "title": "Browser C: a second customer builds its own site and never sees customer A data",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10272,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:33.826Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-2eb04e9d29b059c7a0fe",
+          "file": "demo-journey.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "Browser E: a third customer builds its own site; three-way isolation holds",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10381,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:44.123Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-3c7497a4baae39b7e9fd",
+          "file": "demo-journey.spec.ts",
+          "line": 115,
+          "column": 1
+        },
+        {
+          "title": "unpublished, preview and unknown URLs never show content or demo data",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5848,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:31:54.535Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-4dc246a9a884c2ae4346",
+          "file": "demo-journey.spec.ts",
+          "line": 140,
+          "column": 1
+        },
+        {
+          "title": "Browser D: App Owner sees all three pilots demo ready",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15079,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:00.412Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\demo-journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "49ec2b88ba9186b665fe-8956f60f779c6d77a0fa",
+          "file": "demo-journey.spec.ts",
+          "line": 175,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "email-verification.spec.ts",
+      "file": "email-verification.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "EV-1: an unverified account is told to verify, can resend, and has no App Owner authority",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1417,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:15.781Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c8911a00cd533a6315d-b4183b5c5f6b5fd678b8",
+          "file": "email-verification.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "EV-2: the emailed link verifies the account; the app picks it up; still no App Owner authority",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 391,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:17.342Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c8911a00cd533a6315d-1453e6b66e99e41526c1",
+          "file": "email-verification.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "EV-3: only the server/admin grant confers App Owner, and only after a fresh sign-in",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9161,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:17.755Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\email-verification.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c8911a00cd533a6315d-336bed4fb6004f69a057",
+          "file": "email-verification.spec.ts",
+          "line": 98,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "production-rehearsal.spec.ts",
+      "file": "production-rehearsal.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "REH-R1: customer registers, creates the company, adds an employee, publishes card and website",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7329,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:27.047Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-875df6b153b9ce80bb25",
+          "file": "production-rehearsal.spec.ts",
+          "line": 57,
+          "column": 3
+        },
+        {
+          "title": "REH-R2: customer registers, creates the company, adds an employee, publishes card and website",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8879,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:34.683Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-7f1894e485c6f0d7e953",
+          "file": "production-rehearsal.spec.ts",
+          "line": 57,
+          "column": 3
+        },
+        {
+          "title": "REH-R3: customer registers, creates the company, adds an employee, publishes card and website",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9134,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:43.578Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-9e9c5d0136297822632a",
+          "file": "production-rehearsal.spec.ts",
+          "line": 57,
+          "column": 3
+        },
+        {
+          "title": "REH-SERVER: each employee and card belongs to exactly its own company",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 156,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:52.731Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-32c721b993c79e10d4b5",
+          "file": "production-rehearsal.spec.ts",
+          "line": 73,
+          "column": 1
+        },
+        {
+          "title": "REH-PUBLIC: every website, card and profile renders in a clean browser with only its own data",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15620,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:32:52.906Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-7263df3dbd03973498fe",
+          "file": "production-rehearsal.spec.ts",
+          "line": 88,
+          "column": 1
+        },
+        {
+          "title": "REH-NAV: website → employee card → website navigation uses canonical paths",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5628,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:33:08.585Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-4abbdc8e766a5cb964a9",
+          "file": "production-rehearsal.spec.ts",
+          "line": 115,
+          "column": 1
+        },
+        {
+          "title": "REH-PERSIST: customer data survives a reload and a brand-new browser",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4365,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:33:14.244Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-c6ef07805947dd278fa7",
+          "file": "production-rehearsal.spec.ts",
+          "line": 135,
+          "column": 1
+        },
+        {
+          "title": "REH-UNPUBLISH: unpublished content disappears from clean browsers; ?preview=true is no bypass",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13383,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:33:18.640Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-8230967a004e90a39b78",
+          "file": "production-rehearsal.spec.ts",
+          "line": 158,
+          "column": 1
+        },
+        {
+          "title": "REH-404: unknown slugs and paths show not-found pages, never demo content",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12315,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:33:32.651Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-2f1a4d0bb80d4d2a2172",
+          "file": "production-rehearsal.spec.ts",
+          "line": 196,
+          "column": 1
+        },
+        {
+          "title": "REH-LEGACY: old hash links still open and are rewritten to the canonical path",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5371,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:33:45.001Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-643c4eecdd906f7dd41d",
+          "file": "production-rehearsal.spec.ts",
+          "line": 222,
+          "column": 1
+        },
+        {
+          "title": "REH-OWNER: the App Owner sees all three customers correctly and measured platform health",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20810,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T16:33:50.394Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\SIPL Server\\Downloads\\DSS\\digital-business-card-saas\\tests\\e2e\\production-rehearsal.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fe49561477eec9f3ef6b-b5bc00ec9ed1f91fb186",
+          "file": "production-rehearsal.spec.ts",
+          "line": 233,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-04T16:29:58.339Z",
+    "duration": 260939.458,
+    "expected": 38,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

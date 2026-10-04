@@ -181,6 +181,8 @@ test('Browser D: App Owner sees all three pilots demo ready', async ({ browser }
   const { ctx, page } = await newBrowser(browser);
   await page.goto('/');
   await page.getByRole('button', { name: 'Sign In' }).first().click();
+  // Directive 34: password accounts sign in through the legacy link on the Google sign-in screen.
+  await page.getByRole('button', { name: 'Existing account? Sign in with email' }).click();
   const form = page.locator('form', { has: page.getByRole('button', { name: 'Sign In with Credentials' }) });
   await form.getByPlaceholder('name@example.com').fill(owner.email);
   await form.getByPlaceholder('••••••••').fill(OWNER_PASSWORD);

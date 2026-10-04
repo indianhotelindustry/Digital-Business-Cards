@@ -7,7 +7,7 @@
 //   A clean, never-signed-in browser opens the public card.
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { addAndPublishEmployee, chooseCardDesign, fillEmployeeDetails, fullName, newBrowser, registerCompany, shot, type Customer } from './support/journey';
-import { adminAuth, adminDb, createUser, ok, resetEmulators, type TestUser } from '../backend/support/backendEnv';
+import { adminDb, createUser, ok, resetEmulators, type TestUser } from '../backend/support/backendEnv';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -56,14 +56,11 @@ test.afterAll(async () => {
   await session?.close();
 });
 
-test('D31-SETUP: customer registers and is activated through the App Owner approval', async () => {
-  await registerCompany(page, C, undefined, async () => {
-    // Directive 30 gate: verified email + App Owner approval (the real callable).
-    const user = (await adminDb.collection('users').where('email', '==', C.email).get()).docs[0];
-    await adminAuth.updateUser(user.id, { emailVerified: true });
-    await ok('approveCustomer', { customerType: 'company', customerId: await companyId(), reason: 'D31 onboarding' }, owner);
-  });
+test('D31-SETUP: customer registers with Google; the free company is active immediately', async () => {
+  // Directive 34: Google registration (register_company); free companies need no App Owner approval.
+  await registerCompany(page, C);
   await expect(page.getByRole('button', { name: 'Employees & Cards' })).toBeVisible();
+  expect((await adminDb.doc(`companies/${await companyId()}`).get()).get('status')).toBe('active');
 });
 
 test('D31-TEMPLATE: all three real templates are shown and one must be chosen before details', async () => {

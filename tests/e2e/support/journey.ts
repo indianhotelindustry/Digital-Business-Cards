@@ -1,8 +1,12 @@
 // Shared real-UI customer journey steps (Directive 26 Phase 10, reused by
 // Directive 27 Phase 6). Every step drives the production build exactly as a
 // customer would: registration, Company Profile, Employees & Cards, publishing.
+// Directive 34: registration and login go through Google (the Auth emulator's
+// Google provider, popup path); email/password is login-only for old accounts.
 import { dirname } from 'node:path';
 import { expect, type Browser, type Page } from '@playwright/test';
+import { adminAuth, adminDb } from '../../backend/support/backendEnv';
+import { buildRegistrationDocuments } from '../../../shared/domain/registrationModel';
 
 /** Screenshots go next to the JSON report (DSBC_BROWSER_OUT), so each directive keeps its own evidence. */
 export const SHOTS = process.env.DSBC_BROWSER_OUT ? dirname(process.env.DSBC_BROWSER_OUT) : 'docs/directive-26/evidence/browser';
@@ -31,45 +35,106 @@ export async function newBrowser(browser: Browser) {
 
 export const shot = (page: Page, name: string) => page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: false });
 
+/** A Google identity in the Auth emulator: the same email always selects the same Google account. */
+export interface GoogleIdentity {
+  email: string;
+  name: string;
+}
+export type GoogleIntent = 'company_login' | 'individual_login' | 'register_company' | 'create_free_card';
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 /**
- * Registers a company. Directive 30: a new account waits for App Owner
- * approval; `activate` performs it (verified email + approveCustomer) and the
- * customer then presses "Check again", as a real customer would.
+ * Completes the Auth emulator's Google sign-in widget (firebase-tools 15.32.1,
+ * GET /emulator/auth/handler?providerId=google.com&authType=signInViaPopup).
+ * Pinned from the rendered widget (Task 8 step 1):
+ *   #title                    "Sign-in with Google.com"
+ *   li.js-reuse-account       an identity already in the emulator; its email in #reuse-email
+ *   button "Add new account"  opens the form: #email-input, #display-name-input,
+ *                             submit #sign-in ("Sign in with Google.com")
+ * An identity already in the emulator is picked from the list (same Google
+ * subject, so the same Firebase user); a new one is added. Waits for the popup to close.
  */
-export async function registerCompany(page: Page, c: Customer, password = PASSWORD, activate?: () => Promise<void>) {
+export async function completeGooglePopup(popup: Page, identity: GoogleIdentity) {
+  await popup.waitForLoadState('load'); // the widget wires its click handlers at the end of the page
+  await expect(popup.locator('#title')).toHaveText('Sign-in with Google.com');
+  const closed = popup.waitForEvent('close');
+  const existing = popup
+    .locator('li.js-reuse-account')
+    .filter({ has: popup.locator('#reuse-email', { hasText: new RegExp(`^\\s*${escapeRe(identity.email)}\\s*$`) }) });
+  if (await existing.count()) {
+    await existing.first().click();
+  } else {
+    await popup.getByRole('button', { name: 'Add new account' }).click();
+    await popup.locator('#email-input').fill(identity.email);
+    await popup.locator('#display-name-input').fill(identity.name);
+    await popup.locator('#sign-in').click();
+  }
+  await closed;
+}
+
+/** Directive 34: clicks the sign-in screen's Google button for `intent` and completes the emulator popup (popup path, no redirect). */
+export async function googleSignIn(page: Page, intent: GoogleIntent, identity: GoogleIdentity) {
+  await expect(page.getByTestId('sign-in-screen')).toBeVisible();
+  const popup = page.waitForEvent('popup');
+  await page.getByTestId(`google-${intent}`).click();
+  await completeGooglePopup(await popup, identity);
+}
+
+/** Marketing page "Sign In" -> Google; ends in the identity's workspace (resolveSession). */
+export async function googleLogin(page: Page, identity: GoogleIdentity, intent: 'company_login' | 'individual_login' = 'company_login') {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Sign In' }).first().click();
+  await googleSignIn(page, intent, identity);
+  await expect(page.getByTestId('sign-in-screen')).toHaveCount(0);
+}
+
+/**
+ * Registers a company the Directive 34 way: "Create Company Profile" ->
+ * Google (register_company) -> company form (Free plan) -> backend
+ * registerCompany. A free company is ACTIVE immediately (no approval step).
+ */
+export async function registerCompany(page: Page, c: Pick<Customer, 'company' | 'email'>) {
   await page.goto('/');
   await page.locator('button:visible', { hasText: 'Create Company Profile' }).first().click();
-  const form = page.locator('form', { has: page.getByRole('button', { name: 'Create Company Profile & Start Onboarding' }) });
-  await form.getByPlaceholder('e.g. Acme Innovations').fill(c.company);
-  await form.getByPlaceholder('name@example.com').fill(c.email);
-  await form.getByPlaceholder('••••••••').fill(password);
-  await form.getByRole('button', { name: 'Create Company Profile & Start Onboarding' }).click();
-  const closeWizard = page.getByRole('button', { name: 'Close onboarding' });
-  const awaiting = page.getByRole('heading', { name: 'Awaiting approval' });
-  // Directive 30: a pending account may go straight to the approval screen.
-  await expect(closeWizard.or(awaiting).first()).toBeVisible();
-  if (await closeWizard.isVisible()) await closeWizard.click();
-  await page.goto('/app');
-  if (activate) {
-    await expect(page.getByRole('heading', { name: 'Awaiting approval' })).toBeVisible();
-    await activate();
-    await page.getByRole('button', { name: 'Check again' }).click();
-    // "Check again" opens the workspace but does not re-fetch the entitlement
-    // snapshot refused while pending; a fresh load (as on next sign-in) does.
-    await expect(page.getByRole('button', { name: 'Profile & Branding' })).toBeVisible();
-    await page.reload();
-  }
+  await googleSignIn(page, 'register_company', { email: c.email, name: c.company });
+  const form = page.locator('form', { has: page.getByRole('button', { name: 'Create company workspace' }) });
+  await form.getByLabel('Company name').fill(c.company);
+  await expect(form.getByLabel('Your name')).toHaveValue(c.company); // prefilled from the Google profile
+  await form.getByRole('button', { name: 'Create company workspace' }).click();
+  await expect(page.getByTestId('sign-in-screen')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Profile & Branding' })).toBeVisible();
 }
 
+/**
+ * A password account from before Google sign-in (Directive 34 migration
+ * fixture). Browsers can no longer create accounts, so the Auth user and its
+ * ACTIVE free company are written with the Admin SDK in the shape the backend
+ * registration writes. Returns the uid.
+ */
+export async function seedPasswordCompany(c: { email: string; company: string; displayName?: string }, opts: { password?: string; verified?: boolean } = {}) {
+  const displayName = c.displayName ?? c.company;
+  const user = await adminAuth.createUser({ email: c.email, password: opts.password ?? PASSWORD, emailVerified: opts.verified ?? true, displayName });
+  const docs = buildRegistrationDocuments({ uid: user.uid, email: c.email, displayName, accountType: 'company', companyName: c.company, status: 'active' });
+  const batch = adminDb.batch();
+  batch.set(adminDb.collection('companies').doc(docs.company!.id), docs.company!);
+  batch.set(adminDb.collection('tenants').doc(docs.tenant.id), { ...docs.tenant, commercial: { state: 'free', method: 'free' } });
+  batch.set(adminDb.collection('users').doc(user.uid), docs.user);
+  await batch.commit();
+  return user.uid;
+}
+
+/** Legacy email/password sign-in, for password fixtures only: sign-in screen -> "Existing account? Sign in with email". */
 export async function signIn(page: Page, email: string, password = PASSWORD) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Sign In' }).first().click();
+  await page.getByRole('button', { name: 'Existing account? Sign in with email' }).click();
   const form = page.locator('form', { has: page.getByRole('button', { name: 'Sign In with Credentials' }) });
   await form.getByPlaceholder('name@example.com').fill(email);
   await form.getByPlaceholder('••••••••').fill(password);
   await form.getByRole('button', { name: 'Sign In with Credentials' }).click();
   await expect(form).toHaveCount(0); // signed in, modal closed
+  await expect(page.getByTestId('sign-in-screen')).toHaveCount(0);
   const closeWizard = page.getByRole('button', { name: 'Close onboarding' });
   if (await closeWizard.isVisible().catch(() => false)) await closeWizard.click();
   await page.goto('/app');
