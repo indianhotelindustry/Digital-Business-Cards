@@ -127,11 +127,18 @@ export const EmployeePortalView: React.FC<EmployeePortalViewProps> = ({ onNaviga
   const [deletionReason, setDeletionReason] = useState('');
   const [deletionSubmitted, setDeletionSubmitted] = useState(false);
 
-  const employeeId = userProfile?.employeeId || 'emp_acme_rahul';
+  // Directive 34: no demo fallback. A user without an employee record sees the
+  // "No employee card yet" state; nothing is looked up for them.
+  const employeeId = userProfile?.employeeId || null;
 
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
+      if (employeeId === null) {
+        setEmployee(null);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const emp = await getEmployeeById(employeeId);
@@ -222,7 +229,7 @@ export const EmployeePortalView: React.FC<EmployeePortalViewProps> = ({ onNaviga
   const cardUrl = publicEntityUrl('card', publicSlug, canonicalOrigin());
 
   useEffect(() => {
-    if (publicSlug) {
+    if (employeeId !== null && publicSlug) {
       QRCode.toDataURL(cardUrl, {
         width: 360,
         margin: 2,
@@ -234,7 +241,7 @@ export const EmployeePortalView: React.FC<EmployeePortalViewProps> = ({ onNaviga
         .then(setQrDataUrl)
         .catch((err) => console.error('Error generating QR:', err));
     }
-  }, [publicSlug, cardUrl]);
+  }, [employeeId, publicSlug, cardUrl]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(cardUrl);
@@ -366,13 +373,39 @@ export const EmployeePortalView: React.FC<EmployeePortalViewProps> = ({ onNaviga
     }
   };
 
+  if (employeeId === null) {
+    return (
+      <div className="max-w-xl mx-auto p-6" data-testid="no-employee-record">
+        <h1 className="text-lg font-bold text-slate-900">No employee card yet</h1>
+        <p className="text-sm text-slate-600">Your account is not linked to a company employee record. Ask your company admin to invite this Google account.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
+        <div className="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="text-xs text-slate-400 mt-2">Loading member digital card...</p>
+      </div>
+    );
+  }
+
+  if (!employee) {
+    return (
+      <div className="p-8 text-center bg-white rounded-2xl border border-slate-200">
+        <p className="text-xs text-slate-500">Employee profile not found.</p>
+      </div>
+    );
+  }
+
   // Construct active digital profile for live preview
   const previewProfileOverride: DigitalIdentityProfile = {
-    id: employee?.id || 'demo_emp',
-    employeeId: employee?.id || 'demo_emp',
-    companyId: employee?.companyId || 'demo_company',
+    id: employee.id,
+    employeeId: employee.id,
+    companyId: employee.companyId,
     headline,
-    about: about || employee?.bio,
+    about: about || employee.bio,
     philosophy,
     location,
     heroImageUrl: heroImageUrl || undefined,
@@ -398,23 +431,6 @@ export const EmployeePortalView: React.FC<EmployeePortalViewProps> = ({ onNaviga
     appearance: { mode: appearanceMode },
     updatedAt: new Date().toISOString(),
   };
-
-  if (loading) {
-    return (
-      <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
-        <div className="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-        <p className="text-xs text-slate-400 mt-2">Loading member digital card...</p>
-      </div>
-    );
-  }
-
-  if (!employee) {
-    return (
-      <div className="p-8 text-center bg-white rounded-2xl border border-slate-200">
-        <p className="text-xs text-slate-500">Employee profile not found.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 max-w-7xl">

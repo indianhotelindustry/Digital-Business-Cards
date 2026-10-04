@@ -1,17 +1,20 @@
 // ============================================================================
 // Directive 29: email verification and the App Owner boundary (emulator)
 // ============================================================================
-// The full lifecycle with real components: the client registerAccount() and
-// verification service, Auth-emulator verification links (oobCodes), the
+// The full lifecycle with real components: a legacy email/password account
+// (Directive 34: the browser no longer writes profiles, so the documents are
+// written with the Admin SDK exactly as the old registerAccount() did), the
+// client verification service, Auth-emulator verification links (oobCodes), the
 // Admin-SDK grant script, the deployed callables and firestore.rules.
 //
 //   REGISTER -> unverified -> no App Owner authority -> verify -> still no
 //   authority (no automatic grant) -> server/admin grant -> authority.
 import { beforeAll, describe, expect, it } from 'vitest';
-import { applyActionCode, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
+import { applyActionCode, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, type User } from 'firebase/auth';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { adminAuth, adminDb, call, PROJECT, resetEmulators, type TestUser } from './support/backendEnv';
-import { registerAccount } from '../../src/services/authService';
+import { buildRegistrationDocuments } from '../../shared/domain/registrationModel';
+import { INITIAL_ACCOUNT_STATUS } from '../../shared/domain/accountStatus';
 import { auth, db } from '../../src/lib/firebase';
 import { describeVerificationError, refreshVerificationState, sendVerificationEmail } from '../../src/services/emailVerification';
 import { hasVerifiedOwnerClaim } from '../../src/lib/authority';
@@ -44,13 +47,31 @@ const grantsFor = async (uid: string) =>
 let user: User;
 let tokenBeforeVerification: string;
 
+/** A legacy password company account: Auth user from the client, profile docs from the Admin SDK, then the verification email. */
+async function registerLegacyPasswordAccount(p: { email: string; password: string; displayName: string; companyName: string }) {
+  const created = (await createUserWithEmailAndPassword(auth, p.email, p.password)).user;
+  await updateProfile(created, { displayName: p.displayName });
+  const docs = buildRegistrationDocuments({ uid: created.uid, email: created.email || p.email, displayName: p.displayName, accountType: 'company', companyName: p.companyName, status: INITIAL_ACCOUNT_STATUS });
+  const batch = adminDb.batch();
+  if (docs.company) batch.set(adminDb.collection('companies').doc(docs.company.id), docs.company);
+  batch.set(adminDb.collection('tenants').doc(docs.tenant.id), docs.tenant);
+  batch.set(adminDb.collection('users').doc(created.uid), docs.user);
+  await batch.commit();
+  try {
+    await sendVerificationEmail(created);
+    return { profile: docs.user, verificationEmailSent: true, verificationError: null };
+  } catch (err) {
+    return { profile: docs.user, verificationEmailSent: false, verificationError: describeVerificationError(err) };
+  }
+}
+
 beforeAll(async () => {
   await resetEmulators();
 });
 
 describe('VERIFY: registration starts unverified and without authority', () => {
   it('VERIFY-001 registering creates an unverified account and sends exactly one verification email', async () => {
-    const result = await registerAccount({ email: EMAIL, password: PASSWORD, displayName: 'Verify Owner Co', accountType: 'company', companyName: 'Verify Owner Co' });
+    const result = await registerLegacyPasswordAccount({ email: EMAIL, password: PASSWORD, displayName: 'Verify Owner Co', companyName: 'Verify Owner Co' });
     expect(result.verificationEmailSent).toBe(true);
     expect(result.verificationError).toBeNull();
     expect(result.profile.role).toBe('company_admin'); // never app_owner from registration

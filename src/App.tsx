@@ -25,6 +25,9 @@ import { PublicCompanyPage } from './components/public/PublicCompanyPage';
 import { PublicMarketingPage } from './components/public/PublicMarketingPage';
 import { SecurityTestRunnerModal } from './components/security/SecurityTestRunnerModal';
 import { AuthModal } from './components/auth/AuthModal';
+import { SignInScreen } from './components/auth/SignInScreen';
+import { IndividualHomeView } from './components/views/IndividualHomeView';
+import type { SessionIntent } from '../shared/domain/sessionRouting';
 import { OnboardingWizardModal } from './components/onboarding/OnboardingWizardModal';
 import { DEMO_FEATURES_ENABLED } from './lib/runtimeFlags';
 import { canonicalizeLegacyHash, navigate, onRouteChange, routeFromLocation } from './lib/routes';
@@ -35,14 +38,26 @@ import { shouldShowAwaitingApproval } from './lib/accountGate';
 import { Shield, Sparkles, Building2, ExternalLink, Lock } from 'lucide-react';
 
 function AppContent() {
-  const { role, activeCompany, userProfile, loading: isLoading, switchDemoPersona, accountStatus, emailVerified } = useAuth();
+  const {
+    role,
+    userProfile,
+    currentUser,
+    loading: isLoading,
+    accountStatus,
+    emailVerified,
+    pendingIntent,
+    clearPendingIntent,
+    logoutUser,
+  } = useAuth();
 
   // Route / View state
   const [activeView, setActiveView] = useState<string>('dashboard');
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  // Directive 34: every entry point opens the full-screen Google sign-in; the
+  // legacy email/password modal is login-only and reached from that screen.
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [signInIntent, setSignInIntent] = useState<SessionIntent | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
-  const [authModalType, setAuthModalType] = useState<'individual' | 'company'>('individual');
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [onboardingType, setOnboardingType] = useState<'individual' | 'company'>('individual');
   const [publicCardSlug, setPublicCardSlug] = useState<string | null>(null);
@@ -81,10 +96,19 @@ function AppContent() {
       setActiveView('app-dashboard');
     } else if (role === 'company_admin') {
       setActiveView('company-dashboard');
+    } else if (userProfile?.accountType === 'individual' && !userProfile?.companyId) {
+      setActiveView('individual-home');
     } else if (role === 'employee') {
       setActiveView('employee-portal');
     }
-  }, [role]);
+  }, [role, userProfile?.accountType, userProfile?.companyId]);
+
+  // A signed-in Google identity without a DSBC account stays on the sign-in
+  // screen (also after "Use a different Google account" signs it out).
+  const isProfilelessIdentity = !!currentUser && accountStatus === 'no_account';
+  useEffect(() => {
+    if (isProfilelessIdentity) setIsSignInOpen(true);
+  }, [isProfilelessIdentity]);
 
   const handleNavigateToCard = (slug: string, preview = false) => {
     navigate(`card/${slug}${preview ? '?preview=true' : ''}`);
@@ -99,26 +123,31 @@ function AppContent() {
     setIsAdminPreview(false);
   };
 
-  const handleStartIndividualRegistration = () => {
-    setAuthModalMode('register');
-    setAuthModalType('individual');
-    setIsAuthModalOpen(true);
+  const openSignIn = (intent: SessionIntent | null) => {
+    setSignInIntent(intent);
+    setIsSignInOpen(true);
+  };
+  const handleStartIndividualRegistration = () => openSignIn('create_free_card');
+  const handleStartCompanyRegistration = () => openSignIn('register_company');
+  const handleOpenLogin = () => openSignIn(null);
+
+  const closeSignIn = () => {
+    setIsSignInOpen(false);
+    setSignInIntent(null);
+    clearPendingIntent();
   };
 
-  const handleStartCompanyRegistration = () => {
-    setAuthModalMode('register');
-    setAuthModalType('company');
-    setIsAuthModalOpen(true);
+  // Closing the screen with an unregistered Google session signs it out, so no
+  // profile-less identity lingers behind the marketing page.
+  const handleCloseSignIn = async () => {
+    if (isProfilelessIdentity) await logoutUser();
+    closeSignIn();
   };
 
-  const handleOpenLogin = () => {
-    setAuthModalMode('login');
-    setIsAuthModalOpen(true);
-  };
-
-  const handleAuthSuccess = (type: 'individual' | 'company') => {
-    setOnboardingType(type);
-    setIsOnboardingModalOpen(true);
+  const handleEnterWorkspace = () => {
+    closeSignIn();
+    setIsMarketingPage(false);
+    navigate('app');
   };
 
   // Unknown path (hosting already answered HTTP 404 for it in production)
@@ -194,6 +223,24 @@ function AppContent() {
     );
   }
 
+  // Directive 34: the Google sign-in screen (entry points, registration and
+  // the post-sign-in destination of a profile-less identity). One branch, so
+  // the screen keeps its state while the session changes underneath it.
+  if (isSignInOpen || isProfilelessIdentity) {
+    return (
+      <>
+        <SignInScreen
+          initialIntent={signInIntent ?? pendingIntent}
+          postSignIn={isProfilelessIdentity}
+          onClose={handleCloseSignIn}
+          onEnterWorkspace={handleEnterWorkspace}
+          onOpenLegacyLogin={() => setIsAuthModalOpen(true)}
+        />
+        <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} onSignedIn={handleEnterWorkspace} />
+      </>
+    );
+  }
+
   // Directive 30: a customer pending App Owner approval sees only the waiting
   // screen. No workspace, feature route or onboarding wizard is mounted.
   if (shouldShowAwaitingApproval(accountStatus, emailVerified)) {
@@ -219,26 +266,6 @@ function AppContent() {
             setIsMarketingPage(false);
             navigate('app');
           }}
-        />
-
-        {/* First-Run Customer Onboarding Wizard */}
-        <OnboardingWizardModal
-          isOpen={isOnboardingModalOpen}
-          onClose={() => setIsOnboardingModalOpen(false)}
-          initialType={onboardingType}
-          onPublishComplete={(slug, type) => {
-            setIsOnboardingModalOpen(false);
-            navigate(`${type}/${slug}`);
-          }}
-        />
-
-        {/* Authentication & Registration Modal */}
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          initialMode={authModalMode}
-          initialType={authModalType}
-          onSuccess={handleAuthSuccess}
         />
 
         {/* Legacy Security Test Runner Modal (DEVELOPMENT only — Directive 24) */}
@@ -324,6 +351,10 @@ function AppContent() {
       case 'company-analytics':
         return <CompanyAnalyticsView />;
 
+      // Individual (free account) home — Directive 34 Phase 1
+      case 'individual-home':
+        return <IndividualHomeView />;
+
       // Employee Views
       case 'employee-portal':
         return <EmployeePortalView onNavigateToCard={handleNavigateToCard} />;
@@ -357,10 +388,7 @@ function AppContent() {
       {/* Top Application Header */}
       <Header
         onOpenSecurityModal={() => setIsSecurityModalOpen(true)}
-        onOpenAuthModal={() => {
-          setAuthModalMode('login');
-          setIsAuthModalOpen(true);
-        }}
+        onOpenAuthModal={handleOpenLogin}
         onOpenOnboardingModal={() => {
           setOnboardingType(role === 'company_admin' ? 'company' : 'individual');
           setIsOnboardingModalOpen(true);
@@ -410,15 +438,6 @@ function AppContent() {
           onClose={() => setIsSecurityModalOpen(false)}
         />
       )}
-
-      {/* Real Firebase Authentication Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        initialMode={authModalMode}
-        initialType={authModalType}
-        onSuccess={handleAuthSuccess}
-      />
 
       {/* SaaS Flexible Pricing & Upgrade Modal */}
       <UpgradeModal />

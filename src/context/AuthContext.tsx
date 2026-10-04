@@ -8,6 +8,8 @@ import { DEMO_USERS } from '../services/seedService';
 import { DEMO_FEATURES_ENABLED } from '../lib/runtimeFlags';
 import { deriveEffectiveRole, hasVerifiedOwnerClaim } from '../lib/authority';
 import { getMyAccountState } from '../services/accountService';
+import { completeGoogleRedirect } from '../services/googleAuthService';
+import type { SessionIntent } from '../../shared/domain/sessionRouting';
 import {
   describeVerificationError,
   refreshVerificationState,
@@ -43,6 +45,9 @@ interface AuthContextType {
   switchDemoPersona: (personaKey: keyof typeof DEMO_USERS) => Promise<void>;
   logoutUser: () => Promise<void>;
   setCustomUserProfile: (profile: UserProfile) => void;
+  /** Entry point chosen before a Google redirect sign-in (UI hint only; never authority). */
+  pendingIntent: SessionIntent | null;
+  clearPendingIntent: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [ownerClaimVerified, setOwnerClaimVerified] = useState<boolean>(false);
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<SessionIntent | null>(null);
+  const clearPendingIntent = () => setPendingIntent(null);
 
   // Load profile & tenant company
   const loadProfileAndCompany = async (profile: UserProfile | null) => {
@@ -155,6 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logoutUser = async () => {
     localStorage.removeItem('dbc_active_demo_persona');
+    setPendingIntent(null);
     setUserProfile(null);
     setActiveCompany(null);
     setAccountStatus(null);
@@ -199,6 +207,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     init();
+
+    // Directive 34: finish a Google redirect sign-in (popup-blocked fallback).
+    // The stored intent only picks the screen; the backend decides the destination.
+    completeGoogleRedirect()
+      .then((r) => {
+        if (r && isMounted) setPendingIntent(r.intent);
+      })
+      .catch((err) => console.error('Google redirect sign-in failed:', err));
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setCurrentUser(firebaseUser);
@@ -270,6 +286,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         switchDemoPersona,
         logoutUser,
         setCustomUserProfile,
+        pendingIntent,
+        clearPendingIntent,
       }}
     >
       {children}

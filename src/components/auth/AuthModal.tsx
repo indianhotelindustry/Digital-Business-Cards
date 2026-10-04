@@ -1,45 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { loginWithEmail, registerAccount } from '../../services/authService';
-import { DEMO_USERS } from '../../services/seedService';
-import { conversionFunnelService } from '../../services/conversionFunnelService';
+import { loginWithEmail } from '../../services/authService';
 import { DEMO_FEATURES_ENABLED } from '../../lib/runtimeFlags';
-import { Lock, Mail, Key, User, Building2, AlertCircle, Sparkles, X, Check, ArrowRight } from 'lucide-react';
+import { Lock, Mail, Key, AlertCircle, X, ArrowRight } from 'lucide-react';
 
+// Directive 34 Phase 1: the legacy email/password path is LOGIN ONLY, for
+// accounts created before Google sign-in. New accounts are created by the
+// backend (registerIndividual / registerCompany) from the Google sign-in screen.
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: 'login' | 'register';
-  initialType?: 'individual' | 'company';
-  onSuccess?: (type: 'individual' | 'company') => void;
+  /** Called after a successful sign-in, before the modal closes. */
+  onSignedIn?: () => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({
-  isOpen,
-  onClose,
-  initialMode = 'login',
-  initialType = 'individual',
-  onSuccess,
-}) => {
-  const { switchDemoPersona, refreshUserData } = useAuth();
-  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
-  const [customerType, setCustomerType] = useState<'individual' | 'company'>(initialType);
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignedIn }) => {
+  const { switchDemoPersona } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setMode(initialMode);
-      setCustomerType(initialType);
-      setError(null);
-      if (initialMode === 'register') {
-        conversionFunnelService.trackEvent('REGISTRATION_STARTED', initialType);
-      }
-    }
-  }, [isOpen, initialMode, initialType]);
+    if (isOpen) setError(null);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -49,51 +33,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setSubmitting(true);
 
     try {
-      if (mode === 'login') {
-        const user = await loginWithEmail(email.trim(), password);
-        if (!user) {
-          setError('User document not found for these credentials.');
-        } else {
-          // Directive 26: signing in goes straight to the workspace; the setup
-          // wizard is for newly registered accounts only.
-          onClose();
-        }
+      const user = await loginWithEmail(email.trim(), password);
+      if (!user) {
+        setError('User document not found for these credentials.');
       } else {
-        if (!displayName.trim()) {
-          setError(
-            customerType === 'individual'
-              ? 'Please provide your full name.'
-              : 'Please provide company or admin name.'
-          );
-          setSubmitting(false);
-          return;
-        }
-
-        // Directive 24: identity + requested account type only. Role, tenant and
-        // plan are assigned by registrationModel and enforced by firestore.rules.
-        // No local fallback profile: if registration fails, the user is told so.
-        await registerAccount({
-          email: email.trim(),
-          password,
-          displayName: displayName.trim(),
-          accountType: customerType,
-          companyName: customerType === 'company' ? displayName.trim() : undefined,
-        });
-        await refreshUserData();
-
-        conversionFunnelService.trackEvent('REGISTRATION_COMPLETED', customerType);
+        // Directive 26: signing in goes straight to the workspace.
+        onSignedIn?.();
         onClose();
-        onSuccess?.(customerType);
       }
     } catch (err: any) {
       console.error('Authentication failure:', err);
-      let msg = err.message || 'Authentication failed';
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+      let msg = 'Sign-in did not complete. Please try again.';
+      if (err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password' || err?.code === 'auth/user-not-found') {
         msg = 'Invalid email or password.';
-      } else if (err.code === 'auth/email-already-in-use') {
-        msg = 'An account with this email already exists.';
-      } else if (err.code === 'auth/weak-password') {
-        msg = 'Password should be at least 6 characters.';
+      } else if (err?.code === 'auth/too-many-requests') {
+        msg = 'Too many attempts. Please wait a minute and try again.';
+      } else if (err?.code === 'auth/network-request-failed') {
+        msg = 'No connection. Check your internet and try again.';
+      } else if (err?.code === 'auth/user-disabled') {
+        msg = 'This account has been disabled. Please contact DSBC support.';
       }
       setError(msg);
     } finally {
@@ -103,39 +61,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white border border-slate-200 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+      <div className="bg-white border border-slate-200 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden max-h-[100dvh] overflow-y-auto">
         {/* Modal Header */}
         <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
             <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
-              {customerType === 'individual' && mode === 'register' ? (
-                <User className="w-5 h-5" />
-              ) : customerType === 'company' && mode === 'register' ? (
-                <Building2 className="w-5 h-5" />
-              ) : (
-                <Lock className="w-5 h-5" />
-              )}
+              <Lock className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">
-                {mode === 'login'
-                  ? 'Sign In to Workspace'
-                  : customerType === 'individual'
-                  ? 'Create My Free Digital Card'
-                  : 'Create Company Profile & Mini-Website'}
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                {mode === 'login'
-                  ? 'Firebase Authentication & Multi-Tenant Authorization'
-                  : customerType === 'individual'
-                  ? 'Zero credit card required • Instant public vanity URL'
-                  : 'Team directory • Branded employee cards • Mini-website'}
-              </p>
+              <h2 className="text-sm font-bold text-slate-900">Sign in with your existing email account</h2>
+              <p className="text-[11px] text-slate-500">For accounts created with an email and password</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+            aria-label="Close"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -144,138 +85,60 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Form Body */}
         <div className="p-6">
           {error && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start space-x-2 text-rose-700 text-xs">
+            <div role="alert" className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start space-x-2 text-rose-700 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Registration Mode Choice (Directive 21 Section 6) */}
-          {mode === 'register' && (
-            <div className="mb-4 p-1 bg-slate-100 rounded-xl grid grid-cols-2 gap-1 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setCustomerType('individual')}
-                className={`py-1.5 px-3 rounded-lg flex items-center justify-center space-x-1.5 transition ${
-                  customerType === 'individual'
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <User className="w-3.5 h-3.5 text-teal-600" />
-                <span>Individual Card</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCustomerType('company')}
-                className={`py-1.5 px-3 rounded-lg flex items-center justify-center space-x-1.5 transition ${
-                  customerType === 'company'
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Building2 className="w-3.5 h-3.5 text-teal-600" />
-                <span>Company Profile</span>
-              </button>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-3.5">
-            {mode === 'register' && (
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  {customerType === 'individual' ? 'Full Name' : 'Company or Admin Name'}
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    required
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder={
-                      customerType === 'individual' ? 'e.g. Jordan Smith' : 'e.g. Acme Innovations'
-                    }
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600"
-                  />
-                </div>
-              </div>
-            )}
-
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                {customerType === 'individual' && mode === 'register' ? 'Personal / Work Email' : 'Work Email'}
+              <label htmlFor="legacy-login-email" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Work Email
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                 <input
+                  id="legacy-login-email"
                   type="email"
                   required
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600"
+                  className="w-full min-h-[44px] pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+              <label htmlFor="legacy-login-password" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Password
               </label>
               <div className="relative">
-                <Key className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <Key className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                 <input
+                  id="legacy-login-password"
                   type="password"
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600"
+                  className="w-full min-h-[44px] pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600"
                 />
               </div>
             </div>
-
-            {mode === 'register' && (
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                We'll email you a link to verify this address. Please open it: an unverified address can't be
-                granted platform administration rights, and verifying protects your account.
-              </p>
-            )}
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full mt-2 py-2.5 px-4 bg-teal-800 hover:bg-teal-900 active:bg-teal-950 text-white rounded-xl font-bold text-xs transition shadow-sm disabled:opacity-50 flex items-center justify-center space-x-1.5"
+              className="w-full min-h-[44px] mt-2 py-2.5 px-4 bg-teal-800 hover:bg-teal-900 active:bg-teal-950 text-white rounded-xl font-bold text-xs transition shadow-sm disabled:opacity-50 flex items-center justify-center space-x-1.5"
             >
-              <span>
-                {submitting
-                  ? 'Setting Up Account...'
-                  : mode === 'login'
-                  ? 'Sign In with Credentials'
-                  : customerType === 'individual'
-                  ? 'Create My Free Card & Start Onboarding'
-                  : 'Create Company Profile & Start Onboarding'}
-              </span>
+              <span>{submitting ? 'Signing in...' : 'Sign In with Credentials'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>
-
-          {/* Toggle Login/Register */}
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                setMode(mode === 'login' ? 'register' : 'login');
-              }}
-              className="text-xs text-teal-700 hover:text-teal-800 font-medium"
-            >
-              {mode === 'login'
-                ? "Don't have an account? Create Free Card or Company Profile"
-                : 'Already have credentials? Sign In'}
-            </button>
-          </div>
 
           {/* Quick Demo Switcher Divider (DEVELOPMENT only) */}
           {DEMO_FEATURES_ENABLED && (
