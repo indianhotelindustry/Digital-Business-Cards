@@ -113,16 +113,27 @@ test('D31-PUBLIC: a clean, never-signed-in browser sees the real card with its p
   });
 });
 
-test('D31-SLUG: a taken, reserved or malformed custom address is refused and never replaced silently', async () => {
+test('D31-SLUG: Card Link ID is suggested from the name, checked inline, and a typed ID is never replaced', async () => {
   await chooseCardDesign(page, 'classic');
-  for (const [slug, msg] of [['asha-verma', /already claimed/i], ['admin', /reserved|not allowed|system/i], ['a', /at least|too short|characters/i]] as const) {
-    await fillEmployeeDetails(page, SECOND, { customSlug: slug });
-    await page.getByTestId('employee-submit').click();
-    await expect(page.getByTestId('custom-slug-error')).toHaveText(msg);
+  const status = page.getByTestId('card-link-id-status');
+  const input = page.getByTestId('card-link-id-input');
+  // Suggested from the name; the same name in the same company gets a visible alternative.
+  await page.locator('label:has-text("First Name") + input').fill(C.employee.first);
+  await page.locator('label:has-text("Last Name") + input').fill(C.employee.last);
+  await expect(input).toHaveValue('asha-verma-2');
+  await expect(page.getByTestId('card-link-id-note')).toContainText('asha-verma');
+  await expect(status).toHaveAttribute('data-state', 'available');
+  // Typed IDs: taken / reserved / malformed are shown inline, kept as typed, and block creation.
+  for (const [slug, state] of [['asha-verma', 'taken'], ['admin', 'reserved'], ['ab', 'invalid'], ['ravi-', 'invalid']] as const) {
+    await input.fill(slug);
+    await expect(status).toHaveAttribute('data-state', state);
+    await expect(input).toHaveValue(slug);
+    await expect(page.getByTestId('employee-submit')).toBeDisabled();
   }
   expect((await adminDb.collection('employees').where('email', '==', SECOND.email).get()).size).toBe(0);
-  // A free address is kept exactly as requested.
-  await fillEmployeeDetails(page, SECOND, { customSlug: 'Ravi Nair' });
+  // A free ID is kept exactly as typed.
+  await fillEmployeeDetails(page, SECOND, { customSlug: 'ravi-nair' });
+  await expect(status).toHaveAttribute('data-state', 'available');
   await page.getByTestId('employee-submit').click();
   await expect(page.getByTestId('publishing-panel-card').getByTestId('publishing-slug')).toHaveValue(SECOND.slug);
   await page.getByRole('button', { name: 'Close publishing' }).click();
@@ -137,6 +148,9 @@ test('D31-EDIT: editing an employee keeps the card design unless it is changed',
   const row = page.locator('tr', { hasText: fullName(C) });
   await row.getByTitle('Edit Profile').click();
   await expect(page.getByTestId('selected-template')).toHaveText('modern');
+  await expect(page.getByTestId('card-link-id-input')).toHaveValue(C.employee.slug); // shown read-only
+  await expect(page.getByTestId('photo-upload-field')).toBeVisible();
+  await expect(page.locator('label:has-text("Profile Photo URL")')).toHaveCount(0);
   await page.locator('label:has-text("Job Designation") + input').fill('Principal Designer');
   await page.getByTestId('employee-submit').click();
   await expect(page.getByText('Principal Designer').first()).toBeVisible();

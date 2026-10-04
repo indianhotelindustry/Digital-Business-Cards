@@ -111,7 +111,7 @@ export const PublishingPanel: React.FC<PublishingPanelProps> = ({ entityType, en
       ) : (
         <>
           <label className="block text-[11px] font-semibold text-slate-600">
-            Public address
+            {entityType === 'card' ? 'Card Link ID' : 'Public address'}
             <div className="mt-1 flex items-center rounded-xl border border-slate-200 overflow-hidden">
               <span className="px-2 py-2 text-[11px] text-slate-500 bg-slate-50 border-r border-slate-200">/{ROUTE[entityType]}/</span>
               <input

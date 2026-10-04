@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useEntitlement } from '../../context/EntitlementContext';
 import { Employee, Department, Card, CardTemplate } from '../../types';
@@ -9,10 +9,11 @@ import {
   setEmployeeStatus,
 } from '../../services/employeeService';
 import { getDepartmentsByCompany } from '../../services/departmentService';
-import { getCardById, getCardTemplates, updateCard } from '../../services/cardService';
+import { findUniqueSlug, getCardById, getCardTemplates, updateCard } from '../../services/cardService';
 import { PublishingPanel } from '../publishing/PublishingPanel';
 import { TemplatePicker, type CardTemplateId } from '../cards/TemplatePicker';
 import { PhotoUploadField, type PhotoValue } from '../cards/PhotoUploadField';
+import { CardLinkIdField, checkCardLinkId, type CardLinkStatus } from '../cards/CardLinkIdField';
 import { uploadEmployeePhoto } from '../../services/storageService';
 import { slugService } from '../../services/slugService';
 import { publishingService } from '../../services/publishingService';
@@ -83,8 +84,12 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
   const [cardTemplateId, setCardTemplateId] = useState<CardTemplateId | null>(null);
   const [originalTemplateId, setOriginalTemplateId] = useState<CardTemplateId | null>(null);
   const [step, setStep] = useState<'template' | 'details'>('template');
-  const [customSlug, setCustomSlug] = useState('');
-  const [slugError, setSlugError] = useState<string | null>(null);
+  // Directive 32: Card Link ID, suggested from the name until the user edits it.
+  const [cardLinkId, setCardLinkId] = useState('');
+  const [cardLinkTouched, setCardLinkTouched] = useState(false);
+  const [cardLinkStatus, setCardLinkStatus] = useState<CardLinkStatus>({ state: 'empty', message: '' });
+  const [cardLinkNote, setCardLinkNote] = useState<string | null>(null);
+  const linkCheckSeq = useRef(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [pageNotice, setPageNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -131,8 +136,10 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     setCardTemplateId(null);
     setOriginalTemplateId(null);
     setStep('template');
-    setCustomSlug('');
-    setSlugError(null);
+    setCardLinkId('');
+    setCardLinkTouched(false);
+    setCardLinkStatus({ state: 'empty', message: '' });
+    setCardLinkNote(null);
     setFormError(null);
     setIsAddModalOpen(true);
   };
@@ -168,10 +175,19 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     setLinkedin(emp.linkedin || '');
     setWebsite(emp.website || '');
     setPhoto({ url: emp.profilePhotoUrl || '', file: null });
-    setCustomSlug('');
-    setSlugError(null);
+    setCardLinkId('');
+    setCardLinkTouched(true);
+    setCardLinkStatus({ state: 'empty', message: '' });
+    setCardLinkNote('To change a published Card Link ID use Publish; the old link stops working.');
     setFormError(null);
     setStep('details');
+    if (emp.cardId) {
+      const cardId = emp.cardId;
+      publishingService
+        .fetchRecord(cardId)
+        .then(async (record) => setCardLinkId(record?.slug || (await getCardById(cardId))?.publicSlug || ''))
+        .catch((err) => console.error('Failed to load Card Link ID:', err));
+    }
     // Load the card's real design so saving the form never resets it.
     setCardTemplateId(null);
     setOriginalTemplateId(null);
@@ -187,23 +203,46 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     }
   };
 
-  /** Validates a requested custom slug; returns the normalised slug, '' for none, or null when rejected. */
-  const checkCustomSlug = async (): Promise<string | null> => {
-    const raw = customSlug.trim();
-    if (!raw) return '';
-    const candidate = slugService.sanitize(raw);
-    const format = slugService.validateSlug(candidate);
-    if (!format.isValid) {
-      setSlugError(format.errorMessage || 'This address is not allowed.');
-      return null;
+  // Suggest a Card Link ID from the name until the user types their own.
+  useEffect(() => {
+    if (!isAddModalOpen || cardLinkTouched) return;
+    const base = slugService.sanitize(`${firstName} ${lastName}`);
+    setCardLinkId(base);
+    setCardLinkNote(null);
+  }, [firstName, lastName, isAddModalOpen, cardLinkTouched]);
+
+  // Inline availability (debounced). An untouched suggestion that is taken is
+  // replaced by a visible alternative; a typed ID is never changed.
+  useEffect(() => {
+    if (!isAddModalOpen) return;
+    const seq = ++linkCheckSeq.current;
+    if (!cardLinkId) {
+      setCardLinkStatus({ state: 'empty', message: '' });
+      return;
     }
-    const availability = await slugService.checkAvailability(candidate);
-    if (!availability.isValid) {
-      setSlugError(availability.errorMessage || 'This address is already in use. Please choose another.');
-      return null;
-    }
-    setSlugError(null);
-    return candidate;
+    setCardLinkStatus({ state: 'checking', message: '' });
+    const timer = setTimeout(async () => {
+      const status = await checkCardLinkId(cardLinkId);
+      if (seq !== linkCheckSeq.current) return;
+      if (status.state === 'taken' && !cardLinkTouched) {
+        const alternative = await findUniqueSlug(cardLinkId);
+        if (seq !== linkCheckSeq.current) return;
+        if (alternative !== cardLinkId) {
+          setCardLinkNote(`"${cardLinkId}" is already taken, so "${alternative}" is suggested.`);
+          setCardLinkId(alternative);
+          return;
+        }
+      }
+      setCardLinkStatus(status);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [cardLinkId, cardLinkTouched, isAddModalOpen]);
+
+  /** Final check before creating: returns the Card Link ID, or null when it cannot be used. */
+  const confirmCardLinkId = async (): Promise<string | null> => {
+    const status = await checkCardLinkId(cardLinkId);
+    setCardLinkStatus(status);
+    return status.state === 'available' || status.state === 'unknown' ? cardLinkId : null;
   };
 
   const handleCreateEmployee = async (e: React.FormEvent) => {
@@ -223,7 +262,7 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
     setSubmitting(true);
     setFormError(null);
     try {
-      const slug = await checkCustomSlug();
+      const slug = await confirmCardLinkId();
       if (slug === null) return;
       const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
       const result = await createEmployee(
@@ -244,7 +283,7 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
         },
         {
           cardTemplateId,
-          customSlug: slug || undefined,
+          customSlug: slug,
         }
       );
 
@@ -709,6 +748,18 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
                 </div>
               </div>
 
+              <CardLinkIdField
+                value={cardLinkId}
+                readOnly={!!editingEmployee}
+                onChange={(v) => {
+                  setCardLinkTouched(true);
+                  setCardLinkNote(null);
+                  setCardLinkId(v);
+                }}
+                status={editingEmployee ? undefined : cardLinkStatus}
+                note={cardLinkNote}
+              />
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-slate-700 mb-1">Job Designation *</label>
@@ -828,32 +879,6 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
                 </button>
               </div>
 
-              {!editingEmployee && (
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">
-                    Custom Card Address (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. rahul-sharma"
-                    data-testid="custom-slug-input"
-                    value={customSlug}
-                    onChange={(e) => {
-                      setCustomSlug(e.target.value);
-                      setSlugError(null);
-                    }}
-                    className={`w-full px-3 py-2 rounded-xl border ${slugError ? 'border-rose-400' : 'border-slate-200'} focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-[11px]`}
-                  />
-                  {slugError ? (
-                    <span className="text-[11px] text-rose-700 mt-1 block" role="alert" data-testid="custom-slug-error">{slugError}</span>
-                  ) : (
-                    <span className="text-[10px] text-slate-400 mt-1 block">
-                      Public URL: /card/{customSlug.trim() ? slugService.sanitize(customSlug) : 'generated from the name'}. The address is reserved for this card when you publish it.
-                    </span>
-                  )}
-                </div>
-              )}
-
               {formError && (
                 <div className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-[11px] text-rose-800" role="alert">{formError}</div>
               )}
@@ -877,7 +902,7 @@ export const EmployeeManagementView: React.FC<EmployeeManagementViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting || !cardTemplateId}
+                  disabled={submitting || !cardTemplateId || (!editingEmployee && ['taken', 'reserved', 'invalid', 'checking', 'empty'].includes(cardLinkStatus.state))}
                   data-testid="employee-submit"
                   className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-sm disabled:opacity-50"
                 >

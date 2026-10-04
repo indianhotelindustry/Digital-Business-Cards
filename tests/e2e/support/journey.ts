@@ -121,7 +121,8 @@ export async function fillEmployeeDetails(page: Page, e: Customer['employee'], o
     await page.getByTestId('photo-file-input').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: PNG });
     await expect(page.getByTestId('photo-preview')).toBeVisible();
   }
-  if (opts.customSlug !== undefined) await page.getByTestId('custom-slug-input').fill(opts.customSlug);
+  // Directive 32: the Card Link ID sits under the name and is checked inline.
+  if (opts.customSlug !== undefined) await page.getByTestId('card-link-id-input').fill(opts.customSlug);
 }
 
 export async function addAndPublishEmployee(page: Page, c: Customer) {
@@ -129,6 +130,7 @@ export async function addAndPublishEmployee(page: Page, c: Customer) {
   await expect(page.getByText(/0 \/ 3 employees used/)).toBeVisible(); // server entitlement snapshot loaded
   await chooseCardDesign(page, c.employee.template || 'classic');
   await fillEmployeeDetails(page, c.employee, { photo: true, customSlug: c.employee.slug });
+  await expect(page.getByTestId('card-link-id-status')).toHaveAttribute('data-state', 'available');
   await page.getByTestId('employee-submit').click();
   // Step 6: the publishing panel opens on its own, seeded with the requested address.
   const panel = page.getByTestId('publishing-panel-card');
