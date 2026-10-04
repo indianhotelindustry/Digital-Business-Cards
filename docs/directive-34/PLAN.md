@@ -16,7 +16,7 @@ test-first task list for each phase lives in `docs/superpowers/plans/`.
 | Employees / cards | 1 / 1 (Moolchand, published) |
 | Individuals / pending accounts | 0 / 0 → **no status migration is needed** |
 
-task360-ift is the DSBC project only (Task360/Tasking is a separate project, tasking-f8019).
+task360-ift is the DSBC project; its Firebase Authentication serves DSBC only.
 The project-level password provider may therefore be disabled — but only after both existing
 DSBC users have linked Google and that is verified (directive §12). DSBC also enforces Google in
 its own backend and rules (token `firebase.sign_in_provider == 'google.com'`) as defence in depth.
