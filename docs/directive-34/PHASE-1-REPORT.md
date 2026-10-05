@@ -15,8 +15,8 @@ pre-Phase-1 release.
 |---|---|
 | Branch | `security-foundation/directive-27` (not `main`) |
 | Phase 1 commits | **13**, `63aefc1..46421e2`, on top of the plan commit `63aefc1` |
-| Tree certified | `46421e2` *fix(d34): mobile marketing menu gets Sign In and a labelled toggle; tighten Google sign-in journeys* |
-| Code changes after `46421e2` | none — every suite below ran against this exact tree |
+| Implementation complete at | `46421e2` *fix(d34): mobile marketing menu gets Sign In and a labelled toggle; tighten Google sign-in journeys* |
+| Code changes after `46421e2` | **one**, from the final review: `src/components/auth/SignInScreen.tsx` gains a "sign in with email" route out of the `no_account` / `not_company_admin` screens (§2, and the reasoning in §10 risk 6). The suite totals in §5 were re-measured after it. |
 
 Working tree at certification — tracked files are clean except for documentation; the following
 are **untracked** and are not part of Phase 1:
@@ -55,7 +55,7 @@ commit `63aefc1`). By area:
 **Client (hosting) — deployable**
 - `src/services/googleAuthService.ts` (new) — the one Google auth service (popup, redirect fallback, linking, error copy)
 - `src/services/sessionService.ts` (new) — `resolveSession` / `registerIndividual` / `registerCompany`
-- `src/components/auth/SignInScreen.tsx` (new, 472 lines), `signInErrorCopy.ts` (new), `LinkGoogleBanner.tsx` (new)
+- `src/components/auth/SignInScreen.tsx` (new), `signInErrorCopy.ts` (new), `LinkGoogleBanner.tsx` (new). **Review fix:** the `no_account` and `not_company_admin` phases now also offer "Existing account? Sign in with email" (the same label the `choose` phase and `googleAuthService`'s account-exists copy already use), routed through the existing `onOpenLegacyLogin` prop. Without it, an existing DSBC user whose Google address differs from their account email was offered only "Create Free Card" / "Register as Company", either of which would have created a **second** active account for the same person. See §10 risk 6.
 - `src/components/auth/CustomerRegistrationModal.tsx` **deleted** (−290); `AuthModal.tsx` reduced to sign-in only (+44/−181)
 - `src/App.tsx`, `src/context/AuthContext.tsx`, `src/services/authService.ts`, `src/services/registrationModel.ts`, `src/lib/backend.ts`, `src/lib/accountGate.ts`, `src/components/public/PublicMarketingPage.tsx`, `src/components/views/EmployeePortalView.tsx`, `src/components/views/IndividualHomeView.tsx`
 
@@ -110,14 +110,14 @@ relative to `.superpowers/sdd/2026-10-04-d34-phase1-google-sign-in/`.
 
 | Suite | Command | Result | Measured |
 |---|---|---|---|
-| Typecheck (app) | `npm run typecheck` | **clean**, no errors | 10-04, `logs/tc-root.log` |
-| Typecheck (functions) | `npm --prefix functions run typecheck` | **clean**, no errors | 10-04, `logs/tc-fn.log` |
-| Unit (this working tree) | `npm run test:unit` | **162/162 passed, 18 files** — includes the 3 untracked D30 tests | 10-04, `logs/unit.log` |
+| Typecheck (app) | `npm run typecheck` | **clean**, no errors, exit 0 | 10-05, `logs/tc-root-final.log` |
+| Typecheck (functions) | `npm --prefix functions run typecheck` | **clean**, no errors, exit 0 | 10-05, `logs/tc-fn-final.log` |
+| Unit (this working tree) | `npm run test:unit` | **162/162 passed, 18 files**, exit 0 — includes the 3 untracked D30 tests | 10-05, `logs/unit-final.log` |
 | Unit (committed tree only) | `npx vitest run --exclude "**/accountService.test.ts"` | **159/159 passed, 17 files**, exit 0 | 10-05, `logs/unit-committed-tree.log` |
 | Rules | `npm run test:rules` | **588/588 passed, 8 files**, 45.3 s, script exit **0** | 10-04, `logs/rules.log` |
 | Integration | `npm run test:integration` | **24/24 passed, 2 files**, 27.2 s, script exit **0** | 10-04, `logs/integ.log` |
 | Backend authority | `npm run test:backend` | **194/194 passed, 10 files**, 144.1 s, script exit **0** | 10-05 (see §11) |
-| Browser (real Chrome) | `node scripts/directive26/runBrowserTests.mjs` | **38/38 specs passed**, 0 flaky, exit **0** — two runs, see below | 10-04 + 10-05, two `results*.json` |
+| Browser (real Chrome, full suite) | `node scripts/directive26/runBrowserTests.mjs` | **38/38 specs passed**, 0 unexpected, 0 flaky, 2.7 min, script exit **0** | 10-05, `logs/browser-final.log` + `results-final.json` |
 | Production build | `npx vite build` | **exit 0** — 1881 modules, built in 5.46 s (`dist/index.html` 1.06 kB, CSS 107.47 kB, `index-*.js` 238.66 kB, `App-*.js` 1710.23 kB; the >500 kB chunk warning is pre-existing) | 10-05 |
 
 "10-04" figures are the logs in `logs/`, all timestamped after the last code commit (22:13). They
@@ -132,41 +132,49 @@ Note on the unit total: 3 of the 162 tests come from the untracked Directive 30 
 
 ### Browser suite detail (real Chrome, production-mode bundle, emulator-backed)
 
-The e2e suite is 38 specs in 5 files. All 38 passed, in two runs whose spec sets are disjoint and
-together exhaustive:
-
-| Run | Specs | Result | Evidence |
-|---|---|---|---|
-| 2026-10-04 (Task 8) | `d34-google-sign-in.spec.ts` (7) + `production-rehearsal.spec.ts` (11) | **18 expected, 18 passed, 0 unexpected, 0 flaky**, 94.1 s | `docs/directive-34/evidence/browser/results.json` |
-| 2026-10-05 (Task 9) | `card-creation.spec.ts` (8) + `demo-journey.spec.ts` (9) + `email-verification.spec.ts` (3) | **20 expected, 20 passed, 0 unexpected, 0 flaky**, 58.3 s, script exit **0** | `docs/directive-34/evidence/browser/results-task9-remaining.json` |
-| | **38 of 38** | | |
-
-The Task 9 run was scoped to the three spec files that had not run since the final fix commit
-`46421e2`; the other two files had already been re-run against it. The exact command was:
+The e2e suite is 38 specs in 5 files. **All 38 passed in a single full-suite run** after the
+`SignInScreen` fix below, so there is no split-run or timing caveat to carry:
 
 ```bash
-DSBC_BROWSER_OUT=docs/directive-34/evidence/browser/results-task9-remaining.json \
-  node scripts/directive26/runBrowserTests.mjs \
-  tests/e2e/card-creation.spec.ts tests/e2e/demo-journey.spec.ts tests/e2e/email-verification.spec.ts
+DSBC_BROWSER_OUT=docs/directive-34/evidence/browser/results-final.json \
+  node scripts/directive26/runBrowserTests.mjs
 ```
 
-`DSBC_BROWSER_OUT` was pointed at a new file so Playwright's JSON reporter could not overwrite
-the committed 18-spec `results.json` (confirmed: unchanged). The full 38 also passed in a single
-run one commit earlier, at `a53096d`.
+| Spec file | Specs |
+|---|---|
+| `card-creation.spec.ts` | 8 |
+| `d34-google-sign-in.spec.ts` | 7 |
+| `demo-journey.spec.ts` | 9 |
+| `email-verification.spec.ts` | 3 |
+| `production-rehearsal.spec.ts` | 11 |
+| **Total** | **38 expected, 38 passed, 0 unexpected, 0 flaky**, 2.7 min, script exit **0** |
 
-**Timing caveat on the 18-spec run.** Its `results.json` records the run as
-22:11:57–22:13:31 IST, while commit `46421e2` is timestamped 22:13:57 — the run finished 26
-seconds *before* the commit. That is the ordinary write-test-commit sequence: it exercised the
-working tree that was committed moments later, so "ran against `46421e2`" is accurate in substance
-but not literally against the committed object. Byte-level equality between what ran and what was
-committed is assumed, not verified. The 20-spec Task 9 run has no such ambiguity — it ran well
-after the commit. If the founder wants this closed rather than caveated, re-running those 18
-specs at `eff8dc5` is one command and a couple of minutes.
+Evidence: `docs/directive-34/evidence/browser/results-final.json`, console log
+`logs/browser-final.log`. `DSBC_BROWSER_OUT` was pointed at a new file so Playwright's JSON
+reporter could not overwrite earlier committed evidence; `results.json` (the Task 8 18-spec run)
+and `results-task9-remaining.json` (the Task 9 20-spec run) are both unchanged and remain in the
+repo as the history of how this suite was certified.
 
-Re-running the three specs regenerated 10 of their own screenshots in
-`docs/directive-34/evidence/browser/` (`01`, `03`, `05`, `05b`, `07`, `d29-*`,
-`d31-created-published`, `d31-template-step`). Those refreshed images are committed with this
-report, so the screenshot evidence matches the certified tree.
+This full run supersedes the earlier two partial runs. It also closes two caveats those runs
+carried: the 18 + 20 split, and the fact that the 18-spec `results.json` finished 26 seconds
+*before* the commit it was attributed to. This run began well after its tree was final.
+
+**A coverage change behind the "38/38, 0 flaky".** Phase 1 made free registrations active
+immediately, so Task 8 removed the `activate()` approval callbacks from the `card-creation`,
+`production-rehearsal` and `email-verification` journeys (commit `a53096d`; verified: `activate(`
+no longer appears anywhere under `tests/e2e/`). The Directive 30 App-Owner **approval** journey
+therefore no longer has browser-level, end-to-end coverage. The behaviour itself is still pinned
+at two lower levels — `tests/backend/activation.test.ts` (29 cases) and `tests/unit/accountGate.test.ts`
+— so nothing is untested, but it is no longer exercised through a real browser. This matters
+beyond Phase 1: **Phase 2 and the SHSPL offline-payment confirmation depend on that approval
+path**, so Phase 2 should restore a browser-level approval journey rather than inherit this gap.
+The green totals above are true; this is what they no longer cover.
+
+The full run regenerated **21** of the journeys' own screenshots in
+`docs/directive-34/evidence/browser/`; they are committed, so the screenshot evidence matches the
+certified tree. Among them, `d34-e2e-4-not-authorized.png` is the visual confirmation of the
+`SignInScreen` review fix: the "Existing account? Sign in with email" route now appears on that
+screen between "Register as Company" and "Use a different Google account".
 
 ---
 
@@ -222,11 +230,18 @@ nothing else.
 From a clean tree at the certified commit:
 
 ```bash
-git status                                            # clean, at the certified commit
+git status                                            # see the note below before acting on this
 npx vite build                                        # production mode; produces dist/ for hosting
 npx tsx scripts/directive27/preflight.ts              # must report 0 FAIL and 0 BLOCKED
 node scripts/directive27/secretsAudit.mjs --bundle dist
 ```
+
+**On `git status`:** "clean" means *no uncommitted tracked changes*. Four **untracked** paths are
+expected and listed in §1 — `.firebase/`, `.vscode/`, `docs/directive-27/evidence/bootstrap/` and
+`tests/unit/accountService.test.ts`. **Do not run `git clean -fd` to make the output look clean:**
+`docs/directive-27/evidence/bootstrap/` holds the only copies of two real production bootstrap
+evidence reports, and deleting them is irreversible. Confirm `git status --porcelain` shows no
+`M`/`A`/`D` lines; `??` lines matching §1's list are fine.
 
 `npx vite build` is a prerequisite, not a formality: `firebase.production.json` serves hosting
 from `dist/`, so the hosting step publishes whatever that build produced. The build itself was
@@ -236,7 +251,7 @@ already verified green for this tree (§5); re-run it at deploy time so `dist/` 
 
 1. **Functions**
    ```bash
-   firebase deploy --config firebase.production.json --project production --only functions
+   npx firebase deploy --config firebase.production.json --project production --only functions
    ```
    Additive. Verify: `resolveSession`, `registerIndividual`, `registerCompany` appear in
    `asia-south1`; the existing 45 callables still answer.
@@ -247,7 +262,7 @@ already verified green for this tree (§5); re-run it at deploy time so `dist/` 
    behaviour change and should not be described as none.
 2. **Firestore rules and indexes**
    ```bash
-   firebase deploy --config firebase.production.json --project production --only firestore
+   npx firebase deploy --config firebase.production.json --project production --only firestore
    ```
    This is the step that closes browser-side registration. `firestore.indexes.json` is unchanged
    by Phase 1 (verified: not in the `28fb0c7..eff8dc5` diff), so this is effectively a
@@ -256,7 +271,7 @@ already verified green for this tree (§5); re-run it at deploy time so `dist/` 
    existing users can still read their own `users/{uid}`; Moolchand's public card still resolves.
 3. **Hosting**
    ```bash
-   firebase deploy --config firebase.production.json --project production --only hosting
+   npx firebase deploy --config firebase.production.json --project production --only hosting
    ```
    Verify: build-info shows the new commit; the sign-in screen loads; `/pricing` loads and
    `/no-such-page` answers 404 (the rewrites live in `firebase.production.json`); then §9.
@@ -277,6 +292,14 @@ Not a style preference. The base `firebase.json` is the **emulator** configurati
 `--project production` is the `.firebaserc` alias for `task360-ift`. The **default** alias in
 `.firebaserc` is `demo-dsbc`, the emulator project, so omitting `--project` does not target
 production.
+
+**And why `npx`.** `firebase-tools` is a **root devDependency** (`^15.32.1`); bare `firebase` is
+**not on `PATH`** in this environment (verified: `command -v firebase` finds nothing, while
+`node_modules/.bin/firebase.exe` exists). Every command here is therefore prefixed with `npx`, in
+line with the repo's convention elsewhere (`npx vite build`, `npx tsx`). If you have
+firebase-tools installed globally you may drop the `npx`, but do not assume it — and note that
+`npx` run **outside** this checkout would silently fetch an unpinned firebase-tools from the
+registry rather than the version this repo was verified against.
 
 ### Why this order, and the window it leaves
 
@@ -308,20 +331,43 @@ succeeded**. Either way, rules and hosting must land in the same sitting; do not
 
 ### Rollback
 
-| Step | Rollback |
-|---|---|
-| Hosting | `firebase hosting:rollback --project production` (or console → Hosting → release history, selecting the release whose build-info commit is `28fb0c7`). Seconds, no rebuild. |
-| Rules | Non-destructive, from a throwaway worktree so the working tree's `firestore.rules` is never overwritten: see the commands below. Restores browser-side registration — do it only together with a hosting rollback, since the new UI does not use that path. |
-| Functions | Nothing to undo: the three callables are additive and unreferenced once hosting is rolled back. To revert `getMyAccountState`'s `no_account` response, redeploy `functions` from the same worktree. Production functions are in **`asia-south1`** (§6); the runbook's functions-undo line names `us-west1`, which is stale for this project — do not use it. |
+| Step | Rollback | Cost |
+|---|---|---|
+| Hosting | `npx firebase hosting:rollback --project production`, or console → Hosting → release history, selecting the release whose build-info commit is `28fb0c7`. | Seconds, no rebuild |
+| Rules | **Primary: the Firebase console.** Firestore → Rules → ruleset history for database `dsbc-production` → select the ruleset in force before the Phase 1 deploy → publish. No CLI, no checkout, no build. **Fallback (CLI):** see below — needs `npm ci` in a worktree first, so it is minutes, not seconds. Restores browser-side registration, so do it only together with a hosting rollback. | Console: seconds. CLI fallback: minutes |
+| Functions | Nothing to undo: the three callables are additive and unreferenced once hosting is rolled back. To revert `getMyAccountState`'s `no_account` response, redeploy `functions` **from the main checkout** at the previous commit (see below) — not from a throwaway worktree. Production functions are in **`asia-south1`** (§6). | Minutes |
+
+**Take the console route for rules if you can.** It is the only genuinely-seconds option, and in an
+incident it avoids every dependency problem below.
 
 ```bash
-# Rules rollback — leaves the working tree untouched
-git worktree add ../dsbc-rules-rollback 28fb0c7          # firebase.production.json is present at this commit
+# Rules rollback — CLI fallback. Leaves the working tree's firestore.rules untouched.
+git worktree add ../dsbc-rules-rollback 28fb0c7   # firebase.production.json is present at this commit
 cd ../dsbc-rules-rollback
-firebase deploy --config firebase.production.json --project production --only firestore
-cd -
-git worktree remove ../dsbc-rules-rollback
+npm ci                                            # REQUIRED: a fresh worktree has no node_modules,
+                                                  # so `npx firebase` would otherwise fetch an
+                                                  # unpinned firebase-tools from the registry
+npx firebase deploy --config firebase.production.json --project production --only firestore
+cd - && git worktree remove ../dsbc-rules-rollback
 ```
+
+Why this is safe despite the functions `predeploy` hook: `firebase.production.json` declares
+`predeploy: npm --prefix functions run build` on its **functions** target only, and
+`--only firestore` does not run another target's predeploy. So the rules rollback never invokes
+`functions/build.mjs`.
+
+```bash
+# Functions rollback — from the MAIN checkout, which already has node_modules
+git stash                                         # if the working tree has changes worth keeping
+git checkout 28fb0c7
+npx firebase deploy --config firebase.production.json --project production --only functions
+git checkout security-foundation/directive-27     # and `git stash pop` if you stashed
+```
+
+**Do not run the functions rollback from a throwaway worktree.** Its `predeploy` runs
+`npm --prefix functions run build` → `node functions/build.mjs`, which imports **esbuild**.
+`esbuild` is a **root** devDependency (`^0.25.0`) and is absent from `functions/package.json`, so
+in a worktree with no installed `node_modules` the predeploy fails and nothing deploys.
 
 **Precondition — stated, not assumed.** This rollback is only correct if the **live** ruleset
 currently matches `firestore.rules` as of `28fb0c7`. What is verified and what is not:
@@ -350,8 +396,39 @@ No data rollback exists or is needed: the deploy writes no data.
 
 Run **only** after the founder approves the deploy, and only after step 3 above.
 
+**Step 0 — observe what the real Google IdP does, *before* any linking.** This is the only
+scenario with no automated coverage anywhere: the emulator mints synthetic Google tokens, so
+Firebase's real same-email behaviour has never been exercised. It writes no data. Record verbatim
+what Firebase returns.
+
+> **⚠️ Step 0 is safe for one of the two people and harmful for the other. Read this first.**
+>
+> Signing in with Google **creates a Firebase Auth user** for that Google identity if none exists
+> — this is measured, not assumed: `D34-E2E-4` resolves a UID for an unknown Google identity that
+> has no `users/{uid}` document. So:
+>
+> - **If the person's Google address is the same as their DSBC account email** — expected for the
+>   App Owner — `allowDuplicateEmails: false` prevents a second account for that address. Firebase
+>   either auto-links Google onto the existing UID (its documented behaviour when the existing
+>   email is verified, and both production emails are) or refuses with
+>   `auth/account-exists-with-different-credential`. Both outcomes are safe and both are worth
+>   recording. **Run step 0 for this person.**
+> - **If the person's Google address differs from their DSBC account email** — the likely case for
+>   the In Future Technologies owner, whose password account is on their company domain — there is
+>   no email collision, so Firebase creates a **new, separate** Auth user holding that Google
+>   credential. `Link Google` on their real account then fails permanently with
+>   `auth/credential-already-in-use` (pinned at `tests/backend/d34-session.test.ts:163`), and the
+>   App Owner must delete that orphaned Auth user before linking can succeed. **Skip step 0 for
+>   this person and go straight to step 2.**
+>
+> Note also that **`Improved email privacy` is on** for this project (§6). One documented effect is
+> that Firebase stops surfacing `auth/account-exists-with-different-credential`. If so, the
+> account-exists copy may be unreachable in production by configuration, and step 0 would show a
+> silent auto-link instead. Either result is fine — record which one happens, because that is the
+> fact this step exists to establish.
+
 1. **App Owner**: sign in with the existing password → click **Link Google** → sign out → sign in with Google → lands in the **App Owner** workspace.
-2. **In Future Technologies owner**: the same, with the Google account that person controls → lands in the **company** workspace.
+2. **In Future Technologies owner**: the same, with the Google account that person controls → lands in the **company** workspace. **Link first; do not sign in with Google beforehand** (see the step 0 warning). If they have already signed in with that Google account at any point, check for and delete the orphaned Auth user before linking.
 3. Read-only `accounts:lookup` for both UIDs shows **`password` + `google.com` on the SAME UIDs** (`qwDfeo…` and `Xj7QfQ…` — no new UID).
 4. `users/{uid}` role / companyId / status unchanged for both; `companies/co_Xj7Q…` unchanged; **no new** `users` / `companies` / `tenants` documents — compare the counts in §6 before and after (expected: users 2, companies 2, tenants 2).
 5. Moolchand's public card still resolves (`resolvePublicEntity` → `OK`).
@@ -360,18 +437,19 @@ Email/password stays enabled throughout. **"Create Free Card" and "Register as C
 to be exercised with real accounts** unless the founder intends to create those accounts — doing
 so writes real `users`/`tenants`/`companies` documents and would change the counts in step 4.
 
-Phase 1 is production-ready only when all five pass.
+Phase 1 is production-ready only when step 0 is recorded and all five checks pass.
 
 ---
 
 ## 10. Remaining risks
 
-1. **The rules/hosting coupling.** Closing browser registration and shipping the new sign-in screen are one logical change split across two deploy targets, so there is no ordering that is free of trade-offs — §8 states the window each order leaves. The real risk is *stopping* between them: if the hosting deploy fails after the rules deploy, self-registration is closed with no replacement UI. Mitigation: deploy rules and hosting in one sitting, and keep the one-line rules rollback in §8 to hand.
-2. **Real Google IdP behaviour is still unobserved.** The emulator mints synthetic Google ID tokens. Account-exists and credential-already-in-use handling against Google's own IdP is first exercised by §9. (Carried forward from Task 7.)
+1. **The rules/hosting coupling.** Closing browser registration and shipping the new sign-in screen are one logical change split across two deploy targets, so there is no ordering that is free of trade-offs — §8 states the window each order leaves. The real risk is *stopping* between them: if the hosting deploy fails after the rules deploy, self-registration is closed with no replacement UI. Mitigation: deploy rules and hosting in one sitting, and before starting, have the rules rollback **already open** — the Firebase console's ruleset history for `dsbc-production`, which is the only seconds-fast route. The CLI fallback in §8 needs a worktree and an `npm ci` first, so it is minutes, not a one-liner; do not plan an incident around it.
+2. **Real Google IdP same-email behaviour is unobserved, and §9's steps 1–5 do not observe it.** The emulator mints synthetic Google ID tokens, so Firebase's real response to "this Google address already belongs to a DSBC password account" has never been exercised. Steps 1–2 deliberately **link first, then** sign in with Google — an order that can never produce `auth/account-exists-with-different-credential`. So passing all five checks would leave this still unobserved. That is why **§9 now has a step 0** that signs in with Google *before* linking and records what Firebase actually returns. Two caveats, both in §9: step 0 is safe only where the Google address matches the DSBC account email (otherwise it creates an orphaned Auth user and blocks linking), and because `Improved email privacy` is on, the account-exists error may be unreachable in production by configuration — in which case the mapped copy for it is dead code in practice, which step 0 will reveal. (Carried forward from Task 7, now corrected.)
 3. **The redirect fallback has no automated test.** Popup-blocked browsers fall back to `signInWithRedirect`; the emulator cannot drive a real redirect, so that path is covered by unit tests over mocked `firebase/auth` plus the error copy, not by a browser test. (Carried forward from Task 6.)
 4. **`npm run test:backend` can silently drop a test file.** An intermittent vitest forks-pool fault made the first run of this certification skip `platform-health.test.ts` while still printing "190/190 passed" (it exited 1, correctly). It did not reproduce in three later runs, and the suite is 194/194 exit 0. The operating rule — accept a backend run only at `10 passed (10)` / `194 passed (194)` / exit 0 — and the full investigation are in §11. A test-runner defect, not a product defect.
 5. **A triage list of minor findings is open.** Tasks 1–8 recorded **15** `minor (deferred)` ledger entries (each listing one or more findings), ranging from cosmetic (a stale file header, missing test ids) through to small UX gaps (the Link Google banner shows for every non-Google signed-in user including the App Owner and is not dismissible; a profile-less owner-claim holder could sit on an "Opening your workspace…" spinner; an orphaned owned company without a `users` doc can produce a re-register loop; the marketing hero still shows a sample card). They are listed in full, per task, in `.superpowers/sdd/2026-10-04-d34-phase1-google-sign-in/progress.md`. None blocks Phase 1; the scheduled whole-branch review triages them.
-6. **The deployable delta versus live is Phase 1 alone — and that is what makes the rollback source valid.** The live hosting commit `28fb0c7` is an **ancestor** of this report's commit (verified with `git merge-base --is-ancestor`), so everything up to it is already in production and the branch's distance from `main` is not a measure of deploy risk. Measured against live: `28fb0c7..eff8dc5` is **19 commits** — 4 pre-plan commits, the plan commit, the 13 Phase 1 commits, and this report. Of the files they touch, **24 are on the deployable surface** (`firestore.rules`, `functions/src/**`, `src/**`, `shared/**`), and every one of those 24 is a D34 Phase 1 file. The 4 pre-plan commits touch only documentation plus one dev-only script (`scripts/directive31-smoke.mjs`, never deployed) — no rules, no `functions/src`, no `src`, no `shared`, no `firebase*.json`. **So deploying from this branch ships Phase 1 and nothing else**, and §9's verification covers the delta rather than a fraction of it. The same measurement is what makes the §8 rules rollback sound: because those 4 commits change no rules file, `firestore.rules` is byte-identical at `28fb0c7` and at the Phase 1 base `63aefc1^`, so rolling back to `28fb0c7` restores exactly the pre-Phase-1 rules. The residual risk is not the delta's size but the unverified live-rules provenance recorded in §8.
+6. **Signing in with Google creates a Firebase Auth user before any registration — so the order in §9 matters.** This is measured, not assumed: `D34-E2E-4` resolves a UID for an unknown Google identity that has no `users/{uid}` document. Consequences: (a) a person whose Google address differs from their DSBC account email who signs in with Google **before** linking creates a separate Auth user holding that credential, after which `Link Google` on their real account fails permanently with `auth/credential-already-in-use` (`tests/backend/d34-session.test.ts:163`) until the App Owner deletes the orphan; (b) before the review fix in §2, that person's only on-screen options were "Create Free Card" and "Register as Company", either of which would have created a **second fully active DSBC account** — a duplicate workspace with its own company and tenant documents — for someone who already had one. The fix gives them a route back to their real account; it does **not** retroactively unblock anyone who has already signed in with that Google address, which still needs the orphan deleted. The backend cannot fix this, and should not: matching identities by email is exactly what Phase 1 forbids. §9's step 0 guard and step 2 note exist for this reason.
+7. **The deployable delta versus live is Phase 1 alone — and that is what makes the rollback source valid.** The live hosting commit `28fb0c7` is an **ancestor** of this report's commit (verified with `git merge-base --is-ancestor`), so everything up to it is already in production and the branch's distance from `main` is not a measure of deploy risk. Measured against live: `28fb0c7..eff8dc5` is **19 commits** — 4 pre-plan commits, the plan commit, the 13 Phase 1 commits, and this report. Of the files they touch, **24 are on the deployable surface** (`firestore.rules`, `functions/src/**`, `src/**`, `shared/**`), and every one of those 24 is a D34 Phase 1 file. The 4 pre-plan commits touch only documentation plus one dev-only script (`scripts/directive31-smoke.mjs`, never deployed) — no rules, no `functions/src`, no `src`, no `shared`, no `firebase*.json`. **So deploying from this branch ships Phase 1 and nothing else**, and §9's verification covers the delta rather than a fraction of it. The same measurement is what makes the §8 rules rollback sound: because those 4 commits change no rules file, `firestore.rules` is byte-identical at `28fb0c7` and at the Phase 1 base `63aefc1^`, so rolling back to `28fb0c7` restores exactly the pre-Phase-1 rules. The residual risk is not the delta's size but the unverified live-rules provenance recorded in §8.
 
 ---
 

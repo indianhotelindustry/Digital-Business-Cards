@@ -46,6 +46,15 @@ immediately.
 Undo: redeploy `docs/directive-27/evidence/live-snapshot/live-firestore.rules`
 to `$DB`.
 
+> **⚠️ Only valid for the Directive 27 deploy itself.** That snapshot is the
+> **pre-D27** capture (2026-10-02) and is now three directives stale: it differs
+> from `firestore.rules` at the live hosting commit `28fb0c7` by ~1,191 lines
+> (25,854 vs 32,640 bytes). Redeploying it during a later rollback would revert
+> production rules past Directives 29-34. For a post-D27 rollback, use the rules
+> from the commit that is actually live — see
+> `docs/directive-34/PHASE-1-REPORT.md` §8, and confirm the live ruleset's
+> provenance before relying on any source.
+
 ## 3. Grant and verify the App Owner
 
 ```bash
@@ -78,6 +87,12 @@ The backend checks itself against the registry at load. A wrong project,
 database, region or payment switch makes this step fail before anything is
 created. Undo: `firebase functions:delete <names> --project $PROJECT --region us-west1`.
 Before DSBC no DSBC functions existed, so deleting returns to the previous state.
+
+> **⚠️ The region in that undo command is wrong for this project.** DSBC's
+> functions are deployed in **`asia-south1`** (measured 2026-10-04: 45 callables
+> in `asia-south1`), not `us-west1`. Use `--region asia-south1`, or the delete
+> silently matches nothing. Note also that `firebase` is not on `PATH` — it is a
+> root devDependency, so prefix CLI commands with `npx`.
 
 ## 6. Storage rules (only after the bucket-ownership decision)
 
