@@ -31,29 +31,38 @@ or anything else at runtime (ENV-009). The resolved object is frozen (ENV-008).
 
 | | Development | Staging | Production |
 |---|---|---|---|
-| Firebase project | `demo-dsbc` (emulators) | **not designated** | `v-nexus-lite` |
-| Firestore database | `(default)` | n/a | `ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5` (Enterprise edition, `us-west1`) |
-| Storage bucket | `demo-dsbc.appspot.com` | n/a | `v-nexus-lite.firebasestorage.app` |
-| Functions region | `us-central1` | n/a | `us-west1` (same region as the database, required for Firestore triggers) |
-| Hosting site | `demo-dsbc` | n/a | **not designated** |
-| Public origin | none | n/a | **not designated** |
+| Firebase project | `demo-dsbc` (emulators) | **not designated** | `task360-ift` (project number `924082823565`) |
+| Firestore database | `(default)` | n/a | `dsbc-production` (Standard edition, `asia-south1`) — never `(default)`, which exists in the same project and is **not** DSBC |
+| Storage bucket | `demo-dsbc.appspot.com` | n/a | `task360-ift.firebasestorage.app` |
+| Functions region | `us-central1` | n/a | `asia-south1` (same region as the database, required for Firestore triggers). One global region for every function — `functions/src/shared/runtime.ts` calls `setGlobalOptions({ region })` from the registry value. |
+| Hosting site | `demo-dsbc` | n/a | `task360-ift` (deploy target `dsbc-web`) |
+| Public origin | none | n/a | `https://task360-ift.web.app` |
 | Demo data / personas / dev tools | allowed | n/a | never |
 | Payments | disabled | n/a | disabled |
 
 ## Designations only the App Owner can make
 
+> **Status (verified against the registry, 2026-10-05).** 1, 2 and 4 are **designated**
+> — the values are in the Current targets table above. **3 (staging) remains open**, and
+> is the one preflight check that still reports BLOCKED; it is formally waived for the
+> D34 Phase 1 pilot in the risk-acceptance entry below. The instructions are kept for
+> when a target is re-designated.
+
 1. **Hosting site.** Create or choose a site, set `hosting.site` in the registry, then run
    `node_modules/.bin/firebase target:apply hosting dsbc-web <site> --project task360-ift`
    (the repo-pinned CLI; never `npx firebase` — see RUNBOOK.md).
 2. **Public origin.** For example `https://cards.example.com`. Set `publicOrigin` in the
-   registry **and** `DSBC_PUBLIC_ORIGIN` in `functions/.env.v-nexus-lite` (the
+   registry **and** `DSBC_PUBLIC_ORIGIN` in `functions/.env.task360-ift` (the
    backend refuses to load if they differ). Share links and QR codes use it.
 3. **Staging.** A separate Firebase project with no customer data. Fill in the
    `staging` entry and add `functions/.env.<stagingProject>`.
-4. **Storage bucket ownership.** `v-nexus-lite` also hosts other AI Studio
-   apps. Deploying `storage.rules` replaces the rules of the **whole bucket**.
-   Confirm no other app uses `v-nexus-lite.firebasestorage.app`, or provision a
-   dedicated DSBC bucket and register it.
+4. **Storage bucket ownership.** Resolved: `task360-ift` is **dedicated to DSBC**
+   (`boundary.dedicatedProject: true`, `sharedWith: []` in the registry; decision
+   recorded in [docs/directive-28/decision.json](../directive-28/decision.json)), so
+   deploying `storage.rules` to `task360-ift.firebasestorage.app` cannot replace
+   another app's rules. The earlier shared-bucket hazard applied to the previous
+   candidate project and no longer applies here. Re-check this if the project ever
+   stops being DSBC-only.
 
 After any change: `npx vite build && npx tsx scripts/directive27/preflight.ts`.
 
