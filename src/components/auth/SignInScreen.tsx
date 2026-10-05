@@ -267,6 +267,23 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({ initialIntent = null
     </button>
   );
 
+  // Directive 34: an existing DSBC user whose Google address differs from their
+  // account email lands here with no profile. Without this escape hatch the only
+  // offers are "Create Free Card" / "Register as Company", either of which would
+  // create a SECOND active account for the same person instead of linking Google
+  // to the one they already have. Same label as the choose phase, which
+  // googleAuthService's account-exists copy tells users to look for.
+  const existingAccountButton = (
+    <>
+      <p className="text-sm text-slate-600">
+        Already have a DSBC account? Sign in with your email first, then use Link Google — your account and data stay the same.
+      </p>
+      <button type="button" onClick={onOpenLegacyLogin} className="text-xs text-slate-500 underline self-center min-h-[44px] px-2">
+        Existing account? Sign in with email
+      </button>
+    </>
+  );
+
   const renderPhase = () => {
     switch (phase.kind) {
       case 'choose':
@@ -410,6 +427,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({ initialIntent = null
             <button type="button" onClick={() => handleSignedInIntent('register_company', phase)} disabled={busy} className={primaryBtn}>
               Register as Company
             </button>
+            {existingAccountButton}
             {differentAccountButton}
           </>
         );
@@ -425,6 +443,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({ initialIntent = null
               Register as Company
             </button>
             <p className="text-sm text-slate-600">Joining your company? Ask your company admin to invite this Google account.</p>
+            {existingAccountButton}
             {differentAccountButton}
           </>
         );
