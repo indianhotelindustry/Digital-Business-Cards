@@ -1,6 +1,6 @@
 {
   "schema": "dsbc.directive27.preflight/v1",
-  "generatedAt": "2026-10-03T06:52:18.249Z",
+  "generatedAt": "2026-10-05T06:18:23.728Z",
   "target": "production",
   "status": "BLOCKED",
   "counts": {
@@ -72,7 +72,7 @@
     {
       "id": "BUILD_IDENTITY",
       "status": "PASS",
-      "detail": "dist = commit 267a35f for task360-ift / dsbc-production (built from a dirty working tree: not a release build)."
+      "detail": "dist = commit 793c31b for task360-ift / dsbc-production."
     },
     {
       "id": "PRODUCTION_BOUNDARY",

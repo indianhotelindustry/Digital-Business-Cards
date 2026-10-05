@@ -56,6 +56,47 @@ or anything else at runtime (ENV-009). The resolved object is frozen (ENV-008).
 
 After any change: `npx vite build && npx tsx scripts/directive27/preflight.ts`.
 
+## Risk acceptance — staging waiver (D34 Phase 1 controlled pilot)
+
+**Dated 2026-10-05. Issued by the App Owner (founder) under Directive 37.**
+Scope: the D34 Phase 1 controlled pilot deployment only.
+
+**Release record:** `BLOCKED BY DESIGNATED-STAGING CHECK — FORMALLY WAIVED FOR THIS PILOT`
+
+`scripts/directive27/preflight.ts` reports **16 PASS, 0 FAIL, 1 BLOCKED** for target
+`production`. The only blocked check is `STAGING_DESIGNATED` ("No staging project is
+designated; nothing can be rehearsed on real infrastructure before production"), which
+corresponds to designation 3 above. This is a pre-existing infrastructure condition, **not a
+D34 Phase 1 defect**: the committed `evidence/preflight.json` generated 2026-10-03T06:52:18Z
+already recorded the identical `16 PASS / 0 FAIL / 1 BLOCKED` with `STAGING_DESIGNATED` as its
+only non-PASS check, so the same block was outstanding when commit `28fb0c7` was deployed to
+production on 2026-10-04. [RUNBOOK.md](RUNBOOK.md) §0 ("Before deployment day", line 18) permits satisfying this gate through
+**staging OR a written waiver**; this entry is that written waiver.
+
+**Basis for acceptance.** D34 Phase 1 was independently certified locally at commit
+`793c31b`: backend 194/194 (exit 0), browser 38/38, rules 588/588, integration 24/24, unit
+162/162 working tree, root and Functions typecheck clean, `npx vite build` clean. The final
+whole-branch review found **no Critical code findings**. Production Firestore rules were
+captured directly from `task360-ift` / `dsbc-production` (ruleset
+`6bc57802-2983-4a37-8be7-8a320ce28c5d`) and verified **identical** to the measured pre-Phase-1
+rollback baseline. Phase 1 has modified no production data or customer records.
+
+**Accepted risk.** No separate staging environment is available for a real-infrastructure
+rehearsal before this pilot deployment.
+
+**Compensating controls.** Deployment of the exact certified commit; explicit Firebase project
+targeting; explicit `dsbc-production` database targeting (never `(default)`); a measured live
+rollback baseline; read-only production preflight; minimal deployment scope (functions,
+Firestore rules, hosting only); post-deployment verification; an explicit rollback procedure;
+no Phase 2 deployment; no payment enablement (`PAYMENTS_ENABLED=false` unchanged); no
+Google-only authentication cutover; no destructive migration; no customer data seeding.
+
+**Limits.** This waiver applies **only** to the current D34 Phase 1 controlled pilot. It does
+**not** permanently waive the need for a staging environment. Future production releases must
+revisit designation 3. The preflight check is expected to keep reporting `STAGING_DESIGNATED`
+as BLOCKED — the framework has no waiver state, and **neither the application nor the preflight
+was modified to make the check appear to pass**. No staging project is marked as designated.
+
 ## Secrets
 
 - Browser: none. The production bundle is scanned by
