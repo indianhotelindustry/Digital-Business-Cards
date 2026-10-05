@@ -270,14 +270,19 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({ initialIntent = null
   // Directive 34: an existing DSBC user whose Google address differs from their
   // account email lands here with no profile. Without this escape hatch the only
   // offers are "Create Free Card" / "Register as Company", either of which would
-  // create a SECOND active account for the same person instead of linking Google
-  // to the one they already have. Same label as the choose phase, which
+  // create a SECOND active account for the same person instead of taking them to
+  // the one they already have. Same label as the choose phase, which
   // googleAuthService's account-exists copy tells users to look for.
+  //
+  // The copy deliberately does NOT promise that Google can then be linked:
+  // reaching this screen via Google already created a Firebase user holding that
+  // credential, so linking it to the real account fails with
+  // auth/credential-already-in-use until an admin removes the orphan
+  // (D34-AUTH-030). This route prevents a duplicate DSBC account; it does not
+  // restore linking.
   const existingAccountButton = (
     <>
-      <p className="text-sm text-slate-600">
-        Already have a DSBC account? Sign in with your email first, then use Link Google — your account and data stay the same.
-      </p>
+      <p className="text-sm text-slate-600">Already have a DSBC account? Sign in with your email to reach it.</p>
       <button type="button" onClick={onOpenLegacyLogin} className="text-xs text-slate-500 underline self-center min-h-[44px] px-2">
         Existing account? Sign in with email
       </button>
