@@ -6,9 +6,15 @@ Each step names its verification and how to undo it. Stop at the first failure.
 Values used below:
 
 ```bash
-PROJECT=v-nexus-lite
-DB=ai-studio-37d17c3e-5c08-4bde-9163-8b8b6e0b2bb5
+PROJECT=task360-ift      # the DSBC production Firebase project
+DB=dsbc-production       # the DSBC production Firestore database — never "(default)"
 P="--project $PROJECT --confirm-project $PROJECT --database $DB"
+
+# Firebase CLI: ALWAYS the repo-pinned executable, run from the repository root.
+# It resolves to firebase-tools 15.32.1. NEVER `npx firebase`: the `firebase`
+# package in this repo is the Firebase JS SDK (bin: null), so npx resolves to
+# the SDK and exits with "could not determine executable to run".
+#   node_modules/.bin/firebase --version   # -> 15.32.1
 ```
 
 ## 0. Before deployment day
@@ -17,7 +23,7 @@ P="--project $PROJECT --confirm-project $PROJECT --database $DB"
 |---|---|
 | Designations in [PRODUCTION-CONFIGURATION.md](PRODUCTION-CONFIGURATION.md) (hosting site, public origin, bucket ownership, staging or a written waiver) | `npx tsx scripts/directive27/preflight.ts` shows **0 FAIL, 0 BLOCKED** |
 | Firestore **Enterprise edition** verified for rules + Firestore triggers | staging rehearsal, or a one-off test on a scratch Enterprise database (the emulator only runs Standard edition) |
-| Secret Manager: `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` exist (placeholders are fine while payments are off) | `firebase functions:secrets:get RAZORPAY_KEY_SECRET --project $PROJECT` |
+| Secret Manager: `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` exist (placeholders are fine while payments are off) | `node_modules/.bin/firebase functions:secrets:get RAZORPAY_KEY_SECRET --project task360-ift` |
 | Billing (Blaze) enabled; APIs: Cloud Functions, Cloud Build, Artifact Registry, Eventarc, Secret Manager | Console |
 | Notifications decision: integrate a provider, or accept NOTIFICATIONS = NOT_CONFIGURED | written decision |
 | Certification at the commit being deployed | `node scripts/directive27/certify.mjs` → Demo Ready PASS |
@@ -27,7 +33,7 @@ P="--project $PROJECT --confirm-project $PROJECT --database $DB"
 
 ```bash
 git status            # clean tree, the certified commit
-npx vite build        # production mode → [dsbc] building for PRODUCTION: v-nexus-lite / ai-studio-…
+npx vite build        # production mode → [dsbc] building for PRODUCTION: task360-ift / dsbc-production
 npx tsx scripts/directive27/preflight.ts
 node scripts/directive27/secretsAudit.mjs --bundle dist
 ```
@@ -35,7 +41,7 @@ node scripts/directive27/secretsAudit.mjs --bundle dist
 ## 2. Deploy rules and indexes (named database only)
 
 ```bash
-firebase deploy --config firebase.production.json --project production --only firestore
+node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only firestore
 ```
 
 Verify: in the Console, check that the rules of database `$DB` match `firestore.rules`.
@@ -80,24 +86,27 @@ was touched.
 ## 5. Deploy the backend
 
 ```bash
-firebase deploy --config firebase.production.json --project production --only functions
+node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only functions
 ```
 
 The backend checks itself against the registry at load. A wrong project,
 database, region or payment switch makes this step fail before anything is
-created. Undo: `firebase functions:delete <names> --project $PROJECT --region us-west1`.
+created. Undo: `node_modules/.bin/firebase functions:delete <names> --project task360-ift --region asia-south1`.
 Before DSBC no DSBC functions existed, so deleting returns to the previous state.
 
-> **⚠️ The region in that undo command is wrong for this project.** DSBC's
-> functions are deployed in **`asia-south1`** (measured 2026-10-04: 45 callables
-> in `asia-south1`), not `us-west1`. Use `--region asia-south1`, or the delete
-> silently matches nothing. Note also that `firebase` is not on `PATH` — it is a
-> root devDependency, so prefix CLI commands with `npx`.
+> **⚠️ Region and CLI, both corrected above (Directive 39).** DSBC's functions
+> are in **`asia-south1`** (measured 2026-10-05: 48 callables in `asia-south1`
+> after the Phase 1 deploy), never `us-west1` — a delete against the wrong region
+> silently matches nothing. And the CLI is the repo-pinned
+> `node_modules/.bin/firebase`: bare `firebase` is not on `PATH`, and **`npx
+> firebase` does not work in this repo** — `firebase` is the JS SDK package
+> (`bin: null`), so npx exits with "could not determine executable to run". That
+> failed a real Phase 1 deploy attempt on 2026-10-05 before it reached production.
 
 ## 6. Storage rules (only after the bucket-ownership decision)
 
 ```bash
-firebase deploy --config firebase.production.json --project production --only storage
+node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only storage
 ```
 
 ## 7. Platform Health
@@ -115,15 +124,16 @@ App Owner review → validate → execute).
 ## 9. Deploy hosting
 
 ```bash
-firebase deploy --config firebase.production.json --project production --only hosting
+node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only hosting
 ```
 
 Verify from a clean browser on another device: `/pricing` loads,
 `/no-such-page` answers HTTP 404, and `/card/<slug>`, `/profile/<slug>`,
 `/company/<slug>` of a real published customer render. Platform Health
 PUBLIC_URL is OK.
-Undo: `firebase hosting:rollback --project $PROJECT` (or Console → Hosting →
-release history).
+Undo: `node_modules/.bin/firebase hosting:rollback --project task360-ift` (or
+Console → Hosting → release history; for a Phase 1 rollback pick the release whose
+build-info commit is `28fb0c7`).
 
 ## 10. Live three-customer verification (Production Certification input)
 

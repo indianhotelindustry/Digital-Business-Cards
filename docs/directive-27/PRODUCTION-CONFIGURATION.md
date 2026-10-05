@@ -43,7 +43,8 @@ or anything else at runtime (ENV-009). The resolved object is frozen (ENV-008).
 ## Designations only the App Owner can make
 
 1. **Hosting site.** Create or choose a site, set `hosting.site` in the registry, then run
-   `firebase target:apply hosting dsbc-web <site> --project v-nexus-lite`.
+   `node_modules/.bin/firebase target:apply hosting dsbc-web <site> --project task360-ift`
+   (the repo-pinned CLI; never `npx firebase` — see RUNBOOK.md).
 2. **Public origin.** For example `https://cards.example.com`. Set `publicOrigin` in the
    registry **and** `DSBC_PUBLIC_ORIGIN` in `functions/.env.v-nexus-lite` (the
    backend refuses to load if they differ). Share links and QR codes use it.

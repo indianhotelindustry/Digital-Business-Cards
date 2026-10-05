@@ -258,7 +258,7 @@ already verified green for this tree (§5); re-run it at deploy time so `dist/` 
 
 1. **Functions**
    ```bash
-   npx firebase deploy --config firebase.production.json --project production --only functions
+   node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only functions
    ```
    Additive. Verify: `resolveSession`, `registerIndividual`, `registerCompany` appear in
    `asia-south1`; the existing 45 callables still answer.
@@ -269,7 +269,7 @@ already verified green for this tree (§5); re-run it at deploy time so `dist/` 
    behaviour change and should not be described as none.
 2. **Firestore rules and indexes**
    ```bash
-   npx firebase deploy --config firebase.production.json --project production --only firestore
+   node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only firestore
    ```
    This is the step that closes browser-side registration. `firestore.indexes.json` is unchanged
    by Phase 1 (verified: not in the `28fb0c7..eff8dc5` diff), so this is effectively a
@@ -278,12 +278,12 @@ already verified green for this tree (§5); re-run it at deploy time so `dist/` 
    existing users can still read their own `users/{uid}`; Moolchand's public card still resolves.
 3. **Hosting**
    ```bash
-   npx firebase deploy --config firebase.production.json --project production --only hosting
+   node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only hosting
    ```
    Verify: build-info shows the new commit; the sign-in screen loads; `/pricing` loads and
    `/no-such-page` answers 404 (the rewrites live in `firebase.production.json`); then §9.
 
-### Why `--config firebase.production.json --project production` is mandatory
+### Why `--config firebase.production.json --project task360-ift` is mandatory
 
 Not a style preference. The base `firebase.json` is the **emulator** configuration:
 
@@ -296,17 +296,26 @@ Not a style preference. The base `firebase.json` is the **emulator** configurati
 - `firebase.production.json` is the file that carries `database: dsbc-production`, the `dsbc-web`
   hosting target, the URL rewrites and the security headers.
 
-`--project production` is the `.firebaserc` alias for `task360-ift`. The **default** alias in
-`.firebaserc` is `demo-dsbc`, the emulator project, so omitting `--project` does not target
-production.
+`--project task360-ift` names the production project **literally**, which is why it is used here in
+preference to the `.firebaserc` alias `production` that resolves to the same id. The **default**
+alias in `.firebaserc` is `demo-dsbc`, the emulator project, so omitting `--project` does not
+target production. Hosting targets resolve identically with the literal id: `.firebaserc` keys its
+`targets` block by project id, so `--project task360-ift` resolves `dsbc-web` (verified locally
+with `node_modules/.bin/firebase target --project task360-ift`).
 
-**And why `npx`.** `firebase-tools` is a **root devDependency** (`^15.32.1`); bare `firebase` is
-**not on `PATH`** in this environment (verified: `command -v firebase` finds nothing, while
-`node_modules/.bin/firebase.exe` exists). Every command here is therefore prefixed with `npx`, in
-line with the repo's convention elsewhere (`npx vite build`, `npx tsx`). If you have
-firebase-tools installed globally you may drop the `npx`, but do not assume it — and note that
-`npx` run **outside** this checkout would silently fetch an unpinned firebase-tools from the
-registry rather than the version this repo was verified against.
+**And why `node_modules/.bin/firebase`, never `npx firebase`.** `firebase-tools` (`^15.32.1`) is a
+**root devDependency**, and bare `firebase` is **not on `PATH`** here (`command -v firebase` finds
+nothing). But `npx firebase` does **not** solve that and must never be used in this repository:
+`firebase` — the Firebase **JS SDK**, a runtime dependency — declares `bin: null`, so `npx`
+resolves to the SDK package rather than the CLI and exits immediately with
+`npm error could not determine executable to run`. This was not theoretical: it failed the first
+Phase 1 functions deploy attempt on 2026-10-05 (harmlessly — it exited before contacting
+production). `scripts/directive27/liveProbe.mjs` already documented the same trap.
+
+Use the repo-pinned executable from the repository root, which resolves to firebase-tools
+**15.32.1** (verified: `node_modules/.bin/firebase --version`). Do **not** substitute a globally
+installed or `npx`-downloaded CLI: an unpinned version is not the one this release was verified
+against.
 
 ### Why this order, and the window it leaves
 
@@ -340,7 +349,7 @@ succeeded**. Either way, rules and hosting must land in the same sitting; do not
 
 | Step | Rollback | Cost |
 |---|---|---|
-| Hosting | `npx firebase hosting:rollback --project production`, or console → Hosting → release history, selecting the release whose build-info commit is `28fb0c7`. | Seconds, no rebuild |
+| Hosting | `node_modules/.bin/firebase hosting:rollback --project task360-ift`, or console → Hosting → release history, selecting the release whose build-info commit is `28fb0c7`. | Seconds, no rebuild |
 | Rules | **Primary: the Firebase console.** Firestore → Rules → ruleset history for database `dsbc-production` → select the ruleset in force before the Phase 1 deploy → publish. No CLI, no checkout, no build. **Fallback (CLI):** see below — needs `npm ci` in a worktree first, so it is minutes, not seconds. Restores browser-side registration, so do it only together with a hosting rollback. | Console: seconds. CLI fallback: minutes |
 | Functions | Nothing to undo: the three callables are additive and unreferenced once hosting is rolled back. To revert `getMyAccountState`'s `no_account` response, redeploy `functions` **from the main checkout** at the previous commit (see below) — not from a throwaway worktree. Production functions are in **`asia-south1`** (§6). | Minutes |
 
@@ -352,9 +361,10 @@ incident it avoids every dependency problem below.
 git worktree add ../dsbc-rules-rollback 28fb0c7   # firebase.production.json is present at this commit
 cd ../dsbc-rules-rollback
 npm ci                                            # REQUIRED: a fresh worktree has no node_modules,
-                                                  # so `npx firebase` would otherwise fetch an
-                                                  # unpinned firebase-tools from the registry
-npx firebase deploy --config firebase.production.json --project production --only firestore
+                                                  # so there is no repo-pinned CLI there until you
+                                                  # install one. Never substitute a global or
+                                                  # downloaded CLI for the pinned firebase-tools.
+node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only firestore
 cd - && git worktree remove ../dsbc-rules-rollback
 ```
 
@@ -367,7 +377,7 @@ Why this is safe despite the functions `predeploy` hook: `firebase.production.js
 # Functions rollback — from the MAIN checkout, which already has node_modules
 git stash                                         # if the working tree has changes worth keeping
 git checkout 28fb0c7
-npx firebase deploy --config firebase.production.json --project production --only functions
+node_modules/.bin/firebase deploy --config firebase.production.json --project task360-ift --only functions
 git checkout security-foundation/directive-27     # and `git stash pop` if you stashed
 ```
 
@@ -391,17 +401,22 @@ currently matches `firestore.rules` as of `28fb0c7`. What is verified and what i
   and at `63aefc1^` = `7cd3163` (the Phase 1 base). The four commits between them change no rules
   file. So either revision is the same rollback source, and rolling back to `28fb0c7` restores
   exactly the pre-Phase-1 rules.
-- **Not verified:** that the live ruleset in `dsbc-production` actually matches that file. Nobody
-  has read live rules at this commit; §6's read-only preflight did not capture them.
+- **Verified live (Directive 35, 2026-10-05):** the pre-Phase-1 live ruleset of `dsbc-production`
+  was `6bc57802-2983-4a37-8be7-8a320ce28c5d`, and its source was captured read-only and found
+  **identical** to `firestore.rules` at `28fb0c7` (sha256 `9f7f439e…` on both sides after
+  line-ending normalisation; the deployed copy is CRLF, the git blob LF). That ruleset id is the
+  rollback target. After the Phase 1 deploy (Directive 38) the live ruleset is
+  `91447933-33fa-4a6f-85c0-c3cde7dffd22`, whose source matches `firestore.rules` at `8f4bbc4`.
 - **Do not use the one snapshot in the repo for this.**
   `docs/directive-27/evidence/live-snapshot/live-firestore.rules` is the **pre-Directive-27**
   capture (2026-10-02) and differs substantially from `28fb0c7` (25,854 vs 32,640 bytes, ~1,191
   diff lines). The runbook's "redeploy the snapshot rules" undo was written for D27's own
   rollback, not this one.
 
-**Therefore:** before step 2, capture the current live ruleset read-only and confirm it matches
-`28fb0c7:firestore.rules`. If it does not, establish the true rollback source first — rolling back
-to a revision that was never live would itself be a change.
+**Therefore:** the rollback source is established. Still re-capture the live ruleset read-only
+immediately before rolling back and confirm it is `91447933-33fa-4a6f-85c0-c3cde7dffd22`; if
+something else is live, establish the true rollback source first — rolling back to a revision that
+was never live would itself be a change.
 
 No data rollback exists or is needed: the deploy writes no data.
 
