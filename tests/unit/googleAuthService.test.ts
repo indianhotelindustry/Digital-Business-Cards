@@ -130,20 +130,31 @@ describe('linkGoogleToCurrentUser', () => {
     expect(linkWithPopup).not.toHaveBeenCalled();
   });
 
-  it('is a no-op when Google is already linked', async () => {
-    authStub.currentUser = { providerData: [{ providerId: 'password' }, { providerId: 'google.com' }], getIdToken: vi.fn() };
-    await expect(linkGoogleToCurrentUser()).resolves.toBe('already_linked');
+  // D45: the caller must be able to NAME the linked Google account in the success
+  // message, so the outcome carries the email instead of a bare string.
+  it('is a no-op when Google is already linked, and reports the linked Google email', async () => {
+    authStub.currentUser = { providerData: [{ providerId: 'password' }, { providerId: 'google.com', email: 'kavya@saffron-studio.test' }], getIdToken: vi.fn() };
+    await expect(linkGoogleToCurrentUser()).resolves.toEqual({ outcome: 'already_linked', email: 'kavya@saffron-studio.test' });
     expect(linkWithPopup).not.toHaveBeenCalled();
   });
 
-  it('links to the current user (same UID) and refreshes the token', async () => {
+  it('links to the current user (same UID), refreshes the token, and reports the linked Google email', async () => {
     const getIdToken = vi.fn(async () => 'token');
     const user = { providerData: [{ providerId: 'password' }], getIdToken };
     authStub.currentUser = user;
-    linkWithPopup.mockResolvedValue({ user });
-    await expect(linkGoogleToCurrentUser()).resolves.toBe('linked');
+    const linked = { providerData: [{ providerId: 'password' }, { providerId: 'google.com', email: 'kavya@saffron-studio.test' }], getIdToken };
+    linkWithPopup.mockResolvedValue({ user: linked });
+    await expect(linkGoogleToCurrentUser()).resolves.toEqual({ outcome: 'linked', email: 'kavya@saffron-studio.test' });
     expect(linkWithPopup).toHaveBeenCalledTimes(1);
     expect(linkWithPopup.mock.calls[0][0]).toBe(user);
     expect(getIdToken).toHaveBeenCalledWith(true);
+  });
+
+  it('reports a null email when Google exposes none, so the caller still confirms success', async () => {
+    const getIdToken = vi.fn(async () => 'token');
+    const user = { providerData: [{ providerId: 'password' }], getIdToken };
+    authStub.currentUser = user;
+    linkWithPopup.mockResolvedValue({ user: { providerData: [{ providerId: 'google.com' }], getIdToken } });
+    await expect(linkGoogleToCurrentUser()).resolves.toEqual({ outcome: 'linked', email: null });
   });
 });

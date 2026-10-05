@@ -219,7 +219,14 @@ test('D34-E2E-7: a password account signs in by email, links Google (same UID), 
     const popupP = page.waitForEvent('popup');
     await banner.getByRole('button', { name: 'Link Google' }).click();
     await completeGooglePopup(await popupP, { email: LEGACY.email, name: LEGACY.displayName });
-    await expect(banner).toHaveCount(0);
+    // D45: success must be stated, never implied by the control disappearing. The
+    // first production attempt failed precisely because a silent unmount read as success.
+    await expect(banner).toBeVisible();
+    await expect(banner).toContainText('Google account linked successfully.');
+    await expect(banner).toContainText(LEGACY.email);
+    await expect(banner).toContainText('You can now sign in with Google using this account.');
+    await expect(banner.getByRole('button', { name: 'Link Google' })).toHaveCount(0);
+    await shot(page, 'd34-e2e-7-link-google-success');
     await expect.poll(async () => (await adminAuth.getUser(uid)).providerData.map((p) => p.providerId).sort()).toEqual(['google.com', 'password']);
 
     await page.getByRole('button', { name: 'Sign Out' }).click();

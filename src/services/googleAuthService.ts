@@ -49,14 +49,23 @@ export async function completeGoogleRedirect(): Promise<{ user: User; intent: Se
   return { user: result.user, intent };
 }
 
-/** Link Google to the signed-in (password) account: same Firebase UID, user-mediated, never by email matching. */
-export async function linkGoogleToCurrentUser(): Promise<'linked' | 'already_linked'> {
+/** The Google address on a user, so the caller can name it when confirming a link. */
+function googleEmailOf(user: Pick<User, 'providerData'> | null | undefined): string | null {
+  return user?.providerData?.find((p) => p?.providerId === 'google.com')?.email ?? null;
+}
+
+/**
+ * Link Google to the signed-in (password) account: same Firebase UID, user-mediated,
+ * never by email matching. Returns the linked Google address (D45) so the UI can
+ * state WHICH account was linked instead of implying success by disappearing.
+ */
+export async function linkGoogleToCurrentUser(): Promise<{ outcome: 'linked' | 'already_linked'; email: string | null }> {
   const user = auth.currentUser;
   if (!user) throw Object.assign(new Error('Not signed in'), { code: 'auth/no-current-user' });
-  if (hasGoogleProvider(user)) return 'already_linked';
-  await linkWithPopup(user, provider());
+  if (hasGoogleProvider(user)) return { outcome: 'already_linked', email: googleEmailOf(user) };
+  const credential = await linkWithPopup(user, provider());
   await user.getIdToken(true);
-  return 'linked';
+  return { outcome: 'linked', email: googleEmailOf(credential?.user) ?? googleEmailOf(auth.currentUser) };
 }
 
 export function hasGoogleProvider(user: Pick<User, 'providerData'> | null): boolean {
