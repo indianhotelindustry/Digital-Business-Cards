@@ -66,7 +66,7 @@ Google sign-in (Firebase Auth, provider google.com)
   → workspace
 ```
 
-* **Registration moves to the backend** (`registerAccount` callable). The client can no longer
+* **Registration moves to the backend** (`registerIndividual` / `registerCompany` callables). The client can no longer
   create `users`/`tenants`/`companies`; rules close those creates. Duplicate protection is by UID.
 * **Activation is derived from the commercial path**, never a universal approval:
   free → `active` immediately; paid online → `pending_activation` + `payment_pending` until the
